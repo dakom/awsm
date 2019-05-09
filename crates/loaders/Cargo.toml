@@ -1,0 +1,38 @@
+[package]
+name = "awsm_loaders"
+edition = "2018"
+version = "0.0.1"
+authors = ["David Komer<david.komer@gmail.com.com>"]
+license = "MIT"
+readme = "README.md"
+documentation = "https://docs.rs/web_sys_loaders/0.0.1/web_sys_loaders/"
+repository = "https://github.com/dakom/web_sys_loaders"
+homepage = "https://github.com/dakom/web_sys_loaders"
+description = "Wrappers around web_sys primitives for easier loading"
+categories = ["web_sys", "loader"]
+keywords = ["xhr", "fetch"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+lto = true
+opt-level = 's'
+
+[dependencies]
+wasm-bindgen = "0.2.43"
+js-sys = "0.3.20"
+futures = "0.1.26"
+
+[dependencies.web-sys]
+version = "0.3.20"
+features = [
+'XmlHttpRequest',
+'Document',
+'HtmlElement',
+'HtmlImageElement',
+'Url',
+'Window',
+'Location',
+'console'
+]

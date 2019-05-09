@@ -1,0 +1,15 @@
+.error {
+    position: fixed;
+    display: flex;
+    align-items: center;
+    justify-items: center;
+    width: 100vw;
+    height: 100vh;
+    .label {
+        width: 100%;
+        text-align: center;
+        color: red;
+        font-size: 3em;
+        font-weight: 700;
+    }
+}
