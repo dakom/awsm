@@ -27,6 +27,9 @@ futures = "0.1.26"
 [dependencies.web-sys]
 version = "0.3.20"
 features = [
+  'console',
+  'WebGlUniformLocation',
+  'WebGlBuffer',
   'CanvasRenderingContext2d',
   'WebGlRenderingContext',
   'WebGl2RenderingContext',
@@ -40,3 +43,4 @@ features = [
   'WebGlTexture',
   'Window'
 ]
+
