@@ -42,7 +42,7 @@ pub enum UniformMatrixData <'a> {
 
 pub fn get_uniform_location(gl:&WebGlRenderingContext, program:&WebGlProgram, name:&str) -> Result<WebGlUniformLocation, Error> {
     gl.get_uniform_location(&program, &name)
-        .ok_or(Error::from(NativeError::UniformLocation))
+        .ok_or(Error::from(NativeError::UniformLocation(Some(name.to_owned()))))
 }
 
 pub fn set_uniform_data(gl:&WebGlRenderingContext, loc:&WebGlUniformLocation, data: UniformData) {

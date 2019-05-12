@@ -38,7 +38,7 @@ pub fn get_attribute_location(gl:&WebGlRenderingContext, program:&WebGlProgram, 
     Some(gl.get_attrib_location(&program, &name))
         .filter(|x| *x != -1)
         .map(|x| x as u32)
-        .ok_or(Error::from(NativeError::AttributeLocation))
+        .ok_or(Error::from(NativeError::AttributeLocation(Some(name.to_owned()))))
 }
 
 pub fn activate_attribute(gl:&WebGlRenderingContext, loc:u32, opts:&AttributeOptions) {

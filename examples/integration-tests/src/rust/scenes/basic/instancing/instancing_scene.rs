@@ -1,4 +1,5 @@
 use crate::rust::helpers::matrix::*;
+use crate::rust::helpers::data::*;
 use super::instancing_data::*;
 use super::instancing_render_data::*;
 use crate::rust::scenes::scene::{Scene};
@@ -9,6 +10,8 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use futures::future::{Future, result};
 use awsm_webgl::uniforms::{UniformMatrixData};
+use awsm_webgl::attributes::{AttributeOptions};
+use awsm_webgl::enums::{BufferTarget, BufferUsage, DataType};
 
 pub struct InstancingScene <'a> {
     webgl_renderer: Rc<RefCell<WebGlRenderer<'a>>>, 
@@ -44,6 +47,7 @@ impl <'a> InstancingScene <'a> {
     }
 }
 
+
 impl <'a> Scene for InstancingScene<'a> {
     fn id(self:&Self) -> &str {
         "instancing"
@@ -53,11 +57,11 @@ impl <'a> Scene for InstancingScene<'a> {
 
         self.instance_data.update(delta_time);
 
-        for bunny in &self.instance_data.bunnies {
-            self.render_data.update(&self.camera_matrix, &self.instance_data.area, &bunny.pos);
-            self.render(&mut webgl_renderer_ref)?;
-        }
-        
+        //Moved to render()
+        //let bunny_positions_iter = self.instance_data.bunnies.iter().map(|b| b.pos); 
+        //self.render_data.update(&self.camera_matrix, &self.instance_data.area, bunny_positions_iter);
+
+        self.render(&mut webgl_renderer_ref)?;
 
         Ok(())
     }
@@ -70,25 +74,36 @@ impl <'a> Scene for InstancingScene<'a> {
 
 }
 
-
 impl <'a>WebGlRender for InstancingScene<'a> {
     fn render(self: &Self, webgl_renderer:&mut WebGlRenderer) -> Result<(), Error> {
         let render_data = &self.render_data; 
 
-        //TODO - the instancing shouldn't try and use the uniform location
-        //Rather it should use the attribute location
-        let loc = webgl_renderer.get_uniform_loc("u_modelViewProjection")?;
-        //instancing
-        let ext = webgl_renderer.get_extension_instanced_arrays()?;
-        ext.vertex_attrib_divisor_angle(&loc, 1);
+
         //scale
         webgl_renderer.set_uniform_matrix_name("u_size", UniformMatrixData::Float4(&render_data.scale_matrix))?;
 
-        //model-view-projection
-        webgl_renderer.set_uniform_matrix_name("u_modelViewProjection", UniformMatrixData::Float4(&render_data.mvp_matrix))?;
+        //camera
+        webgl_renderer.set_uniform_matrix_name("u_camera", UniformMatrixData::Float4(&self.camera_matrix))?;
 
+        //upload our buffer to the attribute for instancing
+        //it's a big data move but we're doing it all at once.
+        //without instancing we'd be doing separate draw calls and setting the uniform each time
+        //there's almost definitely faster ways of creating the pos_data but this is clear for demo purposes
+        let mut pos_data:Vec<f32> = Vec::new();
+        for bunny in self.instance_data.bunnies.iter() {
+            pos_data.push(bunny.pos.x as f32);
+            pos_data.push(bunny.pos.y as f32);
+        }
+
+        webgl_renderer.upload_array_buffer(render_data.pos_buffer_id, &pos_data, BufferTarget::ArrayBuffer, BufferUsage::StaticDraw)?;
+        webgl_renderer.activate_attribute_name_in_current_program("a_position", &AttributeOptions::new(4, DataType::Float))?;
+
+        //TODO - get this working!
+
+        //let ext = webgl_renderer.get_extension_instanced_arrays()?;
+        //ext.vertex_attrib_divisor_angle(&loc, 1);
         //draw!
-        ext.draw_arrays_instanced_angle(BeginMode::TriangleStrip as u32, 0, 4, 1)?;
+        //ext.draw_arrays_instanced_angle(BeginMode::TriangleStrip as u32, 0, 4, 1)?;
         //webgl_renderer.draw_arrays(BeginMode::TriangleStrip as u32, 0, 4);
 
         Ok(())

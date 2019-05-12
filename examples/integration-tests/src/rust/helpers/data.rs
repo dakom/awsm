@@ -1,11 +1,13 @@
 
 #[repr(C)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Point {
     pub x:f64,
     pub y:f64,
 }
 
 #[repr(C)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Color {
     pub r:f64,
     pub g:f64,
@@ -14,6 +16,7 @@ pub struct Color {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Area {
     pub width:f64,
     pub height:f64,
@@ -67,5 +70,17 @@ pub trait SliceValues {
         target[13] = values[13] as f32;
         target[14] = values[14] as f32;
         target[15] = values[15] as f32;
+    }
+}
+
+pub fn copy_slices_to_slice<T>(srcs:&[Vec<T>], dest:&mut [T]) 
+where T: Copy
+{
+    let mut offset = 0;
+    for src in srcs.iter() {
+        let len = src.len();
+        let max = offset + len;
+        dest[offset..max].copy_from_slice(&src);
+        offset = max;
     }
 }

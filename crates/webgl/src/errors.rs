@@ -9,8 +9,8 @@ pub enum Error {
 
 pub enum NativeError {
     CanvasCreate,
-    AttributeLocation,
-    UniformLocation,
+    AttributeLocation(Option<String>),
+    UniformLocation(Option<String>),
     MipsPowerOf2,
     NoExtension,
     MissingShaderProgram,
@@ -26,7 +26,7 @@ impl Error {
         match self {
             Error::String(s) => JsValue::from_str(&s[..]),
             Error::Js(jval) => jval.clone(),
-            Error::Native(err) => JsValue::from_str(err.default_str()),
+            Error::Native(err) => JsValue::from_str(err.to_string().as_str()),
         }
     }
 }
@@ -41,8 +41,8 @@ impl NativeError {
     pub fn default_str (self:&Self) -> &'static str{
         match self {
             NativeError::CanvasCreate => "Couldn't create canvas",
-            NativeError::AttributeLocation => "Couldn't get attribute location",
-            NativeError::UniformLocation => "Couldn't get uniform location",
+            NativeError::AttributeLocation(_optional_name) => "Couldn't get attribute location",
+            NativeError::UniformLocation(_optional_name) => "Couldn't get uniform location",
             NativeError::MipsPowerOf2 => "mipmapping requires that textures be power of 2",
             NativeError::NoExtension => "extension not found",
             NativeError::NoCreateBuffer => "couldn't create buffer",
@@ -51,6 +51,21 @@ impl NativeError {
             NativeError::NoCreateTexture => "unable to create texture",
             NativeError::MissingTexture => "couldn't get texture",
             NativeError::MissingBuffer => "couldn't get buffer",
+        }
+    }
+    pub fn to_string (self:&Self) -> String {
+        match self {
+            NativeError::AttributeLocation(optional_name) => 
+                match optional_name {
+                    None => "Couldn't get attribute location".to_string(),
+                    Some(name) => format!("couldn't get attribute location named {}", name.as_str())
+                },
+            NativeError::UniformLocation(optional_name) => 
+                match optional_name {
+                    None => "Couldn't get uniform location".to_string(),
+                    Some(name) => format!("couldn't get uniform location named {}", name.as_str())
+                },
+            _ => self.default_str().to_string()
         }
     }
 }
