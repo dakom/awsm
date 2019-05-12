@@ -24,7 +24,7 @@ extern "C" {
     pub fn draw_elements_instanced_angle(this: &AngleInstancedArrays, mode: u32, count: i32, type_: u32, offset: i32, primcount: i32) -> Result<(), JsValue>;
 
     #[wasm_bindgen(method, js_name = vertexAttribDivisorANGLE)]
-    pub fn vertex_attrib_divisor_angle(this: &AngleInstancedArrays, index: &web_sys::WebGlUniformLocation, divisor: u32);
+    pub fn vertex_attrib_divisor_angle(this: &AngleInstancedArrays, loc: u32, divisor: u32);
 }
 
 

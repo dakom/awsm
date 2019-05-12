@@ -85,7 +85,7 @@ impl <'a>WebGlRender for InstancingScene<'a> {
         //camera
         webgl_renderer.set_uniform_matrix_name("u_camera", UniformMatrixData::Float4(&self.camera_matrix))?;
 
-        //upload our buffer to the attribute for instancing
+        //upload our buffer for instancing
         //it's a big data move but we're doing it all at once.
         //without instancing we'd be doing separate draw calls and setting the uniform each time
         //there's almost definitely faster ways of creating the pos_data but this is clear for demo purposes
@@ -96,15 +96,18 @@ impl <'a>WebGlRender for InstancingScene<'a> {
         }
 
         webgl_renderer.upload_array_buffer(render_data.pos_buffer_id, &pos_data, BufferTarget::ArrayBuffer, BufferUsage::StaticDraw)?;
-        webgl_renderer.activate_attribute_name_in_current_program("a_position", &AttributeOptions::new(4, DataType::Float))?;
 
-        //TODO - get this working!
+        //Now that the buffer is created - copy it into the attribute
+        //We get the loc value since we'll need it for the instancing call later
+        let loc = webgl_renderer.get_attribute_location_from_current_program("a_position")?;
+        webgl_renderer.activate_attribute_loc(loc, &AttributeOptions::new(2, DataType::Float));
 
-        //let ext = webgl_renderer.get_extension_instanced_arrays()?;
-        //ext.vertex_attrib_divisor_angle(&loc, 1);
-        //draw!
-        //ext.draw_arrays_instanced_angle(BeginMode::TriangleStrip as u32, 0, 4, 1)?;
-        //webgl_renderer.draw_arrays(BeginMode::TriangleStrip as u32, 0, 4);
+        //Get the instancing extension
+        let ext = webgl_renderer.get_extension_instanced_arrays()?;
+        //Tell it about the attribute location
+        ext.vertex_attrib_divisor_angle(loc, 1);
+        //Draw!
+        ext.draw_arrays_instanced_angle(BeginMode::TriangleStrip as u32, 0, 4, 2)?;
 
         Ok(())
     }

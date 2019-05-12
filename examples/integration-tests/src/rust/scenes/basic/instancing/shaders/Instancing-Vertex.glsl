@@ -9,11 +9,13 @@ uniform mat4 u_size;
 uniform mat4 u_camera;
 
 void main() {
-    mat4 modelViewProjection;
+    mat4 transform = mat4(1.0);
 
-    //TODO - should be derived from u_camera a_position
-    //What's here is an untested placeholder
-    modelViewProjection = u_camera * a_position;
+    //https://www.geeks3d.com/20141114/glsl-4x4-matrix-mat4-fields/
+    transform[3] = vec4(a_position, 0.0, 1.0);
+    //transform[3] = vec4(800, 800, 0.0, 1.0);
+
+    mat4 modelViewProjection = u_camera * transform; 
 
     gl_Position = modelViewProjection * (u_size * vec4(a_vertex,0,1));
     v_uv = a_vertex;
