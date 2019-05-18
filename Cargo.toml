@@ -1,6 +1,0 @@
-[workspace]
-members = [ "crates/*", "examples/integration-tests" ]
-
-[profile.release]
-lto = true
-opt-level = 's'

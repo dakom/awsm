@@ -74,7 +74,8 @@ fabric.properties
 
 # rust/wasm
 .wasm
-target/
+target
+pkg
 Cargo.lock
 **/*.rs.bk
 
