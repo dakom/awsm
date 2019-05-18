@@ -7,5 +7,6 @@ install:
   - curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -f
 
 script:
+  - cd examples
   - npm install
   - npm run build
