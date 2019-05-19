@@ -1,0 +1,58 @@
+/* Global */
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+html,body {
+	padding: 0;
+	margin: 0;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+	text-decoration: none;
+}
+
+ul {
+	list-style: none;	
+}
+
+
+/* color values for theme 
+#BC04BF
+#0583F2
+#0ABF04
+#F2CB05
+#F27405
+*/
+
+/* Menu */
+.menu-header {
+	margin-top: 5px;
+	margin-left: 10px;
+	font-size: 2rem;
+}
+.menu-list {
+	display: flex;
+	flex-direction: row;
+}
+.menu-list > div {
+	cursor: pointer;
+	margin: 10px;
+	background-color: #0583F2;
+	color: white;
+	text-align: center;
+	padding: 1em 2em;
+	border-radius: 5px;
+	font-weight: bold;
+}
+
+.menu-list > div:hover {
+	background-color: #F27405;
+}
+
+
+

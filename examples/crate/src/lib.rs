@@ -1,3 +1,5 @@
+mod menu;
+
 use awsm::*;
 use wasm_bindgen::prelude::*;
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -17,18 +19,11 @@ pub fn run() -> Result<(), JsValue> {
     let body = document.body().expect("should have a body");
     let body: &web_sys::Node = body.as_ref();
 
-    let p: web_sys::Node = document.create_element("p")?.into();
-    p.set_text_content(Some("Hello from Rust, WebAssembly, and Webpack!"));
-
-    body.append_child(&p)?;
-
-    let p: web_sys::Node = document.create_element("p")?.into();
-    let version_string = format!("version {}", version::info::version_info());
-    p.set_text_content(Some(&version_string.as_ref()));
-
-    body.append_child(&p)?;
+    let menu = menu::build_menu(&document)?;
+    body.append_child(&menu)?;
     version::logger::log_version();
 
+    
     Ok(())
 }
 
