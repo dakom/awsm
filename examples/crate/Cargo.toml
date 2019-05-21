@@ -12,7 +12,8 @@ lto = true
 opt-level = 's'
 
 [dependencies]
-awsm = { path = "../../" }
+awsm = { path = "../../lib" }
+gloo-events = { path = "../../../gloo/crates/events" }
 
 wasm-bindgen = "0.2"
 
@@ -35,6 +36,7 @@ features = [
   "Document",
   "Element",
   "HtmlElement",
+  "HtmlButtonElement",
   "Node",
   "Window",
 ]

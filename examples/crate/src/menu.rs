@@ -1,34 +1,33 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{console};
+use gloo_events::EventListener;
 
-//TODO - call closure with label of scene
 pub fn build_menu(document:&web_sys::Document) -> Result<web_sys::Node, JsValue> {
     let container: web_sys::Node = document.create_element("div")?.into();
 
-    let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-            //context.move_to(event.offset_x() as f64, event.offset_y() as f64);
-            //pressed.set(true);
-            console::log_1(&JsValue::from_str("got click!"))
-        }) as Box<dyn FnMut(_)>);
+    let on_click = move |label:&str| {
+        console::log_1(&JsValue::from_str(&label))
+    };
 
-
-    append_menu(&closure, &container, &document, "Tick", &vec![
+    append_menu(on_click, &container, &document, "Tick", &vec![
        "Clock",
     ])?;
 
-    append_menu(&closure, &container, &document, "WebGl", &vec![
+    append_menu(on_click, &container, &document, "WebGl", &vec![
        "Quad",
        "Quad - Texture",
        "Quad - Instancing",
     ])?;
 
-    closure.forget();
+    //closure.forget();
 
     Ok(container)
 }
 
-fn append_menu(on_click: &Closure<dyn FnMut(web_sys::MouseEvent)>, container:&web_sys::Node, document:&web_sys::Document, label:&str, menu_labels:&Vec<&str>) -> Result<(), JsValue> {
+fn append_menu <F> (on_click: F, container:&web_sys::Node, document:&web_sys::Document, label:&str, menu_labels:&Vec<&str>) -> Result<(), JsValue> 
+where F: (Fn(&str) -> ()) + Copy + 'static,
+{
 
     let menu: web_sys::Element = document.create_element("div")?.into();
     menu.set_class_name("menu");
@@ -40,14 +39,16 @@ fn append_menu(on_click: &Closure<dyn FnMut(web_sys::MouseEvent)>, container:&we
     let menu_list: web_sys::Element = document.create_element("div")?.into();
     menu_list.set_class_name("menu-list");
 
-    //let menu: web_sys::Node = menu.into();
-
     for label in menu_labels.iter() {
-        let item = create_menu_item(*label, document)?;
+        let item = create_menu_item(&label, document)?;
         menu_list.append_child(&item);
 
-        let on_click = on_click.as_ref().unchecked_ref();
-        item.set_onclick(Some(&on_click));
+        //need to clone the label since the closure will take ownership
+        let label = label.to_string();
+
+        EventListener::new(&item, "click", move |_e| {
+            on_click(&label.as_str());
+        }).forget();
     }
 
 

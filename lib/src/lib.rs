@@ -1,4 +1,5 @@
 pub mod version;
+pub mod event;
 
 #[cfg(test)]
 mod tests {
