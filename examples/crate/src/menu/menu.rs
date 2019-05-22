@@ -1,20 +1,23 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{console};
+//use web_sys::{console};
 use gloo_events::EventListener;
-
-pub fn build_menu(document:&web_sys::Document) -> Result<web_sys::Node, JsValue> {
+use std::rc::Rc;
+pub fn build_menu(window:Rc<web_sys::Window>, document:&web_sys::Document) -> Result<web_sys::Node, JsValue> {
     let container: web_sys::Node = document.create_element("div")?.into();
 
-    let on_click = move |label:&str| {
-        console::log_1(&JsValue::from_str(&label))
-    };
+    //Hmmmmm
+    let on_click = Rc::new(move |label:&str| {
 
-    append_menu(on_click, &container, &document, "Tick", &vec![
+        let pathname = format!("/{}", &label);
+        window.location().set_pathname(&pathname);
+    });
+
+    append_menu(Rc::clone(&on_click), &container, &document, "Tick", vec![
        "Clock",
     ])?;
 
-    append_menu(on_click, &container, &document, "WebGl", &vec![
+    append_menu(Rc::clone(&on_click), &container, &document, "WebGl", vec![
        "Quad",
        "Quad - Texture",
        "Quad - Instancing",
@@ -25,8 +28,8 @@ pub fn build_menu(document:&web_sys::Document) -> Result<web_sys::Node, JsValue>
     Ok(container)
 }
 
-fn append_menu <F> (on_click: F, container:&web_sys::Node, document:&web_sys::Document, label:&str, menu_labels:&Vec<&str>) -> Result<(), JsValue> 
-where F: (Fn(&str) -> ()) + Copy + 'static,
+fn append_menu <F> (on_click: Rc<F>, container:&web_sys::Node, document:&web_sys::Document, label:&'static str, menu_labels:Vec<&'static str>) -> Result<(), JsValue> 
+where F: (Fn(&str) -> ()) + 'static,
 {
 
     let menu: web_sys::Element = document.create_element("div")?.into();
@@ -39,15 +42,15 @@ where F: (Fn(&str) -> ()) + Copy + 'static,
     let menu_list: web_sys::Element = document.create_element("div")?.into();
     menu_list.set_class_name("menu-list");
 
-    for label in menu_labels.iter() {
+    for label in menu_labels.into_iter() {
         let item = create_menu_item(&label, document)?;
         menu_list.append_child(&item);
 
-        //need to clone the label since the closure will take ownership
-        let label = label.to_string();
+        //need to clone this since each closure will take ownership
+        let on_click = Rc::clone(&on_click);
 
         EventListener::new(&item, "click", move |_e| {
-            on_click(&label.as_str());
+            on_click(&label);
         }).forget();
     }
 

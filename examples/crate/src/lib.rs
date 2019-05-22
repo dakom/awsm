@@ -1,6 +1,7 @@
+mod start;
 mod menu;
 
-use awsm::*;
+use start::start::*;
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -17,14 +18,7 @@ pub fn run() -> Result<(), JsValue> {
     let window = web_sys::window().expect("should have a Window");
     let document = window.document().expect("should have a Document");
 
-    let body = document.body().expect("should have a body");
-    let body: &web_sys::Node = body.as_ref();
-
-    let menu = menu::build_menu(&document)?;
-    body.append_child(&menu)?;
-    version::logger::log_version();
-
-    Ok(())
+    start(window, document)
 }
 
 fn set_panic_hook() {

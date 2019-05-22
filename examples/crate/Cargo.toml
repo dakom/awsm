@@ -39,6 +39,7 @@ features = [
   "HtmlButtonElement",
   "Node",
   "Window",
+  "Location",
 ]
 
 [features]
