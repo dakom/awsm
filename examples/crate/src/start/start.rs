@@ -18,7 +18,7 @@ pub fn start(window:web_sys::Window, document:web_sys::Document) -> Result<(), J
 
     match pathname {
         "/" => {
-            let menu = menu::build_menu(Rc::clone(&window), &document)?;
+            let menu = menu::build_menu(&document)?;
             body.append_child(&menu)?;
         },
 

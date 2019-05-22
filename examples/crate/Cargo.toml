@@ -31,15 +31,16 @@ wee_alloc = { version = "0.4.2", optional = true }
 [dependencies.web-sys]
 version = "0.3"
 features = [
-  "console",
-  "MouseEvent",
-  "Document",
-  "Element",
-  "HtmlElement",
-  "HtmlButtonElement",
-  "Node",
-  "Window",
-  "Location",
+    "console",
+    "MouseEvent",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlButtonElement",
+    "HtmlHyperlinkElementUtils",
+    "Node",
+    "Window",
+    "Location",
 ]
 
 [features]

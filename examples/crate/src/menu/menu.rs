@@ -1,57 +1,38 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-//use web_sys::{console};
-use gloo_events::EventListener;
-use std::rc::Rc;
-pub fn build_menu(window:Rc<web_sys::Window>, document:&web_sys::Document) -> Result<web_sys::Node, JsValue> {
-    let container: web_sys::Node = document.create_element("div")?.into();
+use web_sys::{Document, Node, Element, HtmlElement, HtmlHyperlinkElementUtils};
 
-    //Hmmmmm
-    let on_click = Rc::new(move |label:&str| {
+pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
+    let container: Node = document.create_element("div")?.into();
 
-        let pathname = format!("/{}", &label);
-        window.location().set_pathname(&pathname);
-    });
-
-    append_menu(Rc::clone(&on_click), &container, &document, "Tick", vec![
-       "Clock",
+    append_menu(&container, &document, "Tick", vec![
+       ("/clock", "Clock"),
     ])?;
 
-    append_menu(Rc::clone(&on_click), &container, &document, "WebGl", vec![
-       "Quad",
-       "Quad - Texture",
-       "Quad - Instancing",
+    append_menu(&container, &document, "WebGl", vec![
+       ("/quad", "Quad"),
+       ("/quad-texture", "Quad - Texture"),
+       ("/quad-instancing", "Quad - Instancing"),
     ])?;
-
-    //closure.forget();
 
     Ok(container)
 }
 
-fn append_menu <F> (on_click: Rc<F>, container:&web_sys::Node, document:&web_sys::Document, label:&'static str, menu_labels:Vec<&'static str>) -> Result<(), JsValue> 
-where F: (Fn(&str) -> ()) + 'static,
-{
+fn append_menu (container:&Node, document:&Document, label:&str, menu_labels:Vec<(&str, &str)>) -> Result<(), JsValue> {
 
-    let menu: web_sys::Element = document.create_element("div")?.into();
+    let menu: Element = document.create_element("div")?.into();
     menu.set_class_name("menu");
 
-    let header: web_sys::Element = document.create_element("div")?.into();
+    let header: Element = document.create_element("div")?.into();
     header.set_class_name("menu-header");
     header.set_text_content(Some(&label));
 
-    let menu_list: web_sys::Element = document.create_element("div")?.into();
+    let menu_list: Element = document.create_element("div")?.into();
     menu_list.set_class_name("menu-list");
 
-    for label in menu_labels.into_iter() {
-        let item = create_menu_item(&label, document)?;
+    for link_info in menu_labels.into_iter() {
+        let item = create_menu_item(&link_info, document)?;
         menu_list.append_child(&item);
-
-        //need to clone this since each closure will take ownership
-        let on_click = Rc::clone(&on_click);
-
-        EventListener::new(&item, "click", move |_e| {
-            on_click(&label);
-        }).forget();
     }
 
 
@@ -63,11 +44,25 @@ where F: (Fn(&str) -> ()) + 'static,
 
 }
 
-fn create_menu_item(label:&str, document:&web_sys::Document) -> Result<web_sys::HtmlElement, JsValue> {
+fn create_menu_item(link_info:&(&str, &str), document:&Document) -> Result<HtmlElement, JsValue> {
 
-    let item: web_sys::HtmlElement = document.create_element("div")?.dyn_into()?;
+    let (href, label) = link_info;
+
+    let item: HtmlElement = document.create_element("div")?.dyn_into()?;
     item.set_text_content(Some(&label));
 
-    Ok(item)
+    wrap_link(&href, item, &document)
+}
 
+fn wrap_link(href:&str, contents:HtmlElement, document:&Document) -> Result<HtmlElement, JsValue> {
+    let anchor: HtmlElement = document.create_element("a")?.dyn_into()?;
+
+    anchor.append_child(&contents);
+    
+    let anchor = anchor.unchecked_into::<HtmlHyperlinkElementUtils>();
+    anchor.set_href(&href);
+
+    let anchor = anchor.unchecked_into::<HtmlElement>();
+
+    Ok(anchor)
 }

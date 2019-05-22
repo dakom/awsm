@@ -39,7 +39,7 @@ ul {
 	display: flex;
 	flex-direction: row;
 }
-.menu-list > div {
+.menu-list > * {
 	cursor: pointer;
 	margin: 10px;
 	background-color: #0583F2;
@@ -50,7 +50,7 @@ ul {
 	font-weight: bold;
 }
 
-.menu-list > div:hover {
+.menu-list > *:hover {
 	background-color: #F27405;
 }
 
