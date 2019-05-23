@@ -1,16 +1,10 @@
-//use awsm::*;
 use wasm_bindgen::prelude::*;
-//use web_sys::{console};
-use crate::menu::*;
+use super::menu;
 use wasm_bindgen::JsCast;
-use std::rc::Rc;
 
 // Called by our JS entry point to run the example.
 pub fn start(window:web_sys::Window, document:web_sys::Document) -> Result<(), JsValue> {
-    let window = Rc::new(window);
-
-    let body = document.body().expect("should have a body");
-    let body: &web_sys::Node = body.as_ref();
+    let body = document.body().expect("should have body");
 
     let pathname = window.location().pathname()?;
 
@@ -20,10 +14,12 @@ pub fn start(window:web_sys::Window, document:web_sys::Document) -> Result<(), J
         "/" => {
             let menu = menu::build_menu(&document)?;
             body.append_child(&menu)?;
+            Ok(())
         },
 
-        "/foo" => {
-        },
+        "/clock" => {
+            super::scenes::clock::clock::start(window, document, body)
+        }
 
         _ => {
 
@@ -32,10 +28,10 @@ pub fn start(window:web_sys::Window, document:web_sys::Document) -> Result<(), J
             item.set_text_content(Some(&text));
 
             body.append_child(&item)?;
+            Ok(())
         }
     }
 
 
-    Ok(())
 }
 
