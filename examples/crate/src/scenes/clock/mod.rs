@@ -1,1 +1,4 @@
-pub mod clock;
+mod clock;
+
+pub use self::clock::*;
+

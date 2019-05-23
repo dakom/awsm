@@ -5,7 +5,8 @@ use web_sys::{Window, Document, Node, HtmlElement};
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
     let element = create_element(&document, &body)?;
 
-    element.set_text_content(Some("TODO: Update clock...."));
+    element.set_text_content(Some("TODO: Update clock with current time"));
+    
     Ok(())
 }
 

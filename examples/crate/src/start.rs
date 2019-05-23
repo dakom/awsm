@@ -1,5 +1,6 @@
 use wasm_bindgen::prelude::*;
 use super::menu;
+use super::scenes::*;
 use wasm_bindgen::JsCast;
 
 // Called by our JS entry point to run the example.
@@ -18,7 +19,7 @@ pub fn start(window:web_sys::Window, document:web_sys::Document) -> Result<(), J
         },
 
         "/clock" => {
-            super::scenes::clock::clock::start(window, document, body)
+            clock::start(window, document, body)
         }
 
         _ => {
