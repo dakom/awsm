@@ -7,7 +7,10 @@ const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 const isProduction = process.env["NODE_ENV"] === "production";
 
 let wasmPluginOptions = {
-      crateDirectory: path.resolve(__dirname, "crate"),
+    crateDirectory: path.resolve(__dirname, "crate"),
+    watchDirectories: [
+        path.resolve(__dirname, "../lib")
+    ]
 }
 
 if(isProduction) {
