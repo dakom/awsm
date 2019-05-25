@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/dakom/awsm.svg?branch=master)](https://travis-ci.org/dakom/awsm)
+
+## [DEMO](https://dakom.github.io/awsm)
+
 ## About
 
 awsm is a collection of helpers for doing wasm in Rust
