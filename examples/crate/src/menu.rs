@@ -10,9 +10,9 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
     ])?;
 
     append_menu(&container, &document, "WebGl", vec![
-       ("/quad", "Quad"),
-       ("/quad-texture", "Quad - Texture"),
-       ("/quad-instancing", "Quad - Instancing"),
+       ("/webgl-simple", "Simple"),
+       ("/webgl-texture", "Texture"),
+       ("/webgl-instancing", "Instancing"),
     ])?;
 
     Ok(container)

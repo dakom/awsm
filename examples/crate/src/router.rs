@@ -4,7 +4,7 @@ use super::scenes::*;
 use wasm_bindgen::JsCast;
 
 // Called by our JS entry point to run the example.
-pub fn start(window:web_sys::Window, document:web_sys::Document) -> Result<(), JsValue> {
+pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Result<(), JsValue> {
     let body = document.body().expect("should have body");
 
     let pathname = window.location().pathname()?;
@@ -22,6 +22,9 @@ pub fn start(window:web_sys::Window, document:web_sys::Document) -> Result<(), J
             clock::start(window, document, body)
         }
 
+        "/webgl-simple" => {
+            quad::simple::start(window, document, body)
+        }
         _ => {
 
             let text = format!("unknown route: {}", &pathname);

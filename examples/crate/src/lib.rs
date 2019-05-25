@@ -1,8 +1,7 @@
-mod start;
+mod router;
 mod menu;
 mod scenes;
 
-use start::*;
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -19,7 +18,7 @@ pub fn run() -> Result<(), JsValue> {
     let window = web_sys::window().expect("should have a Window");
     let document = window.document().expect("should have a Document");
 
-    start(window, document)
+    router::start_router(window, document)
 }
 
 fn set_panic_hook() {

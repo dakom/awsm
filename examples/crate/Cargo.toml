@@ -13,7 +13,7 @@ opt-level = 's'
 
 [dependencies]
 awsm = { path = "../../lib" }
-gloo-events = { path = "../../../gloo/crates/events" }
+gloo-events = { git = "https://github.com/rustwasm/gloo" }
 
 wasm-bindgen = "0.2"
 
