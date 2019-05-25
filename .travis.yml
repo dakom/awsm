@@ -12,7 +12,7 @@ script:
   - npm run build
   
 deploy:
-  local_dir: dist
+  local_dir: examples/dist
   provider: pages
   skip_cleanup: true
   github_token: $GITHUB_TOKEN # Set in travis-ci.org dashboard
