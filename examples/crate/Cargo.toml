@@ -1,0 +1,47 @@
+[package]
+name = "integration_tests"
+version = "0.1.0"
+authors = ["David Komer <david.komer@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = true
+opt-level = 's'
+
+[dependencies]
+awsm = { path = "../../lib" }
+gloo-events = { git = "https://github.com/rustwasm/gloo" }
+
+wasm-bindgen = "0.2"
+
+# The `console_error_panic_hook` crate provides better debugging of panics by
+# logging them with `console.error`. This is great for development, but requires
+# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
+# code size when deploying.
+console_error_panic_hook = { version = "0.1.5", optional = true }
+
+# `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
+# compared to the default allocator's ~10K. It is slower than the default
+# allocator, however.
+wee_alloc = { version = "0.4.2", optional = true }
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "console",
+    "MouseEvent",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlButtonElement",
+    "HtmlHyperlinkElementUtils",
+    "Node",
+    "Window",
+    "Location",
+]
+
+[features]
+default = ["console_error_panic_hook"]

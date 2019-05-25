@@ -1,18 +1,24 @@
+## About
+
+awsm is a collection of helpers for doing wasm in Rust
+
+There's two approaches that exist here:
+
+1. incubating and testing out ideas that might move to [gloo](https://github.com/rustwasm/gloo) at some point
+
+An example of this would be the `start_raf_ticker()` function, as well as most of the direct `webgl` functions.
+
+Moving these into `gloo` and deprecating them here would be considered a good thing!
+
+2. baked-in opinions that are decidedly not universal
+
+An example of this would be the `webgl_renderer`. 
+
+It makes sane choices about how to cache attribute lookups, for example, but not every project would want that hardcoded.
+
 ## Status
 
 Just the beginning, and learning Rust... come back in a year or so?
-
-## About
-
-awsm intends to be a collection of helpers for doing awesome wasm in Rust
-
-Examples:
-
-* webgl: a thin wrapper to make common rendering tasks easier
-* gltf: a batteries included 3D renderer.
-* loaders: web loaders -> futures
-* dom: scattered dom helpers (requestAnimationFrame, onResize, etc.) 
-* audio: also a thin wapper
 
 ## Live Coding 
 
