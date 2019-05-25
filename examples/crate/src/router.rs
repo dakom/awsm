@@ -9,20 +9,20 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
 
     let pathname = window.location().pathname()?;
 
-    let pathname = pathname.as_str();
+    let pathname = get_root(pathname.as_str());
 
     match pathname {
-        "/" => {
+        "" => {
             let menu = menu::build_menu(&document)?;
             body.append_child(&menu)?;
             Ok(())
         },
 
-        "/clock" => {
+        "clock" => {
             clock::start(window, document, body)
         }
 
-        "/webgl-simple" => {
+        "webgl-simple" => {
             quad::simple::start(window, document, body)
         }
         _ => {
@@ -39,3 +39,29 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
 
 }
 
+fn get_root(input:&str) -> &str {
+    //account for github / relative path
+    let stripped = match input.find("awsm/") {
+        Some(len) => {
+            input.split_at(len + 4).1
+        },
+
+        None => {
+            match input.find("/") {
+                Some(len) => input.split_at(len + 1).1,
+                None => input
+            }
+        }
+    };
+
+    stripped.trim_matches('/')
+
+}
+
+#[test]
+fn routes() {
+    assert_eq!(get_root("/foo"), "foo");
+    assert_eq!(get_root("/"), "");
+    assert_eq!(get_root("/awsm/foo"), "foo");
+    assert_eq!(get_root("/awsm/"), "");
+}

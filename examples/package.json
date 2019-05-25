@@ -7,7 +7,8 @@
   "scripts": {
     "clean": "rimraf ./dist && rimraf ./crate/pkg && rimraf ./crate/target",
     "start": "cross-env NODE_ENV=development webpack-dev-server -d --open",
-    "build": "npm run clean && cross-env NODE_ENV=production webpack"
+    "build": "npm run clean && cross-env NODE_ENV=production webpack && npm run build:post",
+	"build:post": "cpy dist/index.html --rename=404.html dist"
   },
   "bin": {
     "create-rust-webpack": ".bin/create-rust-webpack.js"
