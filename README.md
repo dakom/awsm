@@ -14,7 +14,7 @@ An example of this would be the `start_raf_ticker()` function, as well as most o
 
 Moving these into `gloo` and deprecating them here would be considered a good thing!
 
-2. baked-in opinions that are decidedly not universal
+2. opinionated helpers that are a bit _too_ opinionated to be considered universal defaults
 
 An example of this would be the `webgl_renderer`. 
 
