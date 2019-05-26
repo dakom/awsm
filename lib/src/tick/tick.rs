@@ -6,7 +6,8 @@ use wasm_bindgen::JsCast;
 use std::cell::RefCell;
 use std::cell::Cell;
 use std::rc::Rc;
-use web_sys::{console, Window};
+use web_sys::{Window};
+use log::{info};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Timestamp {
@@ -67,7 +68,7 @@ where F: (FnMut(f64) -> ()) + 'static
            
             if !keep_alive.get() {
                 if let Some(id) = raf_id {
-                    console::log_1(&JsValue::from_str(format!("clearing raf id {}", id).as_ref()));
+                    info!("clearing raf id: {}", id);
 
                     window.cancel_animation_frame(id).unwrap();
                 }

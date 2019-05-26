@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 use super::menu;
 use super::scenes::*;
 use wasm_bindgen::JsCast;
-use web_sys::{Document, Node, Element, HtmlElement, HtmlHyperlinkElementUtils};
+use web_sys::{Document, Element, HtmlElement, HtmlHyperlinkElementUtils};
 use cfg_if::cfg_if;
 // Called by our JS entry point to run the example.
 pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Result<(), JsValue> {

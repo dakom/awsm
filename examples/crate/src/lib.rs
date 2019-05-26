@@ -4,7 +4,7 @@ mod scenes;
 
 use wasm_bindgen::prelude::*;
 use cfg_if::cfg_if;
-use log::{Level, warn, info};
+use log::{Level};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -43,8 +43,6 @@ pub fn run() -> Result<(), JsValue> {
 
     let window = web_sys::window().expect("should have a Window");
     let document = window.document().expect("should have a Document");
-
-    info!("it works!");
 
     router::start_router(window, document)
 }
