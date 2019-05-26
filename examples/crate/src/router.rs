@@ -2,7 +2,8 @@ use wasm_bindgen::prelude::*;
 use super::menu;
 use super::scenes::*;
 use wasm_bindgen::JsCast;
-
+use web_sys::{Document, Node, Element, HtmlElement, HtmlHyperlinkElementUtils};
+use cfg_if::cfg_if;
 // Called by our JS entry point to run the example.
 pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Result<(), JsValue> {
     let body = document.body().expect("should have body");
@@ -10,6 +11,20 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
     let pathname = window.location().pathname()?;
 
     let pathname = get_root(pathname.as_str());
+
+
+    if let Some(menu) = menu::MENU_LOOKUP.get(pathname) {
+        let links: Element = document.create_element("div")?.into();
+        links.set_class_name("demo-links");
+        body.append_child(&links)?;
+
+        let home_link = create_home_link(&document)?;
+        links.append_child(&home_link)?;
+
+        let href = format!("https://github.com/dakom/awsm/tree/master/examples/crate/src/scenes/{}", menu.source);
+        let source_link = create_source_link(&href, &document)?;
+        links.append_child(&source_link)?;
+    }
 
     match pathname {
         "" => {
@@ -35,8 +50,50 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
             Ok(())
         }
     }
+}
 
 
+// enable logging only during debug builds 
+cfg_if! {
+    if #[cfg(debug_assertions)] {
+        fn get_home_href() -> &'static str {
+            "/"
+        }
+    } else {
+        fn get_home_href() -> &'static str {
+            "/awsm/"
+        }
+    }
+}
+fn create_home_link(document:&Document) -> Result<HtmlElement, JsValue> {
+    let anchor: HtmlElement = document.create_element("a")?.dyn_into()?;
+
+    let contents: Element = document.create_element("div")?.into();
+    contents.set_class_name("home button");
+    contents.set_text_content(Some("Home"));
+    anchor.append_child(&contents)?;
+    
+    let anchor = anchor.unchecked_into::<HtmlHyperlinkElementUtils>();
+    anchor.set_href(get_home_href());
+
+    let anchor = anchor.unchecked_into::<HtmlElement>();
+
+    Ok(anchor)
+}
+fn create_source_link(href:&str, document:&Document) -> Result<HtmlElement, JsValue> {
+    let anchor: HtmlElement = document.create_element("a")?.dyn_into()?;
+
+    let contents: Element = document.create_element("div")?.into();
+    contents.set_class_name("source button");
+    contents.set_text_content(Some("View Source"));
+    anchor.append_child(&contents)?;
+    
+    let anchor = anchor.unchecked_into::<HtmlHyperlinkElementUtils>();
+    anchor.set_href(&href);
+
+    let anchor = anchor.unchecked_into::<HtmlElement>();
+
+    Ok(anchor)
 }
 
 fn get_root(input:&str) -> &str {

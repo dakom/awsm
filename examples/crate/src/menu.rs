@@ -1,27 +1,45 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Document, Node, Element, HtmlElement, HtmlHyperlinkElementUtils};
+use lazy_static::*;
+use std::collections::HashMap;
+
+pub struct Menu <'a> {
+    pub label: &'a str,
+    pub source: &'a str,
+}
+
+lazy_static! {
+    pub static ref MENU_LOOKUP: HashMap<&'static str, Menu<'static>> = {
+        let mut m = HashMap::new();
+        m.insert("clock", Menu {label: "Clock", source: "clock"});
+        m.insert("webgl-simple", Menu {label: "Simple", source: "webgl/simple"});
+        m.insert("webgl-texture", Menu {label: "Texture", source: "webgl/texture"});
+        m.insert("webgl-instancing", Menu {label: "Instancing", source: "webgl/instancing"});
+        m
+    };
+}
 
 pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
     let container: Node = document.create_element("div")?.into();
 
     append_menu(&container, &document, "Tick", vec![
-       ("clock", "Clock"),
+      "clock" 
     ])?;
 
     append_menu(&container, &document, "WebGl", vec![
-       ("webgl-simple", "Simple"),
-       ("webgl-texture", "Texture"),
-       ("webgl-instancing", "Instancing"),
+        "webgl-simple",
+        "webgl-texture",
+        "webgl-instancing",
     ])?;
 
     Ok(container)
 }
 
-fn append_menu (container:&Node, document:&Document, label:&str, menu_labels:Vec<(&str, &str)>) -> Result<(), JsValue> {
+fn append_menu (container:&Node, document:&Document, label:&str, menu_routes:Vec<&str>) -> Result<(), JsValue> {
 
-    let menu: Element = document.create_element("div")?.into();
-    menu.set_class_name("menu");
+    let menu_element: Element = document.create_element("div")?.into();
+    menu_element.set_class_name("menu");
 
     let header: Element = document.create_element("div")?.into();
     header.set_class_name("menu-header");
@@ -30,26 +48,26 @@ fn append_menu (container:&Node, document:&Document, label:&str, menu_labels:Vec
     let menu_list: Element = document.create_element("div")?.into();
     menu_list.set_class_name("menu-list");
 
-    for link_info in menu_labels.into_iter() {
-        let item = create_menu_item(&link_info, document)?;
-        menu_list.append_child(&item)?;
+    for menu_route in menu_routes.into_iter() {
+        if let Some(menu) = MENU_LOOKUP.get(menu_route) {
+            let item = create_menu_item(&menu_route, &menu, document)?;
+            menu_list.append_child(&item)?;
+        }
     }
 
+    menu_element.append_child(&header)?;
+    menu_element.append_child(&menu_list)?;
 
-    menu.append_child(&header)?;
-    menu.append_child(&menu_list)?;
-
-    container.append_child(&menu)?;
+    container.append_child(&menu_element)?;
     Ok(())
 
 }
 
-fn create_menu_item(link_info:&(&str, &str), document:&Document) -> Result<HtmlElement, JsValue> {
-
-    let (href, label) = link_info;
+fn create_menu_item(href:&str, menu:&Menu, document:&Document) -> Result<HtmlElement, JsValue> {
 
     let item: HtmlElement = document.create_element("div")?.dyn_into()?;
-    item.set_text_content(Some(&label));
+    item.set_class_name("button");
+    item.set_text_content(Some(&menu.label));
 
     wrap_link(&href, item, &document)
 }

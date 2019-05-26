@@ -21,6 +21,32 @@ ul {
 }
 
 
+.demo-links{
+	display: flex;
+	flex-direction: row;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+.source, .home {
+    display: inline-block;
+}
+
+.button {
+	cursor: pointer;
+	margin: 10px;
+	background-color: #0583F2;
+	color: white;
+	text-align: center;
+	padding: 1em 2em;
+	border-radius: 5px;
+	font-weight: bold;
+}
+
+.button:hover {
+	background-color: #F27405;
+}
+
 /* color values for theme 
 #BC04BF
 #0583F2
@@ -38,20 +64,6 @@ ul {
 .menu-list {
 	display: flex;
 	flex-direction: row;
-}
-.menu-list > * {
-	cursor: pointer;
-	margin: 10px;
-	background-color: #0583F2;
-	color: white;
-	text-align: center;
-	padding: 1em 2em;
-	border-radius: 5px;
-	font-weight: bold;
-}
-
-.menu-list > *:hover {
-	background-color: #F27405;
 }
 
 
