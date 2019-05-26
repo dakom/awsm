@@ -59,15 +59,20 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
 // enable logging only during debug builds 
 cfg_if! {
     if #[cfg(debug_assertions)] {
-        fn get_home_href() -> &'static str {
+        pub fn get_home_href() -> &'static str {
             "/"
         }
     } else {
-        fn get_home_href() -> &'static str {
+        pub fn get_home_href() -> &'static str {
             "/awsm/"
         }
     }
 }
+
+pub fn get_static_href(path:&str) -> String {
+    format!("{}static/{}", get_home_href(), path)
+}
+
 fn create_home_link(document:&Document) -> Result<HtmlElement, JsValue> {
     let anchor: HtmlElement = document.create_element("a")?.dyn_into()?;
 

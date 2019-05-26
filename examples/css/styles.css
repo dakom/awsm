@@ -68,7 +68,7 @@ ul {
 
 
 
-/* tick */
-.tick {
+/* scenes */
+.tick, .loaders {
     padding: 20px;
 }
