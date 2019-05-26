@@ -51,3 +51,5 @@ features = [
 # TODO - followup here: https://github.com/wasm-tool/wasm-pack-plugin/issues/61
 [features]
 default = ["wee_alloc", "console_log", "console_error_panic_hook"]
+dev = ["wee_alloc", "console_log", "console_error_panic_hook"]
+release = ["wee_alloc"]
