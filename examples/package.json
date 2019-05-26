@@ -8,13 +8,15 @@
     "clean": "rimraf ./dist && rimraf ./crate/pkg && rimraf ./crate/target",
     "start": "cross-env NODE_ENV=development webpack-dev-server -d --open",
     "build": "npm run clean && cross-env NODE_ENV=production webpack && npm run build:post",
-	"build:post": "cpy dist/index.html --rename=404.html dist"
+    "build:post": "cpy dist/index.html --rename=404.html dist"
   },
   "bin": {
     "create-rust-webpack": ".bin/create-rust-webpack.js"
   },
   "devDependencies": {
     "@wasm-tool/wasm-pack-plugin": "0.2.7",
+    "cpy": "^7.2.0",
+    "cpy-cli": "^2.0.0",
     "cross-env": "^5.2.0",
     "css-loader": "^2.1.1",
     "html-webpack-plugin": "^3.2.0",
