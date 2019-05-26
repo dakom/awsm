@@ -12,7 +12,11 @@ pub struct Menu <'a> {
 lazy_static! {
     pub static ref MENU_LOOKUP: HashMap<&'static str, Menu<'static>> = {
         let mut m = HashMap::new();
+        //Tick
         m.insert("clock", Menu {label: "Clock", source: "clock"});
+        //Loaders
+        m.insert("loaders-image", Menu {label: "Image", source: "loaders/image"});
+        //WebGl
         m.insert("webgl-simple", Menu {label: "Simple", source: "webgl/simple"});
         m.insert("webgl-texture", Menu {label: "Texture", source: "webgl/texture"});
         m.insert("webgl-instancing", Menu {label: "Instancing", source: "webgl/instancing"});
@@ -25,6 +29,10 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
 
     append_menu(&container, &document, "Tick", vec![
       "clock" 
+    ])?;
+
+    append_menu(&container, &document, "Loaders", vec![
+        "loaders-image",
     ])?;
 
     append_menu(&container, &document, "WebGl", vec![

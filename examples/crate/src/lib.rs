@@ -4,7 +4,7 @@ mod scenes;
 
 use wasm_bindgen::prelude::*;
 use cfg_if::cfg_if;
-use log::{Level};
+use log::{Level, info};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -40,6 +40,8 @@ cfg_if! {
 pub fn run() -> Result<(), JsValue> {
     init_panic();
     init_log();
+
+    info!("logging enabled!");
 
     let window = web_sys::window().expect("should have a Window");
     let document = window.document().expect("should have a Document");

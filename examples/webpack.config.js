@@ -1,7 +1,6 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
-const dist = path.resolve(__dirname, "dist");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 
 const isProduction = process.env["NODE_ENV"] === "production";
@@ -24,11 +23,11 @@ module.exports = {
     mode: isProduction ? "production" : "development",
   entry: "./js/index.js",
   output: {
-    path: dist,
+    path: path.resolve(__dirname, "dist"),
     filename: "bundle.js"
   },
   devServer: {
-    contentBase: dist,
+    contentBase: path.resolve(__dirname, "public"),
     historyApiFallback: true,
   },
   module: {
