@@ -6,13 +6,13 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
     let container: Node = document.create_element("div")?.into();
 
     append_menu(&container, &document, "Tick", vec![
-       ("/clock", "Clock"),
+       ("clock", "Clock"),
     ])?;
 
     append_menu(&container, &document, "WebGl", vec![
-       ("/webgl-simple", "Simple"),
-       ("/webgl-texture", "Texture"),
-       ("/webgl-instancing", "Instancing"),
+       ("webgl-simple", "Simple"),
+       ("webgl-texture", "Texture"),
+       ("webgl-instancing", "Instancing"),
     ])?;
 
     Ok(container)
