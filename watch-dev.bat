@@ -1,4 +1,3 @@
 @echo off
-cd examples/crate
-cargo check
-watchexec -w ../../lib/src -w src cargo check
+cd examples
+watchexec -w ../lib/src -w crate/src npm run _rust:build:dev

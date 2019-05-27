@@ -1,5 +1,5 @@
 [package]
-name = "integration_tests"
+name = "awsm_examples"
 version = "0.1.0"
 authors = ["David Komer <david.komer@gmail.com>"]
 edition = "2018"
@@ -50,6 +50,5 @@ features = [
 
 # TODO - followup here: https://github.com/wasm-tool/wasm-pack-plugin/issues/61
 [features]
-default = ["wee_alloc", "console_log", "console_error_panic_hook"]
+default = ["wee_alloc"]
 dev = ["wee_alloc", "console_log", "console_error_panic_hook"]
-release = ["wee_alloc"]

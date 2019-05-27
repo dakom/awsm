@@ -1,5 +1,5 @@
 import("../css/styles.css");
 
-import("../crate/pkg").then(module => {
+import("../crate/pkg/awsm_examples").then(module => {
   module.run();
 });
