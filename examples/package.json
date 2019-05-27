@@ -8,6 +8,8 @@
     "clean": "rimraf ./dist && rimraf ./crate/pkg && rimraf ./crate/target && rimraf ../lib/target",
     "//": "start does NOT automatically watch/re-compile rust sources. Start watch-dev.bat in a separate process for that. See README.md for more info",
     "start": "npm run _rust:build:dev && cross-env NODE_ENV=development webpack-dev-server -d --progress --open --config webpack.dev.js",
+	"deploy": "npm run bundle && npm run deploy:prebuilt",
+	"deploy:prebuilt": "netlify deploy --prod --dir=dist --site=c6d71941-94ea-494c-a5f6-429f4b8feb9e",
     "bundle": "npm run clean && npm run _rust:build:release && cross-env NODE_ENV=production webpack --config webpack.release.js && npm run bundle:post",
     "bundle:post": "cpy dist/index.html --rename=404.html dist && cpy --cwd=public --parents **/* ../dist",
     "//rust-dev": "",
