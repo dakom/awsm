@@ -5,7 +5,7 @@ install:
   - source ~/.nvm/nvm.sh
   - nvm install v10.5
   - curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -f
-  - curl https://github.com/WebAssembly/binaryen/releases/download/1.38.32/binaryen-1.38.32-x86_64-linux.tar.gz /tmp/binaryen.tar.gz
+  - wget -O $HOME/binaryen.tar.gz https://github.com/WebAssembly/binaryen/releases/download/1.38.32/binaryen-1.38.32-x86_64-linux.tar.gz
   - tar -zxvf /tmp/binaryen.tar.gz --one-top-level=binaryen
   - export PATH=$PATH:$PWD/binaryen/
   
