@@ -10,13 +10,10 @@
     "start": "npm run _rust:build:dev && cross-env NODE_ENV=development webpack-dev-server -d --progress --open --config webpack.dev.js",
     "bundle": "npm run clean && npm run _rust:build:release && cross-env NODE_ENV=production webpack --config webpack.release.js && npm run bundle:post",
     "bundle:post": "cpy dist/index.html --rename=404.html dist && cpy --cwd=public --parents **/* ../dist",
-
-
     "//rust-dev": "",
     "_rust:build:dev:nowarnings": "cross-env RUSTFLAGS=\"-A warnings\" cargo +nightly rustc --target wasm32-unknown-unknown --manifest-path crate/Cargo.toml && npm run _rust:bindgen:dev",
     "_rust:build:dev": "cargo +nightly build --features dev --target wasm32-unknown-unknown --manifest-path crate/Cargo.toml && npm run _rust:bindgen:dev",
     "_rust:bindgen:dev": "wasm-bindgen crate/target/wasm32-unknown-unknown/debug/awsm_examples.wasm --out-dir crate/pkg",
-
     "//rust-release": "",
     "_rust:build:release": "cargo +nightly build --target wasm32-unknown-unknown --release --manifest-path crate/Cargo.toml && npm run _rust:bindgen:release && npm run _rust:opt",
     "_rust:bindgen:release": "wasm-bindgen crate/target/wasm32-unknown-unknown/release/awsm_examples.wasm --out-dir crate/pkg",

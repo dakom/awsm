@@ -1,20 +1,10 @@
 language: rust
-dist: trusty
 rust: 
   - nightly
   
 install:
   - rustup target add wasm32-unknown-unknown
   - cargo install wasm-bindgen-cli
-  - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
-  - source ~/.nvm/nvm.sh
-  - nvm install v10.5
-  - BINARYEN_TAG=1.38.32
-  - wget -O /tmp/binaryen.tar.gz https://github.com/WebAssembly/binaryen/releases/download/$BINARYEN_TAG/binaryen-$BINARYEN_TAG-x86_64-linux.tar.gz
-  - tar -zxvf /tmp/binaryen.tar.gz
-  - ls binaryen-$BINARYEN_TAG
-  - export PATH=$PATH:$PWD/binaryen-$BINARYEN_TAG/
-  
 
 script:
   - cd lib
@@ -22,13 +12,3 @@ script:
   - cd ../examples/crate
   - cargo test
   - cd ..
-  - npm install
-  - npm run bundle
-  
-deploy:
-  local_dir: examples/dist
-  provider: pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN # Set in travis-ci.org dashboard
-  on:
-    branch: master
