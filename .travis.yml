@@ -11,7 +11,7 @@ install:
   - BINARYEN_TAG=1.38.32
   - wget -O /tmp/binaryen.tar.gz https://github.com/WebAssembly/binaryen/releases/download/$BINARYEN_TAG/binaryen-$BINARYEN_TAG-x86_64-linux.tar.gz
   - tar -zxvf /tmp/binaryen.tar.gz
-  - ls
+  - ls binaryen-$BINARYEN_TAG
   - export PATH=$PATH:$PWD/binaryen-$BINARYEN_TAG/
   
 
