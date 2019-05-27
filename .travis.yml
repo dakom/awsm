@@ -9,7 +9,7 @@ install:
   - source ~/.nvm/nvm.sh
   - nvm install v10.5
   - BINARYEN_TAG=1.38.32
-  - wget -O /tmp/binaryen.tar.gz https://github.com/WebAssembly/binaryen/releases/download/1.38.32/binaryen-$BINARYEN_TAG-x86_64-linux.tar.gz
+  - wget -O /tmp/binaryen.tar.gz https://github.com/WebAssembly/binaryen/releases/download/$BINARYEN_TAG/binaryen-$BINARYEN_TAG-x86_64-linux.tar.gz
   - tar -zxvf /tmp/binaryen.tar.gz
   - ls
   - export PATH=$PATH:$PWD/binaryen-$BINARYEN_TAG/
