@@ -42,5 +42,7 @@ features = [
   'WebGlShader',
   'WebGlTexture',
   'Window',
-  'EventTarget'
+  'EventTarget',
+  'Location',
+  'Url'
 ]
