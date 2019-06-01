@@ -15,7 +15,7 @@ lazy_static! {
         //Tick
         m.insert("clock", Menu {label: "Clock", source: "clock"});
         //Loaders
-        m.insert("loaders-image", Menu {label: "Image", source: "loaders/image"});
+        m.insert("loaders-image", Menu {label: "Image", source: "loaders/image.rs"});
         //WebGl
         m.insert("webgl-simple", Menu {label: "Simple", source: "webgl/simple"});
         m.insert("webgl-texture", Menu {label: "Texture", source: "webgl/texture"});
