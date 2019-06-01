@@ -64,7 +64,9 @@ cfg_if! {
         }
     } else {
         pub fn get_home_href() -> &'static str {
-            "/awsm/"
+            "/"
+            //GITHHUB - no longer
+            //"/awsm/"
         }
     }
 }
@@ -128,5 +130,6 @@ fn routes() {
     assert_eq!(get_root("/foo"), "foo");
     assert_eq!(get_root("/"), "");
     assert_eq!(get_root("/awsm/foo"), "foo");
+    assert_eq!(get_root("/awsm/"), "");
     assert_eq!(get_root("/awsm/"), "");
 }
