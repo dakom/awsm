@@ -23,21 +23,25 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
         let href = get_static_href("smiley.svg");
         info!("loading image!{}", href);
         let future = image::fetch_image(href)
-            .map({
+            .and_then({
                 let root = root.clone();
                 move |img| {
                     info!("loaded!!!");
-                    //TODO - instead of unwrap, convert result to future
-                    //look at futures::done
-                    root.append_child(&img).unwrap();
-                    JsValue::null()
+                    futures::done(root.append_child(&img))
+                    //for seeing what a fail looks like:
+                    //futures::failed::<JsValue, JsValue>(JsValue::from_str("uhuh!!"))
                 }
             });
 
-        future_to_promise(future);
+        //the future resolves with a Node, but future_to_promise expects JsValue
+        //we don't handle errors here because they are exceptions
+        //hope you're running in an environment where uncaught rejects/exceptions are reported!
+        future_to_promise(future.map(|_| JsValue::null()));
+
         root.remove_child(&button_ref).unwrap();
     };
 
+    //for demo purposes - fine to forget
     EventListener::once(&button, "click",my_cb).forget();
 
     Ok(())
