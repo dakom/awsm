@@ -1,3 +1,5 @@
+#![feature(async_await, await_macro)] 
+
 mod router;
 mod menu;
 mod scenes;

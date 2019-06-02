@@ -2,18 +2,20 @@ extern crate web_sys;
 extern crate js_sys;
 extern crate wasm_bindgen;
 
-use futures::{Future, Async, Poll};
-use futures::sync::oneshot::{Sender, Receiver, channel};
-use futures::task::current;
+use futures::{Future};
+use std::pin::{ Pin};
+use futures::task::{Context, Poll};
+use futures::channel::oneshot::{Sender, Receiver, channel};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::*;
+use log::{info};
 
 pub struct Image {
     pub url: String,
     pub img: Option<HtmlImageElement>,
     state: ImageState,
-    closure_holders:Option<(Closure<FnMut()>, Closure<FnMut(JsValue)>)>,
+    closure_holders:Option<(Closure<dyn FnMut()>, Closure<dyn FnMut(JsValue)>)>,
 }
 
 enum ImageState {
@@ -27,10 +29,11 @@ enum ImageState {
 //See: https://github.com/rustwasm/wasm-bindgen/issues/1126
 //
 impl Future for Image {
-    type Item = HtmlImageElement;
-    type Error = JsValue;
+//impl Future for Image {
+    type Output = Result<HtmlImageElement, JsValue>;
 
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+    fn poll(mut self: Pin<&mut Self>, ctx: &mut Context) -> Poll<Self::Output> {
+    //fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         match &mut self.state {
             ImageState::Empty => {
                 let img = HtmlImageElement::new()?;
@@ -43,25 +46,25 @@ impl Future for Image {
                 
 
                 //success callback
-                let task = current();
+                let waker = ctx.waker().clone();
                 let (sender_success, receiver_success):(Sender<()>, Receiver<()>) = channel();
                 let mut sender_success = Option::from(sender_success);
                 let closure_success = Closure::wrap(Box::new(move || {
                     sender_success.take().unwrap().send(()).unwrap();
-                    task.notify();
-                }) as Box<FnMut()>);
+                    waker.wake_by_ref(); 
+                }) as Box<dyn FnMut()>);
                 
                 img.set_onload(Some(closure_success.as_ref().unchecked_ref()));
                 
 
                 //error callback
+                let waker = ctx.waker().clone();
                 let (sender_err, receiver_err):(Sender<JsValue>, Receiver<JsValue>) = channel();
                 let mut sender_err = Option::from(sender_err);
-                let task = current();
                 let closure_err = Closure::wrap(Box::new(move |err| {
                     sender_err.take().unwrap().send(err).unwrap();
-                    task.notify();
-                }) as Box<FnMut(JsValue)>);
+                    waker.wake_by_ref();
+                }) as Box<dyn FnMut(JsValue)>);
                 
                 //self.closure_err = Some(closure_err);
                 img.set_onerror(Some(closure_err.as_ref().unchecked_ref()));
@@ -73,27 +76,48 @@ impl Future for Image {
                 self.closure_holders = Some((closure_success, closure_err));
 
                 //notify the task that we're now loading
-                let task = current();
-                task.notify();
+                ctx.waker().wake_by_ref();
 
-                Ok(Async::NotReady)
+
+                Poll::Pending
             },
 
             ImageState::Loading {receiver_err, receiver_success} => {
-                let mut ret = Ok(Async::NotReady);
+                //if let Poll::Ready(value) = Receiver::poll(Pin::new(receiver_err), ctx) {
 
-                if let Ok(value) = receiver_err.poll() {
-                    if let Async::Ready(err) = value {
-                        ret = Err(err);
-                    }                     
-                }
+                let mut is_cancelled = false;
 
-                if let Ok(value) = receiver_success.poll() {
-                    if let Async::Ready(_) = value {
-                        ret = Ok(Async::Ready(self.img.as_ref().unwrap().clone()));
-                    }                     
-                }
-                
+                let error_state = match receiver_err.try_recv() {
+                    Ok(result) => result,
+                    _ => {
+                        is_cancelled = true;
+                        None
+                    }
+                };
+
+                let success_state = match receiver_success.try_recv() {
+                    Ok(result) => result,
+                    _ => {
+                        is_cancelled = true;
+                        None
+                    }
+                };
+
+
+                let ret = {
+                    if let Some(result) = error_state {
+                        Poll::Ready(Err(result))
+                    } else if let Some(result) = success_state {
+                        Poll::Ready(Ok(self.img.as_ref().unwrap().clone()))
+                    } else {
+                        info!("polling...");
+                        if !is_cancelled {
+                            //ctx.waker().wake_by_ref();
+                        }
+                        Poll::Pending
+                    }
+                };
+
                 ret
 
             },
@@ -113,7 +137,7 @@ impl Image {
     }
 }
 
-pub fn fetch_image(url:String) -> impl Future<Item = HtmlImageElement, Error = JsValue> { 
+pub fn fetch_image(url:String) -> impl Future<Output= Result<HtmlImageElement, JsValue>> { 
     Image::new(url)
 
     /*

@@ -78,7 +78,7 @@ where F: (FnMut(f64) -> ()) + 'static
                 on_tick(time);
                 raf_id = request_animation_frame(&window, f.borrow().as_ref().unwrap()).ok();
             }
-        }) as Box<FnMut(f64)-> ()>));
+        }) as Box<dyn FnMut(f64)-> ()>));
     }
 
     //this is just used to create the first invocation
@@ -90,6 +90,6 @@ where F: (FnMut(f64) -> ()) + 'static
     Ok(cancel)
 }
 
-fn request_animation_frame(window:&Window, f: &Closure<FnMut(f64) -> ()>) -> Result<i32, JsValue> {
+fn request_animation_frame(window:&Window, f: &Closure<dyn FnMut(f64) -> ()>) -> Result<i32, JsValue> {
     window.request_animation_frame(f.as_ref().unchecked_ref())
 }
