@@ -7,7 +7,7 @@ use gloo_events::{EventListener};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
+pub fn start_webgl(window: Window, document: Document, body: HtmlElement) -> Result<Rc<RefCell<WebGlRenderer>>, JsValue> {
 
     let canvas:HtmlCanvasElement = document.create_element("canvas")?.dyn_into()?;
     body.append_child(&canvas)?;
@@ -23,13 +23,15 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     };
 
     on_resize(&web_sys::Event::new("").unwrap());
-    let gl = &webgl_renderer.borrow_mut().gl;
-    gl.clear_color(0.3, 0.3, 0.3, 1.0);
-    gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT); 
+    {
+        let gl = &webgl_renderer.borrow_mut().gl;
+        gl.clear_color(0.3, 0.3, 0.3, 1.0);
+        gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT); 
+    }
 
 
     EventListener::new(&window, "resize",on_resize).forget();
-    Ok(())
+    Ok(webgl_renderer)
 }
 
 

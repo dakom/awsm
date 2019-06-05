@@ -1,6 +1,7 @@
-use web_sys::{Window};
+use web_sys::{window, Window};
+use crate::errors::{Error, NativeError};
 
-pub fn get_size(window:&web_sys::Window) -> Result<(u32, u32), &'static str> {
+pub fn get_size(window:&web_sys::Window) -> Result<(u32, u32), Error> {
     /*
     let document_element = 
         window
@@ -16,14 +17,18 @@ pub fn get_size(window:&web_sys::Window) -> Result<(u32, u32), &'static str> {
             .inner_width()
             .ok()
             .and_then(|val| val.as_f64())
-            .ok_or("couldn't get window width")?;
+            .ok_or(Error::Native(NativeError::WindowWidth))?;
 
     let height = 
         window
             .inner_height()
             .ok()
             .and_then(|val| val.as_f64())
-            .ok_or("couldn't get window height")?;
+            .ok_or(Error::Native(NativeError::WindowHeight))?;
 
     Ok((width as u32, height as u32))
+}
+
+pub fn get_window() -> Result<Window, Error> {
+    web_sys::window().ok_or(Error::Native(NativeError::Window))
 }

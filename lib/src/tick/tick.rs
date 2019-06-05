@@ -8,6 +8,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 use web_sys::{Window};
 use log::{info};
+use crate::errors::{Error};
+use crate::window::{get_window};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Timestamp {
@@ -18,7 +20,7 @@ pub struct Timestamp {
 
 /// similar to start_ticker but instead of a callback with the current time
 /// it uses a Timestamp struct which contains commonly useful info
-pub fn start_raf_ticker_timestamp<F>(mut on_tick:F) -> Result<impl (FnOnce() -> ()), JsValue> 
+pub fn start_raf_ticker_timestamp<F>(mut on_tick:F) -> Result<impl (FnOnce() -> ()), Error> 
 where F: (FnMut(Timestamp) -> ()) + 'static
 {
     let mut last_time:Option<f64> = None;
@@ -47,7 +49,7 @@ where F: (FnMut(Timestamp) -> ()) + 'static
 }
 
 /// Kick off a rAF loop. The returned function can be called to cancel it
-pub fn start_raf_ticker<F>(mut on_tick:F) -> Result<impl (FnOnce() -> ()), JsValue> 
+pub fn start_raf_ticker<F>(mut on_tick:F) -> Result<impl (FnOnce() -> ()), Error> 
 where F: (FnMut(f64) -> ()) + 'static
 {
 
@@ -61,7 +63,7 @@ where F: (FnMut(f64) -> ()) + 'static
     let mut raf_id:Option<i32> = None;
 
     //this window is passed into the loop
-    let window = web_sys::window().expect("couldn't get window!");
+    let window = get_window()?; 
     {
         let keep_alive = Rc::clone(&keep_alive);
         *g.borrow_mut() = Some(Closure::wrap(Box::new(move |time| {
@@ -82,7 +84,7 @@ where F: (FnMut(f64) -> ()) + 'static
     }
 
     //this is just used to create the first invocation
-    let window = web_sys::window().expect("couldn't get window!");
+    let window = get_window()?; 
     request_animation_frame(&window, g.borrow().as_ref().unwrap())?;
    
     let cancel = move || keep_alive.set(false);
@@ -90,6 +92,6 @@ where F: (FnMut(f64) -> ()) + 'static
     Ok(cancel)
 }
 
-fn request_animation_frame(window:&Window, f: &Closure<dyn FnMut(f64) -> ()>) -> Result<i32, JsValue> {
-    window.request_animation_frame(f.as_ref().unchecked_ref())
+fn request_animation_frame(window:&Window, f: &Closure<dyn FnMut(f64) -> ()>) -> Result<i32, Error> {
+    window.request_animation_frame(f.as_ref().unchecked_ref()).map_err(|e| e.into())
 }

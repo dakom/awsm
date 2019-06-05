@@ -1,4 +1,5 @@
 use awsm::loaders::*;
+use awsm::errors::{Error};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Window, Document, Element, HtmlElement};
@@ -32,7 +33,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
                     }
                     Err(err) => {
                         info!("error!");
-                        Err(err)
+                        Err(err.into())
                     }
                 }
             };
