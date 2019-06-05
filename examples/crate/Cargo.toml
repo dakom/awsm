@@ -44,6 +44,7 @@ features = [
     "Element",
     "HtmlElement",
     "HtmlButtonElement",
+    "HtmlCanvasElement",
     "HtmlHyperlinkElementUtils",
     "Node",
     "Window",

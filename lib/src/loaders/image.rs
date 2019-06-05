@@ -1,7 +1,3 @@
-extern crate web_sys; 
-extern crate js_sys;
-extern crate wasm_bindgen;
-
 use futures::{Future};
 use std::pin::{ Pin};
 use futures::task::{Context, Poll};
@@ -107,7 +103,7 @@ impl Future for Image {
                 let ret = {
                     if let Some(result) = error_state {
                         Poll::Ready(Err(result))
-                    } else if let Some(result) = success_state {
+                    } else if let Some(_) = success_state {
                         Poll::Ready(Ok(self.img.as_ref().unwrap().clone()))
                     } else {
                         info!("polling...");

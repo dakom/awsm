@@ -23,7 +23,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
 
     //Closure needs to take ownership since it occurs past the JS boundry and is 'static
     //but we need to assign the value of cancel from outside the closure
-    let cancel:Rc<RefCell<Option<Box<FnOnce() -> ()>>>> = Rc::new(RefCell::new(None));
+    let cancel:Rc<RefCell<Option<Box<dyn FnOnce() -> ()>>>> = Rc::new(RefCell::new(None));
 
     let cancel_fn = tick::start_raf_ticker_timestamp({
         let cancel = Rc::clone(&cancel);
