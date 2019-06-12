@@ -49,6 +49,9 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
             webgl::texture::start(window, document, body)
         },
 
+        "webgl-instancing" => {
+            webgl::instancing::start(window, document, body)
+        },
         _ => {
 
             let text = format!("unknown route: {}", &pathname);
