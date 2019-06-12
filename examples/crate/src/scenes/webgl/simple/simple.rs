@@ -1,14 +1,60 @@
-use awsm::webgl::{WebGlRenderer};
+use awsm::webgl::{ClearBufferMask, Id, BufferTarget, WebGlRenderer, AttributeOptions, DataType, UniformMatrixData, UniformData, BeginMode};
 use awsm::helpers::*;
+use awsm::camera::{write_ortho};
+use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use awsm::window;
+use std::rc::Rc; 
+use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use web_sys::{Window, Document, HtmlElement, HtmlCanvasElement, WebGl2RenderingContext};
-use crate::scenes::webgl::common::*; 
+use crate::scenes::webgl::common::{start_webgl, create_unit_quad_buffer}; 
+use log::{info};
+
+pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
+
+    let state = Rc::new(RefCell::new(State::new()));
+
+    let mut on_resize = {
+        let state = Rc::clone(&state);
+        move |width:u32, height: u32| {
+            let mut state = state.borrow_mut();
+            state.camera_width = width.into();
+            state.camera_height = height.into();
+        }
+    };
+
+
+    let webgl_renderer = start_webgl(window, document, body, on_resize)?;
+    let webgl_renderer_clone = Rc::clone(&webgl_renderer);
+
+    let mut webgl_renderer = webgl_renderer.borrow_mut();
+
+    let program_id = webgl_renderer.compile_program(
+        include_str!("shaders/simple-vertex.glsl"),
+        include_str!("shaders/simple-fragment.glsl")
+    )?;
+
+    let buffer_id = create_unit_quad_buffer(&mut webgl_renderer)?;
+
+    start_raf_ticker_timestamp({
+        let state = Rc::clone(&state);
+        move |timestamp:Timestamp| {
+            let mut state = state.borrow_mut();
+            state.update(timestamp.time);
+            render(&state, &mut webgl_renderer_clone.borrow_mut());
+        }
+    });
+
+    Ok(())
+}
 
 struct State {
+    //mutable for each tick
     pub pos: Point,
     pub area: Area,
     pub color: Color,
+    pub camera_width: f64,
+    pub camera_height: f64,
     pub direction: f64,
 }
 
@@ -18,6 +64,8 @@ impl State {
             pos: Point{x: 500.0, y: 500.0},
             area: Area{width: 300.0, height: 100.0},
             color: Color::new(1.0, 1.0, 0.0, 1.0),
+            camera_width: 0.0,
+            camera_height: 0.0,
             direction: 0.05, 
         }
 
@@ -42,71 +90,34 @@ impl State {
     }
 }
 
-struct RenderData {
-    pub scale_matrix:[f32;16],
-    pub mvp_matrix:[f32;16],
-    pub color_vec:[f32;4],
-    pub program_id: usize, 
-}
-
-impl RenderData {
-    pub fn new(webgl_renderer:&mut WebGlRenderer) -> Result<Self, &'static str> {
-        let program_id:usize = 0;
-
-        /*
-        let program_id = webgl_renderer.compile_program(
-            include_str!("shaders/simple-vertex.glsl"),
-            include_str!("shaders/simple-fragment.glsl")
-        )?;
-        */
-
-/*
-        let buffer_id = webgl_renderer.create_buffer()?;
-
-        let data:Vec<f32> = vec![  
-                0.0,1.0, // top-left
-                0.0,0.0, //bottom-left
-                1.0, 1.0, // top-right
-                1.0, 0.0 // bottom-right
-        ];
-        webgl_renderer.upload_array_buffer(buffer_id, &data, BufferTarget::ArrayBuffer, BufferUsage::StaticDraw)?;
-
-        webgl_renderer.activate_attribute_name_in_current_program("a_vertex", &attributes::AttributeOptions::new(2, DataType::Float))?;
-
-        */
-        Ok(Self{
-            program_id,
-            scale_matrix: [0.0;16],
-            mvp_matrix: [0.0;16],
-            color_vec: [0.0;4]
-        })
-    }
-
-    pub fn set_from_state(self:&mut Self, camera_matrix:&[f32;16], state:&State) {
-        let mut scratch_matrix:[f32;16] = [0.0;16]; 
-        let RenderData {scale_matrix, mvp_matrix, color_vec, ..} = self;
-        let State {pos, area, color, ..} = state;
+fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
+    let mut scratch_matrix:[f32;16] = [0.0;16]; 
+    let mut scale_matrix:[f32;16] = [0.0;16];
+    let mut mvp_matrix:[f32;16] = [0.0;16];
+    let mut camera_matrix:[f32;16] = [0.0;16];
+    let mut color_vec:[f32;4] = [0.0;4];
+    let State {pos, area, color, ..} = state;
 
 
-        //scale
-        write_scale_matrix(area.width, area.height, 1.0, scale_matrix);
-       
-        //model-view-projection
-        write_position_matrix(pos.x, pos.y, 0.0, &mut scratch_matrix);
-        write_multiply_matrix(camera_matrix, &scratch_matrix, mvp_matrix); 
+    //scale
+    write_scale_matrix(area.width, area.height, 1.0, &mut scale_matrix);
+    webgl_renderer.set_uniform_matrix_name("u_size", UniformMatrixData::Float4(&scale_matrix))?;
 
-        //color
-        color.write_to_v32_4(color_vec);
+    //camera
+    write_ortho(0.0, state.camera_width, 0.0, state.camera_height, 0.0, 1.0, &mut camera_matrix);
 
+    //model-view-projection
+    write_position_matrix(pos.x, pos.y, 0.0, &mut scratch_matrix);
+    write_multiply_matrix(&camera_matrix, &scratch_matrix, &mut mvp_matrix); 
+    webgl_renderer.set_uniform_matrix_name("u_modelViewProjection", UniformMatrixData::Float4(&mvp_matrix))?;
 
-    }
-}
+    //color
+    color.write_to_v32_4(&mut color_vec);
+    webgl_renderer.set_uniform_name("u_color", UniformData::Float4(&color_vec))?;
 
-pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
-
-    let webgl_renderer = start_webgl(window, document, body)?;
-
-    let state = State::new();
+    //draw!
+    webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
+    webgl_renderer.draw_arrays(BeginMode::TriangleStrip as u32, 0, 4);
 
     Ok(())
 }

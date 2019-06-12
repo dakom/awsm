@@ -1,13 +1,15 @@
-use awsm::webgl::{WebGlRenderer};
+use awsm::webgl::{ClearBufferMask, WebGlRenderer};
 use awsm::window;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{Window, Document, HtmlElement, HtmlCanvasElement, WebGl2RenderingContext};
+use web_sys::{Window, Document, HtmlElement, HtmlCanvasElement};
 use gloo_events::{EventListener};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-pub fn start_webgl(window: Window, document: Document, body: HtmlElement) -> Result<Rc<RefCell<WebGlRenderer>>, JsValue> {
+pub fn start_webgl<RESIZE_CB>(window: Window, document: Document, body: HtmlElement, mut resize_cb: RESIZE_CB) -> Result<Rc<RefCell<WebGlRenderer<'static>>>, JsValue> 
+where RESIZE_CB: (FnMut(u32, u32) -> ()) + 'static,
+{
 
     let canvas:HtmlCanvasElement = document.create_element("canvas")?.dyn_into()?;
     body.append_child(&canvas)?;
@@ -17,17 +19,22 @@ pub fn start_webgl(window: Window, document: Document, body: HtmlElement) -> Res
    
     let window_clone = window.clone();
     let webgl_renderer_clone = Rc::clone(&webgl_renderer);
-    let on_resize = move |_:&web_sys::Event| {
+    let mut on_resize = move |_:&web_sys::Event| {
         let (width, height) = window::get_size(&window_clone).unwrap();
         webgl_renderer_clone.borrow_mut().resize(width, height);
+        resize_cb(width, height);
     };
 
     on_resize(&web_sys::Event::new("").unwrap());
+
     {
-        let gl = &webgl_renderer.borrow_mut().gl;
-        gl.clear_color(0.3, 0.3, 0.3, 1.0);
-        gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT); 
+        let mut webgl_renderer = &webgl_renderer.borrow_mut();
+
+
+        webgl_renderer.gl.clear_color(0.3, 0.3, 0.3, 1.0);
+        webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
     }
+
 
 
     EventListener::new(&window, "resize",on_resize).forget();
