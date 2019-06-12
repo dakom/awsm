@@ -5,6 +5,7 @@ use wasm_bindgen::JsCast;
 use js_sys::{Object};
 use crate::errors::{Error, NativeError};
 use super::enums::{TextureUnit, TextureParameterName, TextureWrapMode, TextureMinFilter, TextureMagFilter, TextureTarget, PixelFormat, DataType, WebGlSpecific};
+use cfg_if::cfg_if;
 
 pub enum WebGlTextureSource <'a> {
     ArrayBufferView(&'a Object, i32, i32),
@@ -101,9 +102,6 @@ pub fn assign_simple_texture (gl:&WebGlContext, bind_target: TextureTarget, opts
 
 pub fn assign_simple_texture_mips (gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
 
-    if !srcs.iter().all(|&src| is_power_of_2(&src)) {
-        return Err(Error::from(NativeError::MipsPowerOf2));
-    }
     let set_parameters = Some(|_:&WebGlContext| {
         simple_parameters (&gl, bind_target, &opts, true);
     });
@@ -136,6 +134,26 @@ pub fn assign_texture (gl:&WebGlContext, bind_target: TextureTarget, opts:&Textu
 }
 
 pub fn assign_texture_mips (gl:&WebGlContext, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
+
+    //untested but should be right
+    //webgl2 allows mips for any texture, webgl1 is power of 2 only
+    cfg_if! {
+        if #[cfg(feature = "webgl1")] {
+            fn sanity_check() -> Result<(), Error> {
+                if !srcs.iter().all(|&src| is_power_of_2(&src)) {
+                    Err(Error::from(NativeError::MipsPowerOf2))
+                } else {
+                    Ok(())
+                }
+            }
+        } else {
+            fn sanity_check() -> Result<(), Error> {
+                Ok(())
+            }
+        }
+    }
+
+    sanity_check()?;
 
     let bind_target = bind_target as u32;
 
