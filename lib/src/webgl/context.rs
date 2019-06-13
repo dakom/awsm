@@ -1,5 +1,11 @@
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, WebGlRenderingContext, WebGl2RenderingContext};
+use web_sys::{HtmlCanvasElement};
+
+#[cfg(feature = "webgl_1")]
+use web_sys::{WebGlRenderingContext};
+#[cfg(feature = "webgl_2")]
+use web_sys::{WebGl2RenderingContext};
+
 use crate::errors::{Error, NativeError};
 use cfg_if::cfg_if;
 use log::{info};
@@ -21,7 +27,7 @@ cfg_if! {
                 )
                 .map_err(|_| Error::Native(NativeError::WebGlContext))
         }
-    } else {
+    } else if #[cfg(feature = "webgl_2")] {
         pub type WebGlContext = WebGl2RenderingContext;
         pub fn get_context(canvas:&HtmlCanvasElement) -> Result<WebGlContext, Error> {
             info!("Webgl version 2");

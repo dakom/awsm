@@ -9,7 +9,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::futures_0_3::{future_to_promise};
-use web_sys::{Window, Document, HtmlElement, HtmlCanvasElement, WebGl2RenderingContext};
+use web_sys::{Window, Document, HtmlElement, HtmlCanvasElement};
 use crate::scenes::webgl::common::{start_webgl, create_unit_quad_buffer}; 
 use log::{info};
 

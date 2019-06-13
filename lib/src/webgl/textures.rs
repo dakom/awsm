@@ -125,7 +125,7 @@ pub fn texture_sources_can_mipmap(srcs:&[&WebGlTextureSource]) -> Result<(), Err
         false => Err(Error::from(NativeError::MipsPowerOf2))
     }
 }
-#[cfg(not(feature = "webgl_1"))] 
+#[cfg(feature = "webgl_2")] 
 pub fn texture_sources_can_mipmap(srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
     Ok(()) 
 }
