@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::futures_0_3::{future_to_promise};
 use web_sys::{Window, Document, HtmlElement};
-use crate::scenes::webgl::common::{start_webgl, create_unit_quad_buffer}; 
+use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
 use log::{info};
 
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
@@ -31,14 +31,13 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let mut webgl_renderer = webgl_renderer.borrow_mut();
 
-    //webgl_renderer.create_extension_instanced_arrays()?;
 
     let _program_id = webgl_renderer.compile_program(
         include_str!("shaders/instancing-vertex.glsl"),
         include_str!("shaders/instancing-fragment.glsl")
     )?;
 
-    let _buffer_id = create_unit_quad_buffer(&mut webgl_renderer)?;
+    let _buffer_id = create_and_assign_unit_quad_buffer(&mut webgl_renderer)?;
 
     let texture_id = webgl_renderer.create_texture()?;
 
@@ -60,7 +59,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
                 let center = Point{
                     x: ((state_obj.camera_width as f64) - state_obj.area.width) / 2.0,
-                    y: ((state_obj.camera_height as f64) - state_obj.area.height) / 2.0
+                    y: ((state_obj.camera_height as f64) - state_obj.area.height) / 2.0,
+                    z: 0.0
                 };
 
                 for (pos, _) in state_obj.positions.iter_mut() {
@@ -121,8 +121,8 @@ impl State {
     pub fn new() -> Self {
         Self {
             positions: vec![
-                (Point{x: 500.0, y: 500.0}, Point{x: 1.0, y: 1.0}),
-                (Point{x: 800.0, y: 800.0}, Point{x: -1.0, y: -1.0}),
+                (Point{x: 500.0, y: 500.0, z: 0.0}, Point{x: 1.0, y: 1.0, z: 0.0}),
+                (Point{x: 800.0, y: 800.0, z: 0.0}, Point{x: -1.0, y: -1.0, z: 0.0}),
             ],
             area: Area{width: 300.0, height: 100.0},
             camera_width: 0.0,
@@ -161,14 +161,17 @@ fn render(state:&State, instance_pos_buffer_id: Id, webgl_renderer:&mut WebGlRen
     //info!("{:#?}", scale_matrix);
 
     let loc = webgl_renderer.get_attribute_location("a_position")?;
-    webgl_renderer.upload_buffer_to_attribute_loc(
+    webgl_renderer.upload_buffer_f32(
         instance_pos_buffer_id, 
         &pos_data, 
         BufferTarget::ArrayBuffer, 
-        BufferUsage::StaticDraw,
+        BufferUsage::StaticDraw
+    )?;
+
+    webgl_renderer.activate_attribute_loc(
         loc,
         &AttributeOptions::new(2, DataType::Float)
-    )?;
+    );
 
 
     //draw! (gotta clear first due to the extension needing mutability)

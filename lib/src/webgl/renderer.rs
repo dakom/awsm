@@ -16,7 +16,7 @@ use super::attributes;
 use super::uniforms;
 use super::textures;
 use super::extensions;
-use super::enums::{DataType, BeginMode, ClearBufferMask, TextureTarget, BufferTarget, BufferUsage};
+use super::enums::{DataType, BeginMode, GlToggle, ClearBufferMask, TextureTarget, BufferTarget, BufferUsage};
 
 pub type Id = ID<DefaultVersion>; 
 
@@ -39,6 +39,8 @@ pub struct WebGlRenderer <'a> {
     texture_sampler_lookup: HashMap<u32, TextureSamplerInfo>,
 
     extension_lookup: HashMap<&'a str, js_sys::Object>,
+    
+    toggle_lookup: HashMap<u32, bool>,
 }
 
 struct ProgramInfo <'a> {
@@ -84,7 +86,8 @@ impl <'a> WebGlRenderer <'a> {
                 texture_lookup: BeachMap::default(),
                 texture_sampler_lookup: HashMap::new(),
 
-                extension_lookup: HashMap::new()
+                extension_lookup: HashMap::new(),
+                toggle_lookup: HashMap::new()
             }
         )
     }
@@ -150,20 +153,6 @@ impl <'a> WebGlRenderer <'a> {
         Ok(id)
     }
 
-    pub fn upload_buffer_to_attribute_name(&mut self, buffer_id: Id, values:&[f32], buffer_target: BufferTarget, buffer_usage: BufferUsage, attribute_name:&'a str, attribute_opts:&attributes::AttributeOptions) -> Result<(), Error> {
-        self.upload_buffer(buffer_id, &values, buffer_target, buffer_usage)?;
-        self.activate_attribute_name(&attribute_name, &attribute_opts)?;
-
-        Ok(())
-
-    }
-
-    pub fn upload_buffer_to_attribute_loc(&mut self, buffer_id: Id, values:&[f32], buffer_target: BufferTarget, buffer_usage: BufferUsage, attribute_loc:u32, attribute_opts:&attributes::AttributeOptions) -> Result<(), Error> {
-        self.upload_buffer(buffer_id, &values, buffer_target, buffer_usage)?;
-        self.activate_attribute_loc(attribute_loc, &attribute_opts);
-
-        Ok(())
-    }
 
     pub fn activate_buffer(&self, buffer_id:Id, target: BufferTarget) -> Result<(), Error> {
 
@@ -183,14 +172,21 @@ impl <'a> WebGlRenderer <'a> {
         self.buffer_lookup.get(buffer_id).ok_or(Error::from(NativeError::MissingShaderProgram))
     }
 
-    pub fn upload_buffer(&self, id:Id, values:&[f32], target: BufferTarget, usage:BufferUsage) -> Result<(), Error> {
+    pub fn upload_buffer_f32(&self, id:Id, values:&[f32], target: BufferTarget, usage:BufferUsage) -> Result<(), Error> {
         self.activate_buffer(id, target)?;
 
         let buffer = self.get_current_buffer()?; 
 
-        buffers::upload_buffer(&self.gl, &values, target, usage, &buffer)
+        buffers::upload_buffer_f32(&self.gl, &values, target, usage, &buffer)
     }
 
+    pub fn upload_buffer_u8(&self, id:Id, values:&[u8], target: BufferTarget, usage:BufferUsage) -> Result<(), Error> {
+        self.activate_buffer(id, target)?;
+
+        let buffer = self.get_current_buffer()?; 
+
+        buffers::upload_buffer_u8(&self.gl, &values, target, usage, &buffer)
+    }
 
     //ATTRIBUTES
     pub fn get_attribute_location(&mut self, name:&'a str) -> Result<u32, Error> 
@@ -224,6 +220,18 @@ impl <'a> WebGlRenderer <'a> {
         Ok(())
     }
 
+    pub fn activate_buffer_for_attribute_name(&mut self, buffer_id:Id, buffer_target:BufferTarget, name:&'a str, opts:&attributes::AttributeOptions) -> Result<(), Error> {
+        let loc = self.get_attribute_location(&name)?;
+
+        self.activate_buffer_for_attribute_loc(buffer_id, buffer_target, loc, &opts)
+    }
+
+    pub fn activate_buffer_for_attribute_loc(&mut self, buffer_id:Id, buffer_target:BufferTarget, loc:u32, opts:&attributes::AttributeOptions) -> Result<(), Error> {
+
+        self.activate_buffer(buffer_id, buffer_target)?;
+        self.activate_attribute_loc(loc, &opts);
+        Ok(())
+    }
 
     //UNIFORMS
     pub fn get_uniform_loc(&mut self, name:&'a str) -> Result<WebGlUniformLocation, Error> {
@@ -420,6 +428,36 @@ impl <'a> WebGlRenderer <'a> {
         Ok(())
     }
 
+    //TOGGLES
+    pub fn toggle(&mut self, toggle:GlToggle, flag:bool) {
+       
+        let toggle = toggle as u32;
+
+        let entry = self.toggle_lookup.entry(toggle);
+
+        let requires_activation = match entry {
+            Entry::Occupied(mut entry) => {
+                let entry = entry.get_mut();
+                if *entry != flag {
+                    *entry = flag;
+                    true
+                } else {
+                    false
+                }
+            },
+            Entry::Vacant(entry) => {
+                entry.insert(flag);
+                true
+            }
+        };
+
+        if requires_activation {
+            match flag {
+                true => self.gl.enable(toggle),
+                false => self.gl.disable(toggle)
+            }
+        }
+    }
     //DRAWING
     pub fn clear(&self, bits: &[ClearBufferMask]) {
         let mut combined = 0u32;
@@ -429,7 +467,11 @@ impl <'a> WebGlRenderer <'a> {
         self.gl.clear(combined);
     }
 
-    pub fn draw_arrays(&self, mode: u32, first: i32, count: i32) {
-        self.gl.draw_arrays(mode, first, count);
+    pub fn draw_arrays(&self, mode: BeginMode, first: u32, count: u32) {
+        self.gl.draw_arrays(mode as u32, first as i32, count as i32);
+    }
+
+    pub fn draw_elements(&self, mode: BeginMode, count: u32, data_type:DataType, offset:u32) {
+        self.gl.draw_elements_with_i32(mode as u32, count as i32, data_type as u32, offset as i32);
     }
 }

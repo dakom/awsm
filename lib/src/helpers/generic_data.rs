@@ -5,6 +5,7 @@ use super::slice::{SliceValues};
 pub struct Point {
     pub x:f64,
     pub y:f64,
+    pub z:f64
 }
 
 #[repr(C)]
@@ -23,11 +24,21 @@ pub struct Area {
     pub height:f64,
 }
 
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq)]
+pub struct Volume {
+    pub width:f64,
+    pub height:f64,
+    pub depth:f64,
+}
+
 impl SliceValues for Point {}
 
 impl SliceValues for Color {}
 
 impl SliceValues for Area {}
+
+impl SliceValues for Volume {}
 
 impl Color {
     pub fn new(r: f64, g: f64, b: f64, a: f64) -> Color {

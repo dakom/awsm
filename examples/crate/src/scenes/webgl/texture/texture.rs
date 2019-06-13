@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::futures_0_3::{future_to_promise};
 use web_sys::{Window, Document, HtmlElement};
-use crate::scenes::webgl::common::{start_webgl, create_unit_quad_buffer}; 
+use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
 use log::{info};
 
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
@@ -38,7 +38,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         include_str!("shaders/texture-fragment.glsl")
     )?;
 
-    let _buffer_id = create_unit_quad_buffer(&mut webgl_renderer)?;
+    let _buffer_id = create_and_assign_unit_quad_buffer(&mut webgl_renderer)?;
 
     let texture_id = webgl_renderer.create_texture()?;
 
@@ -99,7 +99,8 @@ fn reposition(state:&mut State, width: u32, height: u32) {
 
     state.pos = Point{
         x: ((width as f64) - state.area.width) / 2.0,
-        y: ((height as f64) - state.area.height) / 2.0
+        y: ((height as f64) - state.area.height) / 2.0,
+        z: 0.0
     };
 }
 
@@ -114,7 +115,7 @@ struct State {
 impl State {
     pub fn new() -> Self {
         Self {
-            pos: Point{x: 500.0, y: 500.0},
+            pos: Point{x: 500.0, y: 500.0, z: 0.0},
             area: Area{width: 300.0, height: 100.0},
             camera_width: 0.0,
             camera_height: 0.0,
@@ -137,7 +138,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     webgl_renderer.set_uniform_matrix_name("u_size", UniformMatrixData::Float4(&scale_matrix))?;
 
     //camera
-    write_ortho(0.0, state.camera_width, 0.0, state.camera_height, 0.0, 1.0, &mut camera_matrix);
+    write_ortho(0.0, state.camera_width, 0.0, state.camera_height, -1000.0, 1000.0, &mut camera_matrix);
 
     //model-view-projection
     write_position_matrix(pos.x, pos.y, 0.0, &mut scratch_matrix);
@@ -146,7 +147,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
 
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
-    webgl_renderer.draw_arrays(BeginMode::TriangleStrip as u32, 0, 4);
+    webgl_renderer.draw_arrays(BeginMode::TriangleStrip, 0, 4);
 
     Ok(())
 }

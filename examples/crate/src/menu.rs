@@ -13,13 +13,15 @@ lazy_static! {
     pub static ref MENU_LOOKUP: HashMap<&'static str, Menu<'static>> = {
         let mut m = HashMap::new();
         //Tick
-        m.insert("clock", Menu {label: "Clock", source: "clock"});
+        m.insert("clock", Menu {label: "Clock", source: "clock/clock.rs"});
         //Loaders
         m.insert("loaders-image", Menu {label: "Image", source: "loaders/image.rs"});
         //WebGl
-        m.insert("webgl-simple", Menu {label: "Simple", source: "webgl/simple"});
-        m.insert("webgl-texture", Menu {label: "Texture", source: "webgl/texture"});
-        m.insert("webgl-instancing", Menu {label: "Instancing", source: "webgl/instancing"});
+        m.insert("webgl-simple", Menu {label: "Simple", source: "webgl/simple/simple.rs"});
+        m.insert("webgl-texture", Menu {label: "Texture", source: "webgl/texture/texture.rs"});
+        m.insert("webgl-elements", Menu {label: "Elements", source: "webgl/elements/elements.rs"});
+        m.insert("webgl-instancing", Menu {label: "Instancing", source: "webgl/instancing/instancing.rs"});
+        m.insert("webgl-vaos", Menu {label: "Vertex Arrays", source: "webgl/vaos/vaos.rs"});
         m
     };
 }
@@ -38,7 +40,9 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
     append_menu(&container, &document, "WebGl", vec![
         "webgl-simple",
         "webgl-texture",
+        "webgl-elements",
         "webgl-instancing",
+        "webgl-vaos",
     ])?;
 
     Ok(container)

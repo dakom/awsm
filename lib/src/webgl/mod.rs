@@ -17,4 +17,3 @@ pub use self::attributes::*;
 pub use self::uniforms::*;
 pub use self::textures::*;
 pub use self::extensions::*;
-

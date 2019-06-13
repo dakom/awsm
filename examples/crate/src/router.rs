@@ -50,8 +50,16 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
             webgl::texture::start(window, document, body)
         },
 
+        "webgl-elements" => {
+            webgl::elements::start(window, document, body)
+        },
+
         "webgl-instancing" => {
             webgl::instancing::start(window, document, body)
+        },
+
+        "webgl-vaos" => {
+            webgl::vaos::start(window, document, body)
         },
         _ => {
 

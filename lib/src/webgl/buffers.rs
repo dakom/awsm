@@ -5,7 +5,7 @@ use crate::errors::{Error, NativeError};
 use super::context::{WebGlContext};
 use super::enums::{BufferTarget, BufferUsage};
 
-pub fn upload_buffer(gl:&WebGlContext, values:&[f32], target: BufferTarget, usage:BufferUsage, webgl_buffer:&WebGlBuffer) -> Result<(), Error> {
+pub fn upload_buffer_f32(gl:&WebGlContext, values:&[f32], target: BufferTarget, usage:BufferUsage, webgl_buffer:&WebGlBuffer) -> Result<(), Error> {
     wasm_bindgen::memory()
         .dyn_into::<WebAssembly::Memory>()
         .map(|m:WebAssembly::Memory| {
@@ -23,6 +23,10 @@ pub fn upload_buffer(gl:&WebGlContext, values:&[f32], target: BufferTarget, usag
         .map_err(|err| Error::from(err))
 }
 
+pub fn upload_buffer_u8(gl:&WebGlContext, values:&[u8], target: BufferTarget, usage:BufferUsage, webgl_buffer:&WebGlBuffer) -> Result<(), Error> {
+    gl.buffer_data_with_u8_array(target as u32, &values, usage as u32); 
+    Ok(())
+}
 pub fn bind_buffer(gl:&WebGlContext, target:BufferTarget, buffer:&WebGlBuffer) {
     gl.bind_buffer(target as u32, Some(buffer)); 
 }

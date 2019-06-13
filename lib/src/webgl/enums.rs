@@ -152,6 +152,20 @@ pub enum ClearBufferMask {
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
+pub enum GlToggle {
+    CullFace = 0x0B44,
+    Blend = 0x0BE2,
+    Dither = 0x0BD0,
+    StencilTest= 0x0B90,
+    DepthTest = 0x0B71,
+    ScissorTest = 0x0C11,
+    PolygonOffsetFill = 0x8037,
+    SampleAlphaToCoverage = 0x809E,
+    SampleCoverage = 0x80A0
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
 pub enum WebGlSpecific {
     UnpackFlipY = 0x9240, 
     UnpackPremultiplyAlpha = 0x9241,
@@ -249,15 +263,6 @@ ONE_MINUS_DST_ALPHA            = 0x0305;
 
     * EnableCap *
     * TEXTURE_2D *
-    const GLenum CULL_FACE                      = 0x0B44;
-    const GLenum BLEND                          = 0x0BE2;
-    const GLenum DITHER                         = 0x0BD0;
-    const GLenum STENCIL_TEST                   = 0x0B90;
-    const GLenum DEPTH_TEST                     = 0x0B71;
-    const GLenum SCISSOR_TEST                   = 0x0C11;
-    const GLenum POLYGON_OFFSET_FILL            = 0x8037;
-    const GLenum SAMPLE_ALPHA_TO_COVERAGE       = 0x809E;
-    const GLenum SAMPLE_COVERAGE                = 0x80A0;
 
     * ErrorCode *
     const GLenum NO_ERROR                       = 0;

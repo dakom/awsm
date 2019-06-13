@@ -81,3 +81,22 @@ pub fn write_multiply_matrix(a:&[f32;16], b:&[f32;16], out:&mut [f32]) {
   out[14] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
   out[15] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
 }
+
+pub fn identity(out:&mut[f32]) {
+  out[0] = 1.0;
+  out[1] = 0.0;
+  out[2] = 0.0;
+  out[3] = 0.0;
+  out[4] = 0.0;
+  out[5] = 1.0;
+  out[6] = 0.0;
+  out[7] = 0.0;
+  out[8] = 0.0;
+  out[9] = 0.0;
+  out[10] = 1.0;
+  out[11] = 0.0;
+  out[12] = 0.0;
+  out[13] = 0.0;
+  out[14] = 0.0;
+  out[15] = 1.0;
+}

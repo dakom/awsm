@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use web_sys::{Window, Document, HtmlElement};
-use crate::scenes::webgl::common::{start_webgl, create_unit_quad_buffer}; 
+use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
 
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
 
@@ -33,7 +33,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         include_str!("shaders/simple-fragment.glsl")
     )?;
 
-    let _buffer_id = create_unit_quad_buffer(&mut webgl_renderer)?;
+    let _buffer_id = create_and_assign_unit_quad_buffer(&mut webgl_renderer)?;
 
     let _ = start_raf_ticker_timestamp({
         let state = Rc::clone(&state);
@@ -51,7 +51,8 @@ fn reposition(state:&mut State, width: u32, height: u32) {
 
     state.pos = Point{
         x: ((width as f64) - state.area.width) / 2.0,
-        y: ((height as f64) - state.area.height) / 2.0
+        y: ((height as f64) - state.area.height) / 2.0,
+        z: 0.0
     };
 }
 struct State {
@@ -67,7 +68,7 @@ struct State {
 impl State {
     pub fn new() -> Self {
         Self {
-            pos: Point{x: 500.0, y: 500.0},
+            pos: Point{x: 500.0, y: 500.0, z: 0.0},
             area: Area{width: 300.0, height: 100.0},
             color: Color::new(1.0, 1.0, 0.0, 1.0),
             camera_width: 0.0,
@@ -123,7 +124,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
 
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
-    webgl_renderer.draw_arrays(BeginMode::TriangleStrip as u32, 0, 4);
+    webgl_renderer.draw_arrays(BeginMode::TriangleStrip, 0, 4);
 
     Ok(())
 }
