@@ -105,7 +105,6 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let mut color_vec:[f32;4] = [0.0;4];
     let State {pos, area, color, ..} = state;
 
-
     //scale
     write_scale_matrix(area.width, area.height, 1.0, &mut scale_matrix);
     webgl_renderer.set_uniform_matrix_name("u_size", UniformMatrixData::Float4(&scale_matrix))?;
@@ -119,7 +118,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     webgl_renderer.set_uniform_matrix_name("u_modelViewProjection", UniformMatrixData::Float4(&mvp_matrix))?;
 
     //color
-    color.write_to_v32_4(&mut color_vec);
+    color_vec.copy_from_slice(&color.values_as_f32());
     webgl_renderer.set_uniform_name("u_color", UniformData::Float4(&color_vec))?;
 
     //draw!

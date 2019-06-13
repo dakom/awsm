@@ -5,34 +5,8 @@ pub trait SliceValues {
         slice
     }
 
-    fn write_to_v32_4(self:&Self, target:&mut [f32]) {
-        let values = self.values();
-        target[0] = values[0] as f32;
-        target[1] = values[1] as f32;
-        target[2] = values[2] as f32;
-        target[3] = values[3] as f32;
-    }
-    fn write_to_v32_16(self:&Self, target:&mut [f32]) {
-        let values = self.values();
-        target[0] = values[0] as f32;
-        target[1] = values[1] as f32;
-        target[2] = values[2] as f32;
-        target[3] = values[3] as f32;
-        
-        target[4] = values[4] as f32;
-        target[5] = values[5] as f32;
-        target[6] = values[6] as f32;
-        target[7] = values[7] as f32;
-
-        target[8] = values[8] as f32;
-        target[9] = values[9] as f32;
-        target[10] = values[10] as f32;
-        target[11] = values[11] as f32;
-
-        target[12] = values[12] as f32;
-        target[13] = values[13] as f32;
-        target[14] = values[14] as f32;
-        target[15] = values[15] as f32;
+    fn values_as_f32(self:&Self) -> Vec<f32> {
+        self.values().iter().map(|n| *n as f32).collect()
     }
 }
 

@@ -1,7 +1,7 @@
-mod generic_data;
+mod data;
 mod slice;
 mod matrix;
 
-pub use generic_data::*;
+pub use data::*;
 pub use slice::*;
 pub use matrix::*;
