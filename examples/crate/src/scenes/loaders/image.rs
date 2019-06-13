@@ -1,5 +1,4 @@
 use awsm::loaders::{image};
-use awsm::errors::{Error};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Window, Document, Element, HtmlElement};

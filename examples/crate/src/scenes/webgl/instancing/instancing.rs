@@ -1,15 +1,14 @@
-use awsm::webgl::{ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, WebGlRenderer, AttributeOptions, DataType, UniformMatrixData, UniformData, BeginMode};
+use awsm::webgl::{ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, WebGlRenderer, AttributeOptions, DataType, UniformMatrixData, BeginMode};
 use awsm::helpers::*;
 use awsm::loaders::{image};
 use crate::router::{get_static_href};
 use awsm::camera::{write_ortho};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
-use awsm::window;
 use std::rc::Rc; 
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::futures_0_3::{future_to_promise};
-use web_sys::{Window, Document, HtmlElement, HtmlCanvasElement};
+use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_unit_quad_buffer}; 
 use log::{info};
 
@@ -17,7 +16,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let state = Rc::new(RefCell::new(State::new()));
 
-    let mut on_resize = {
+    let on_resize = {
         let state = Rc::clone(&state);
         move |width:u32, height: u32| {
             let mut state = state.borrow_mut();
@@ -34,19 +33,19 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     //webgl_renderer.create_extension_instanced_arrays()?;
 
-    let program_id = webgl_renderer.compile_program(
+    let _program_id = webgl_renderer.compile_program(
         include_str!("shaders/instancing-vertex.glsl"),
         include_str!("shaders/instancing-fragment.glsl")
     )?;
 
-    let buffer_id = create_unit_quad_buffer(&mut webgl_renderer)?;
+    let _buffer_id = create_unit_quad_buffer(&mut webgl_renderer)?;
 
     let texture_id = webgl_renderer.create_texture()?;
 
     let instance_pos_buffer_id = webgl_renderer.create_buffer()?; 
 
     let future = async move {
-        let mut webgl_renderer = webgl_renderer_clone.borrow_mut();
+        let webgl_renderer = webgl_renderer_clone.borrow_mut();
 
         let href = get_static_href("smiley.svg");
         info!("loading image! {}", href);
@@ -69,31 +68,28 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                     pos.y = center.y; 
                 };
 
-                let (width, height) = webgl_renderer.current_size();
-
-
                 webgl_renderer.assign_simple_texture_2d(
                     texture_id, 
                     &SimpleTextureOptions{
-                        pixelFormat: PixelFormat::Rgba,
+                        pixel_format: PixelFormat::Rgba,
                         ..SimpleTextureOptions::default()
                     },
                     &WebGlTextureSource::ImageElement(&img)
                 )?;
 
-                start_raf_ticker_timestamp({
+                let _cancel = start_raf_ticker_timestamp({
                     let state = Rc::clone(&state);
                     let webgl_renderer_raf = Rc::clone(&webgl_renderer_clone);
-                    move |timestamp:Timestamp| {
+                    move |_timestamp:Timestamp| {
                         let mut state = state.borrow_mut();
                         for (pos, vel) in state.positions.iter_mut() {
                             pos.x += vel.x;
                             pos.y += vel.y;
                         }
                         let mut webgl_renderer = webgl_renderer_raf.borrow_mut();
-                        render(&state, instance_pos_buffer_id, &mut webgl_renderer);
+                        render(&state, instance_pos_buffer_id, &mut webgl_renderer).unwrap();
                     }
-                });
+                })?;
                 Ok(JsValue::null())
             },
 
@@ -111,11 +107,6 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     Ok(())
 }
 
-fn reposition(state:&mut State, width: u32, height: u32) {
-
-    /*
-    */
-}
 
 struct State {
     //mutable for each tick
@@ -143,7 +134,6 @@ impl State {
 }
 
 fn render(state:&State, instance_pos_buffer_id: Id, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let mut scratch_matrix:[f32;16] = [0.0;16]; 
     let mut scale_matrix:[f32;16] = [0.0;16];
     let mut camera_matrix:[f32;16] = [0.0;16];
     let State {positions, area, ..} = state;

@@ -55,6 +55,7 @@ features = [
 
 # TODO - followup here: https://github.com/wasm-tool/wasm-pack-plugin/issues/61
 [features]
-webgl = ["awsm/webgl_1"] # change this to 1 or 2
-default = ["wee_alloc", "webgl"]
-dev = ["wee_alloc", "webgl", "console_log", "console_error_panic_hook"]
+webgl_1 = ["awsm/webgl_1"]
+webgl_2 = ["awsm/webgl_2"]
+default = ["wee_alloc", "webgl_2"]
+dev = ["wee_alloc", "webgl_2", "console_log", "console_error_panic_hook"]

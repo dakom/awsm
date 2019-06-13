@@ -7,8 +7,8 @@ use gloo_events::{EventListener};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-pub fn start_webgl<RESIZE_CB>(window: Window, document: Document, body: HtmlElement, mut resize_cb: RESIZE_CB) -> Result<Rc<RefCell<WebGlRenderer<'static>>>, JsValue> 
-where RESIZE_CB: (FnMut(u32, u32) -> ()) + 'static,
+pub fn start_webgl<ResizeCb>(window: Window, document: Document, body: HtmlElement, mut resize_cb: ResizeCb) -> Result<Rc<RefCell<WebGlRenderer<'static>>>, JsValue> 
+where ResizeCb: (FnMut(u32, u32) -> ()) + 'static,
 {
 
     let canvas:HtmlCanvasElement = document.create_element("canvas")?.dyn_into()?;
@@ -28,7 +28,7 @@ where RESIZE_CB: (FnMut(u32, u32) -> ()) + 'static,
     on_resize(&web_sys::Event::new("").unwrap());
 
     {
-        let mut webgl_renderer = &webgl_renderer.borrow_mut();
+        let webgl_renderer = &webgl_renderer.borrow_mut();
 
 
         webgl_renderer.gl.clear_color(0.3, 0.3, 0.3, 1.0);

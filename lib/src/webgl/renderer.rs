@@ -138,11 +138,6 @@ impl <'a> WebGlRenderer <'a> {
         }
     }
 
-    fn current_program(&self) -> Result<&ProgramInfo<'a>, Error> {
-
-        let program_id = self.current_program_id.get().ok_or(Error::from(NativeError::MissingShaderProgram))?;
-        self.program_lookup.get(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))
-    }
 
     //BUFFERS
     pub fn create_buffer(&mut self) -> Result<Id, Error> {
@@ -393,7 +388,7 @@ impl <'a> WebGlRenderer <'a> {
     #[cfg(feature = "webgl_1")]
     pub fn vertex_attrib_divisor(&mut self, loc: u32, divisor: u32) -> Result<(), Error> {
         let ext = self.get_extension_instanced_arrays()?;
-        ext.vertex_attrib_divisor_angle(loc, 1);
+        ext.vertex_attrib_divisor_angle(loc, divisor);
         Ok(())
     }
 

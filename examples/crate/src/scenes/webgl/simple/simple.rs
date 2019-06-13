@@ -1,20 +1,18 @@
-use awsm::webgl::{ClearBufferMask, Id, BufferTarget, WebGlRenderer, AttributeOptions, DataType, UniformMatrixData, UniformData, BeginMode};
+use awsm::webgl::{ClearBufferMask, WebGlRenderer, UniformMatrixData, UniformData, BeginMode};
 use awsm::helpers::*;
 use awsm::camera::{write_ortho};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
-use awsm::window;
 use std::rc::Rc; 
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
-use web_sys::{Window, Document, HtmlElement, HtmlCanvasElement};
+use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_unit_quad_buffer}; 
-use log::{info};
 
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
 
     let state = Rc::new(RefCell::new(State::new()));
 
-    let mut on_resize = {
+    let on_resize = {
         let state = Rc::clone(&state);
         move |width:u32, height: u32| {
             let mut state = state.borrow_mut();
@@ -30,21 +28,21 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let mut webgl_renderer = webgl_renderer.borrow_mut();
 
-    let program_id = webgl_renderer.compile_program(
+    let _program_id = webgl_renderer.compile_program(
         include_str!("shaders/simple-vertex.glsl"),
         include_str!("shaders/simple-fragment.glsl")
     )?;
 
-    let buffer_id = create_unit_quad_buffer(&mut webgl_renderer)?;
+    let _buffer_id = create_unit_quad_buffer(&mut webgl_renderer)?;
 
-    start_raf_ticker_timestamp({
+    let _ = start_raf_ticker_timestamp({
         let state = Rc::clone(&state);
         move |timestamp:Timestamp| {
             let mut state = state.borrow_mut();
             state.update(timestamp.time);
-            render(&state, &mut webgl_renderer_clone.borrow_mut());
+            render(&state, &mut webgl_renderer_clone.borrow_mut()).unwrap();
         }
-    });
+    })?;
 
     Ok(())
 }

@@ -21,24 +21,24 @@ pub enum WebGlTextureSource <'a> {
 // in order to support any possible options without making the wrappers
 // too verbose, TextureOptions itself uses plain scalars
 pub struct SimpleTextureOptions {
-    pub flipY: bool,
-    pub wrapS: TextureWrapMode,
-    pub wrapT: TextureWrapMode,
-    pub filterMin: TextureMinFilter,
-    pub filterMag: TextureMagFilter,
-    pub pixelFormat: PixelFormat,
+    pub flip_y: bool,
+    pub wrap_s: TextureWrapMode,
+    pub wrap_t: TextureWrapMode,
+    pub filter_min: TextureMinFilter,
+    pub filter_mag: TextureMagFilter,
+    pub pixel_format: PixelFormat,
     pub data_type: DataType,
 }
 
 impl Default for SimpleTextureOptions {
     fn default() -> Self {
         Self {
-            flipY: true,
-            wrapS: TextureWrapMode::ClampToEdge,
-            wrapT: TextureWrapMode::ClampToEdge,
-            filterMin: TextureMinFilter::Linear,
-            filterMag: TextureMagFilter::Linear,
-            pixelFormat: PixelFormat::Rgb,
+            flip_y: true,
+            wrap_s: TextureWrapMode::ClampToEdge,
+            wrap_t: TextureWrapMode::ClampToEdge,
+            filter_min: TextureMinFilter::Linear,
+            filter_mag: TextureMagFilter::Linear,
+            pixel_format: PixelFormat::Rgb,
             data_type: DataType::UnsignedByte,
         }
     }
@@ -79,10 +79,10 @@ cfg_if! {
 
 pub fn get_size (src:&WebGlTextureSource) -> (u32, u32) {
     match src {
-        WebGlTextureSource::ArrayBufferView(buffer, width, height) => {
+        WebGlTextureSource::ArrayBufferView(_buffer, width, height) => {
             (*width as u32, *height as u32)
         },
-        WebGlTextureSource::ByteArray(buffer, width, height) => {
+        WebGlTextureSource::ByteArray(_buffer, width, height) => {
             (*width as u32, *height as u32)
         },
         WebGlTextureSource::ImageBitmap(bmp) => {
@@ -110,8 +110,8 @@ pub fn is_power_of_2 (src:&WebGlTextureSource) -> bool {
 
 fn get_texture_options_from_simple(opts:&SimpleTextureOptions) -> TextureOptions {
     TextureOptions {
-        internal_format: opts.pixelFormat,
-        data_format: opts.pixelFormat,
+        internal_format: opts.pixel_format,
+        data_format: opts.pixel_format,
         data_type: opts.data_type,
     }
 }
@@ -153,7 +153,7 @@ pub fn simple_parameters (gl:&WebGlContext, bind_target: TextureTarget, opts:&Si
 
     let bind_target = bind_target as u32;
 
-    if opts.flipY {
+    if opts.flip_y {
         gl.pixel_storei(WebGlSpecific::UnpackFlipY as u32, 1);
     } else {
         gl.pixel_storei(WebGlSpecific::UnpackFlipY as u32, 0);
@@ -162,10 +162,10 @@ pub fn simple_parameters (gl:&WebGlContext, bind_target: TextureTarget, opts:&Si
     if use_mips {
         gl.generate_mipmap(bind_target);
     } else {
-        gl.tex_parameteri(bind_target, TextureParameterName::TextureWrapS as u32, opts.wrapS as i32); 
-        gl.tex_parameteri(bind_target, TextureParameterName::TextureWrapT as u32, opts.wrapT as i32); 
-        gl.tex_parameteri(bind_target, TextureParameterName::TextureMinFilter as u32, opts.filterMin as i32); 
-        gl.tex_parameteri(bind_target, TextureParameterName::TextureMagFilter as u32, opts.filterMag as i32); 
+        gl.tex_parameteri(bind_target, TextureParameterName::TextureWrapS as u32, opts.wrap_s as i32); 
+        gl.tex_parameteri(bind_target, TextureParameterName::TextureWrapT as u32, opts.wrap_t as i32); 
+        gl.tex_parameteri(bind_target, TextureParameterName::TextureMinFilter as u32, opts.filter_min as i32); 
+        gl.tex_parameteri(bind_target, TextureParameterName::TextureMagFilter as u32, opts.filter_mag as i32); 
     }
 }
 
@@ -181,7 +181,7 @@ pub fn assign_texture_mips (gl:&WebGlContext, bind_target: TextureTarget, opts:&
     set_parameters.map(|f| f(&gl));
 
     for (mip_level, src) in srcs.iter().enumerate() {
-        _assign_texture(&gl, bind_target, mip_level as i32, &opts, &src, &dest)?;
+        _assign_texture(&gl, bind_target, mip_level as i32, &opts, &src)?;
     }
 
     Ok(())
@@ -194,14 +194,12 @@ pub fn activate_texture_for_sampler(gl:&WebGlContext, bind_target: TextureTarget
 }
 
 //internal use only
-fn _assign_texture (gl:&WebGlContext, bind_target: u32, mip_level: i32, opts:&TextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
+fn _assign_texture (gl:&WebGlContext, bind_target: u32, mip_level: i32, opts:&TextureOptions, src:&WebGlTextureSource) -> Result<(), Error> {
 
     let internal_format = opts.internal_format as i32;
     let data_format = opts.data_format as u32;
     let data_type = opts.data_type as u32;
 
-    //TODO - call the stuff in
-    // https://github.com/dakom/awsm-typescript/blob/master/src/lib/exports/webgl/WebGl-Textures.ts#L96
     match src {
         WebGlTextureSource::ArrayBufferView(buffer_view, width, height) => {
             gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(

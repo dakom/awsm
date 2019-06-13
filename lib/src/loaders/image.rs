@@ -102,22 +102,17 @@ impl Future for Image {
                 };
 
 
-                let ret = {
-                    if let Some(result) = error_state {
-                        Poll::Ready(Err(result.into()))
-                    } else if let Some(_) = success_state {
-                        Poll::Ready(Ok(self.img.as_ref().unwrap().clone()))
-                    } else {
-                        info!("polling...");
-                        if !is_cancelled {
-                            //ctx.waker().wake_by_ref();
-                        }
-                        Poll::Pending
+                if let Some(result) = error_state {
+                    Poll::Ready(Err(result.into()))
+                } else if let Some(_) = success_state {
+                    Poll::Ready(Ok(self.img.as_ref().unwrap().clone()))
+                } else {
+                    info!("polling...");
+                    if !is_cancelled {
+                        //ctx.waker().wake_by_ref();
                     }
-                };
-
-                ret
-
+                    Poll::Pending
+                }
             },
         }
     }
