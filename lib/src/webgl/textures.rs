@@ -27,7 +27,7 @@ pub struct SimpleTextureOptions {
     pub filterMin: TextureMinFilter,
     pub filterMag: TextureMagFilter,
     pub pixelFormat: PixelFormat,
-    pub dataType: DataType,
+    pub data_type: DataType,
 }
 
 impl Default for SimpleTextureOptions {
@@ -39,17 +39,43 @@ impl Default for SimpleTextureOptions {
             filterMin: TextureMinFilter::Linear,
             filterMag: TextureMagFilter::Linear,
             pixelFormat: PixelFormat::Rgb,
-            dataType: DataType::UnsignedByte,
+            data_type: DataType::UnsignedByte,
         }
     }
 }
 
+//TODO - WebGL 2 allows a lot more options for internal and data formats than just PixelFormat
+//(or maybe it's that PixelFormat has many more values)
 pub struct TextureOptions {
-    internalFormat: i32, 
-    dataFormat: u32,
-    dataType: u32,
+    internal_format: PixelFormat, 
+    data_format: PixelFormat,
+    data_type: DataType,
 }
 
+//for some reason the function names are different for webgl 1 vs 2
+cfg_if! {
+    if #[cfg(feature = "webgl_1")] {
+        fn get_texture_from_image(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, image: &HtmlImageElement) -> Result<(), JsValue> {
+            gl.tex_image_2d_with_u32_and_u32_and_image( bind_target, mip_level, internal_format, data_format, data_type, image)
+        }
+        fn get_texture_from_canvas(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, canvas: &HtmlCanvasElement) -> Result<(), JsValue> {
+            gl.tex_image_2d_with_u32_and_u32_and_canvas( bind_target, mip_level, internal_format, data_format, data_type, canvas)
+        }
+        fn get_texture_from_video(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, video: &HtmlVideoElement) -> Result<(), JsValue> {
+            gl.tex_image_2d_with_u32_and_u32_and_video( bind_target, mip_level, internal_format, data_format, data_type, video)
+        }
+    } else {
+        fn get_texture_from_image(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, image: &HtmlImageElement) -> Result<(), JsValue> {
+            gl.tex_image_2d_with_u32_and_u32_and_html_image_element( bind_target, mip_level, internal_format, data_format, data_type, image)
+        }
+        fn get_texture_from_canvas(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, canvas: &HtmlCanvasElement) -> Result<(), JsValue> {
+            gl.tex_image_2d_with_u32_and_u32_and_html_canvas_element( bind_target, mip_level, internal_format, data_format, data_type, canvas)
+        }
+        fn get_texture_from_video(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, video: &HtmlVideoElement) -> Result<(), JsValue> {
+            gl.tex_image_2d_with_u32_and_u32_and_html_video_element( bind_target, mip_level, internal_format, data_format, data_type, video)
+        }
+    }
+}
 
 pub fn get_size (src:&WebGlTextureSource) -> (u32, u32) {
     match src {
@@ -84,12 +110,25 @@ pub fn is_power_of_2 (src:&WebGlTextureSource) -> bool {
 
 fn get_texture_options_from_simple(opts:&SimpleTextureOptions) -> TextureOptions {
     TextureOptions {
-        internalFormat: opts.pixelFormat as i32,
-        dataFormat: opts.pixelFormat as u32,
-        dataType: opts.dataType as u32,
+        internal_format: opts.pixelFormat,
+        data_format: opts.pixelFormat,
+        data_type: opts.data_type,
     }
 }
 
+
+//webgl2 allows mips for any texture, webgl1 is power of 2 only
+#[cfg(feature = "webgl_1")] 
+pub fn texture_sources_can_mipmap(srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
+    match srcs.iter().all(|&src| is_power_of_2(&src)) {
+        true => Ok(()),
+        false => Err(Error::from(NativeError::MipsPowerOf2))
+    }
+}
+#[cfg(not(feature = "webgl_1"))] 
+pub fn texture_sources_can_mipmap(srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
+    Ok(()) 
+}
 
 pub fn assign_simple_texture (gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
 
@@ -102,6 +141,7 @@ pub fn assign_simple_texture (gl:&WebGlContext, bind_target: TextureTarget, opts
 
 pub fn assign_simple_texture_mips (gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
 
+    texture_sources_can_mipmap(&srcs)?;
     let set_parameters = Some(|_:&WebGlContext| {
         simple_parameters (&gl, bind_target, &opts, true);
     });
@@ -134,27 +174,6 @@ pub fn assign_texture (gl:&WebGlContext, bind_target: TextureTarget, opts:&Textu
 }
 
 pub fn assign_texture_mips (gl:&WebGlContext, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
-
-    //untested but should be right
-    //webgl2 allows mips for any texture, webgl1 is power of 2 only
-    cfg_if! {
-        if #[cfg(feature = "webgl1")] {
-            fn sanity_check() -> Result<(), Error> {
-                if !srcs.iter().all(|&src| is_power_of_2(&src)) {
-                    Err(Error::from(NativeError::MipsPowerOf2))
-                } else {
-                    Ok(())
-                }
-            }
-        } else {
-            fn sanity_check() -> Result<(), Error> {
-                Ok(())
-            }
-        }
-    }
-
-    sanity_check()?;
-
     let bind_target = bind_target as u32;
 
     gl.bind_texture(bind_target, Some(dest));
@@ -177,6 +196,9 @@ pub fn activate_texture_for_sampler(gl:&WebGlContext, bind_target: TextureTarget
 //internal use only
 fn _assign_texture (gl:&WebGlContext, bind_target: u32, mip_level: i32, opts:&TextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
 
+    let internal_format = opts.internal_format as i32;
+    let data_format = opts.data_format as u32;
+    let data_type = opts.data_type as u32;
 
     //TODO - call the stuff in
     // https://github.com/dakom/awsm-typescript/blob/master/src/lib/exports/webgl/WebGl-Textures.ts#L96
@@ -185,12 +207,12 @@ fn _assign_texture (gl:&WebGlContext, bind_target: u32, mip_level: i32, opts:&Te
             gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
                 bind_target,
                 mip_level,
-                opts.internalFormat,
+                internal_format,
                 *width,
                 *height,
                 0,
-                opts.dataFormat,
-                opts.dataType,
+                data_format,
+                data_type,
                 Some(buffer_view)
             )
         },
@@ -198,12 +220,12 @@ fn _assign_texture (gl:&WebGlContext, bind_target: u32, mip_level: i32, opts:&Te
             gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
                 bind_target,
                 mip_level,
-                opts.internalFormat,
+                internal_format,
                 *width,
                 *height,
                 0,
-                opts.dataFormat,
-                opts.dataType,
+                data_format,
+                data_type,
                 Some(*buffer)
             )
         },
@@ -211,9 +233,9 @@ fn _assign_texture (gl:&WebGlContext, bind_target: u32, mip_level: i32, opts:&Te
             gl.tex_image_2d_with_u32_and_u32_and_image_bitmap(
                 bind_target,
                 mip_level,
-                opts.internalFormat,
-                opts.dataFormat,
-                opts.dataType,
+                internal_format,
+                data_format,
+                data_type,
                 bmp
             )
         },
@@ -221,41 +243,20 @@ fn _assign_texture (gl:&WebGlContext, bind_target: u32, mip_level: i32, opts:&Te
             gl.tex_image_2d_with_u32_and_u32_and_image_data(
                 bind_target,
                 mip_level,
-                opts.internalFormat,
-                opts.dataFormat,
-                opts.dataType,
+                internal_format,
+                data_format,
+                data_type,
                 data
             )
         },
         WebGlTextureSource::ImageElement(img) => {
-             gl.tex_image_2d_with_u32_and_u32_and_html_image_element(
-                bind_target,
-                mip_level,
-                opts.internalFormat,
-                opts.dataFormat,
-                opts.dataType,
-                img
-            )
+            get_texture_from_image(gl, bind_target, mip_level, internal_format, data_format, data_type, img)
         },
         WebGlTextureSource::CanvasElement(canvas) => {
-            gl.tex_image_2d_with_u32_and_u32_and_html_canvas_element(
-                bind_target,
-                mip_level,
-                opts.internalFormat,
-                opts.dataFormat,
-                opts.dataType,
-                canvas
-            )
+            get_texture_from_canvas(gl, bind_target, mip_level, internal_format, data_format, data_type, canvas)
         },
         WebGlTextureSource::VideoElement(video) => {
-            gl.tex_image_2d_with_u32_and_u32_and_html_video_element(
-                bind_target,
-                mip_level,
-                opts.internalFormat,
-                opts.dataFormat,
-                opts.dataType,
-                video
-            )
+            get_texture_from_video(gl, bind_target, mip_level, internal_format, data_format, data_type, video)
         },
         _ => Ok(())
     }.map_err(|err| Error::from(err))

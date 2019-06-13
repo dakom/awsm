@@ -49,3 +49,7 @@ features = [
   'Location',
   'Url'
 ]
+
+[features]
+webgl_1 = []
+webgl_2 = []

@@ -16,7 +16,7 @@ use super::attributes;
 use super::uniforms;
 use super::textures;
 use super::extensions;
-use super::enums::{ClearBufferMask, TextureTarget, BufferTarget, BufferUsage};
+use super::enums::{DataType, BeginMode, ClearBufferMask, TextureTarget, BufferTarget, BufferUsage};
 
 pub type Id = ID<DefaultVersion>; 
 
@@ -155,21 +155,19 @@ impl <'a> WebGlRenderer <'a> {
         Ok(id)
     }
 
-    pub fn create_buffer_at_attribute_name(&mut self, values:&[f32], buffer_target: BufferTarget, buffer_usage: BufferUsage, attribute_name:&'a str, attribute_opts:&attributes::AttributeOptions) -> Result<Id, Error> {
-        let buffer_id = self.create_buffer()?;
+    pub fn upload_buffer_to_attribute_name(&mut self, buffer_id: Id, values:&[f32], buffer_target: BufferTarget, buffer_usage: BufferUsage, attribute_name:&'a str, attribute_opts:&attributes::AttributeOptions) -> Result<(), Error> {
         self.upload_buffer(buffer_id, &values, buffer_target, buffer_usage)?;
         self.activate_attribute_name(&attribute_name, &attribute_opts)?;
 
-        Ok(buffer_id)
+        Ok(())
 
     }
 
-    pub fn create_buffer_at_attribute_loc(&mut self, values:&[f32], buffer_target: BufferTarget, buffer_usage: BufferUsage, attribute_loc:u32, attribute_opts:&attributes::AttributeOptions) -> Result<Id, Error> {
-        let buffer_id = self.create_buffer()?;
+    pub fn upload_buffer_to_attribute_loc(&mut self, buffer_id: Id, values:&[f32], buffer_target: BufferTarget, buffer_usage: BufferUsage, attribute_loc:u32, attribute_opts:&attributes::AttributeOptions) -> Result<(), Error> {
         self.upload_buffer(buffer_id, &values, buffer_target, buffer_usage)?;
         self.activate_attribute_loc(attribute_loc, &attribute_opts);
 
-        Ok(buffer_id)
+        Ok(())
     }
 
     pub fn activate_buffer(&self, buffer_id:Id, target: BufferTarget) -> Result<(), Error> {
@@ -197,6 +195,7 @@ impl <'a> WebGlRenderer <'a> {
 
         buffers::upload_buffer(&self.gl, &values, target, usage, &buffer)
     }
+
 
     //ATTRIBUTES
     pub fn get_attribute_location(&mut self, name:&'a str) -> Result<u32, Error> 
@@ -230,17 +229,6 @@ impl <'a> WebGlRenderer <'a> {
         Ok(())
     }
 
-    pub fn set_attribute_name_to_buffer(&mut self, buffer_id:Id, buffer_target: BufferTarget, attribute_name:&'a str, attribute_opts:&attributes::AttributeOptions) -> Result<(), Error> {
-        self.activate_buffer(buffer_id, buffer_target)?;
-        self.activate_attribute_name(&attribute_name, &attribute_opts)
-    }
-
-    pub fn set_attribute_loc_to_buffer(&mut self, buffer_id:Id, buffer_target: BufferTarget, attribute_loc:u32, attribute_opts:&attributes::AttributeOptions) -> Result<(), Error> {
-        self.activate_buffer(buffer_id, buffer_target)?;
-        self.activate_attribute_loc(attribute_loc, &attribute_opts);
-
-        Ok(())
-    }
 
     //UNIFORMS
     pub fn get_uniform_loc(&mut self, name:&'a str) -> Result<WebGlUniformLocation, Error> {
@@ -393,22 +381,48 @@ impl <'a> WebGlRenderer <'a> {
         )
     }
 
-    fn get_extension(&self, name:&'a str) -> Result<&js_sys::Object, Error> {
-        self.extension_lookup.get(&name).ok_or(
-            Error::from(NativeError::NoExtension)
-        )
-    }
 
-    //Not actually used atm because we're defaulting to WebGL2
-    //But kept here for a working example of how extensions could be implemented
-    pub fn create_extension_instanced_arrays(&mut self) -> Result<&extensions::AngleInstancedArrays, Error> {
+    //INSTANCING - WebGL 1 requires extension, WebGL 2 is native
+
+    #[cfg(feature = "webgl_1")]
+    pub fn get_extension_instanced_arrays(&mut self) -> Result<&extensions::AngleInstancedArrays, Error> {
         self.create_extension("ANGLE_instanced_arrays")
             .map(|ext| ext.unchecked_ref::<extensions::AngleInstancedArrays>())
     }
 
-    pub fn get_extension_instanced_arrays(&self) -> Result<&extensions::AngleInstancedArrays, Error> {
-        self.get_extension("ANGLE_instanced_arrays")
-            .map(|ext| ext.unchecked_ref::<extensions::AngleInstancedArrays>())
+    #[cfg(feature = "webgl_1")]
+    pub fn vertex_attrib_divisor(&mut self, loc: u32, divisor: u32) -> Result<(), Error> {
+        let ext = self.get_extension_instanced_arrays()?;
+        ext.vertex_attrib_divisor_angle(loc, 1);
+        Ok(())
+    }
+
+    #[cfg(feature = "webgl_1")]
+    pub fn draw_arrays_instanced(&mut self, mode: BeginMode, first: u32, count: u32, primcount: u32) -> Result<(), Error> {
+        let ext = self.get_extension_instanced_arrays()?;
+        ext.draw_arrays_instanced_angle(mode as u32, first as i32, count as i32, primcount as i32).map_err(|err| err.into())
+    }
+    #[cfg(feature = "webgl_1")]
+    pub fn draw_elements_instanced(&mut self, mode: BeginMode, count: u32, data_type: DataType, offset: u32, primcount: u32) -> Result<(), Error> {
+        let ext = self.get_extension_instanced_arrays()?;
+        ext.draw_elements_instanced_angle(mode as u32, count as i32, data_type as u32, offset as i32, primcount as i32).map_err(|err| err.into())
+    }
+    
+    #[cfg(not(feature = "webgl_1"))]
+    pub fn vertex_attrib_divisor(&self, loc: u32, divisor: u32) -> Result<(), Error> {
+        self.gl.vertex_attrib_divisor(loc, divisor);
+        Ok(())
+    }
+
+    #[cfg(not(feature = "webgl_1"))]
+    pub fn draw_arrays_instanced(&self, mode: BeginMode, first: u32, count: u32, primcount: u32) -> Result<(), Error> {
+        self.gl.draw_arrays_instanced( mode as u32, first as i32, count as i32, primcount as i32);
+        Ok(())
+    }
+    #[cfg(not(feature = "webgl_1"))]
+    pub fn draw_elements_instanced(&mut self, mode: BeginMode, count: u32, data_type: DataType, offset: u32, primcount: u32) -> Result<(), Error> {
+        self.gl.draw_elements_instanced_with_i32( mode as u32, count as i32, data_type as u32, offset as i32, primcount as i32);
+        Ok(())
     }
 
     //DRAWING
