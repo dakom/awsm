@@ -84,10 +84,12 @@ Cargo.lock
 
 # node
 npm-debug.log
-dist
 node_modules
 bower_components
 
+# build and deploy
+dist
+deploy
 
 # Swap
 [._]*.s[a-v][a-z]
