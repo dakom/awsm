@@ -26,6 +26,15 @@ lazy_static! {
     };
 }
 
+#[cfg(feature = "webgl_1")]
+fn get_webgl_title() -> &'static str {
+    "WebGl (version 1)"
+}
+#[cfg(feature = "webgl_2")]
+fn get_webgl_title() -> &'static str {
+    "WebGl (version 2)"
+}
+
 pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
     let container: Node = document.create_element("div")?.into();
 
@@ -37,7 +46,7 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
         "loaders-image",
     ])?;
 
-    append_menu(&container, &document, "WebGl", vec![
+    append_menu(&container, &document, get_webgl_title(), vec![
         "webgl-simple",
         "webgl-texture",
         "webgl-elements",

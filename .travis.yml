@@ -8,7 +8,9 @@ install:
 
 script:
   - cd lib
-  - cargo test
+  - cargo test --features webgl_1
+  - cargo test --features webgl_2
   - cd ../examples/crate
-  - cargo test
+  - cargo test --features webgl_1
+  - cargo test --features webgl_2
   - cd ..

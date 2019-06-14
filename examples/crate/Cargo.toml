@@ -57,5 +57,5 @@ features = [
 [features]
 webgl_1 = ["awsm/webgl_1"]
 webgl_2 = ["awsm/webgl_2"]
-default = ["wee_alloc", "webgl_2"]
+default = ["wee_alloc"]
 dev = ["wee_alloc", "webgl_2", "console_log", "console_error_panic_hook"]

@@ -35,6 +35,7 @@ features = [
     'WebGlBuffer',
     'ImageBitmap',
     'ImageData',
+    'HtmlElement',
     'HtmlImageElement',
     'HtmlCanvasElement',
     'HtmlVideoElement',
