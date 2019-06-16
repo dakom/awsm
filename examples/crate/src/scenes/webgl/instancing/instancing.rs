@@ -29,10 +29,10 @@ impl State {
         Self {
             positions: vec![
                 (   Point2::new(500.0, 500.0), 
-                    Point2::new(1.0, 1.0)
+                    Point2::new(0.1, 0.1)
                 ),
                 (   Point2::new(800.0, 800.0), 
-                    Point2::new(-1.0, -1.0)
+                    Point2::new(-0.1, -0.1)
                 ),
             ],
             area: Area::new(300.0, 100.0),
@@ -118,11 +118,11 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                 let _cancel = start_raf_ticker_timestamp({
                     let state = Rc::clone(&state);
                     let webgl_renderer_raf = Rc::clone(&webgl_renderer_clone);
-                    move |_timestamp:Timestamp| {
+                    move |timestamp:Timestamp| {
                         let mut state = state.borrow_mut();
                         for (pos, vel) in state.positions.iter_mut() {
-                            pos.x += vel.x;
-                            pos.y += vel.y;
+                            pos.x += (vel.x * timestamp.delta);
+                            pos.y += (vel.y * timestamp.delta);
                         }
                         let mut webgl_renderer = webgl_renderer_raf.borrow_mut();
                         render(&state, &mut webgl_renderer).unwrap();
