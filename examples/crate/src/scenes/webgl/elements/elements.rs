@@ -1,15 +1,38 @@
-use awsm::webgl::{Id, GlToggle, BufferTarget, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, UniformMatrixData, UniformData, BeginMode};
-use awsm::helpers::*;
-use awsm::camera;
+use awsm::webgl::{Id, GlToggle, BufferTarget, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, Uniform, BeginMode};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_unit_box_buffers, N_BOX_ELEMENTS}; 
+use crate::scenes::webgl::common::datatypes::*;
+use nalgebra::{Matrix4, Vector3, Vector4, Point3, Perspective3, Isometry3};
 
-//TODO - match https://github.com/dakom/pure3d-typescript/blob/master/examples/src/app/scenes/basic/box/box-vao-renderer/Box-Vao-Renderer.ts
-//
+type BufferIds = (Id, Id, Id);
+struct State {
+    //mutable for each tick
+    pub pos: Point3<f64>,
+    pub volume: Volume,
+    pub camera_width: f64,
+    pub camera_height: f64,
+    pub program_id: Option<Id>,
+    pub buffer_ids: Option<BufferIds>
+}
+
+impl State {
+    pub fn new() -> Self {
+        Self {
+            pos: Point3::new(0.0, 0.0, 0.0),
+            volume: Volume::new(400.0, 100.0, 50.0),
+            camera_width: 0.0,
+            camera_height: 0.0,
+            program_id: None,
+            buffer_ids: None
+        }
+
+    }
+}
+
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
 
     let state = Rc::new(RefCell::new(State::new()));
@@ -29,92 +52,64 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let mut webgl_renderer = webgl_renderer.borrow_mut();
 
-    let _program_id = webgl_renderer.compile_program(
+    let program_id = webgl_renderer.compile_program(
         include_str!("shaders/elements-vertex.glsl"),
         include_str!("shaders/elements-fragment.glsl")
     )?;
 
+    state.borrow_mut().program_id = Some(program_id);
     let buffer_ids = create_unit_box_buffers(&mut webgl_renderer)?;
+
+    state.borrow_mut().buffer_ids = Some(buffer_ids);
 
     let _ = start_raf_ticker_timestamp({
         let state = Rc::clone(&state);
-        move |timestamp:Timestamp| {
+        move |_timestamp:Timestamp| {
             let mut state = state.borrow_mut();
-            state.update(timestamp.time);
-            render(&state, buffer_ids, &mut webgl_renderer_clone.borrow_mut()).unwrap();
+            render(&state, &mut webgl_renderer_clone.borrow_mut()).unwrap();
         }
     })?;
 
     Ok(())
 }
 
-struct State {
-    //mutable for each tick
-    pub pos: Point,
-    pub volume: Volume,
-    pub camera_width: f64,
-    pub camera_height: f64,
-}
 
-impl State {
-    pub fn new() -> Self {
-        Self {
-            pos: Point{x: 0.0, y: 0.0, z: 0.0},
-            volume: Volume{width: 400.0, height: 100.0, depth: 50.0},
-            camera_width: 0.0,
-            camera_height: 0.0,
-        }
 
-    }
+fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
+    let State {pos, volume, camera_width, camera_height, program_id, buffer_ids} = state;
 
-    pub fn update(self:&mut Self, _time_stamp:f64) {
-
-    }
-}
-
-type BufferIds = (Id, Id, Id);
-
-fn render(state:&State, buffer_ids: BufferIds, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let mut scratch_matrix:[f32;16] = [0.0;16]; 
-    let mut projection_matrix:[f32;16] = [0.0;16]; 
-    let mut eye_matrix:[f32;16] = [0.0;16]; 
-    let mut scale_matrix:[f32;16] = [0.0;16];
-    let mut mvp_matrix:[f32;16] = [0.0;16];
-    let mut camera_matrix:[f32;16] = [0.0;16];
-    let mut color_vec:[f32;4] = [0.0;4];
-    let State {pos, volume, ..} = state;
-    let (geom_id, colors_id, elements_id) = buffer_ids;
-
+    webgl_renderer.activate_program(program_id.unwrap());
 
     webgl_renderer.toggle(GlToggle::DepthTest, true);
 
-    //scale
-    write_scale_matrix(volume.width, volume.height, volume.depth, &mut scale_matrix);
-    webgl_renderer.set_uniform_matrix_name("u_size", UniformMatrixData::Float4(&scale_matrix))?;
+    //Build our matrices (must cast to f32)
+    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(volume.width as f32, volume.height as f32, volume.depth as f32));
 
-    //camera
-    let projection = camera::write_persp(
-        std::f64::consts::PI / 2.0, 
-        state.camera_width / state.camera_height, 
+
+    // Our camera looks toward the point (1.0, 0.0, 0.0).
+    // It is located at (0.0, 0.0, 1.0).
+    let eye    = Point3::new(1000.0, 500.0, 1000.0);
+    let target = Point3::new(0.0, 0.0, 0.0);
+    let view   = Isometry3::look_at_rh(&eye, &target, &Vector3::y());
+
+    // A perspective projection.
+    let projection = Perspective3::new(
+        state.camera_width as f32 / state.camera_height as f32, 
+        std::f32::consts::PI / 2.0, 
         1.0, 
         3000.0, 
-        &mut projection_matrix
     );
 
-    let eye = camera::look_at(
-        &vec![1000.0, 500.0, 1000.0],
-        &vec![0.0, 0.0, 0.0],
-        &vec![0.0, 1.0, 0.0],
-        &mut eye_matrix
-    );
+    let model_mat = Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, pos.z as f32));
+    let mvp_mat = projection.to_homogeneous() * (view.to_homogeneous() * model_mat);
 
-    write_multiply_matrix(&projection_matrix, &eye_matrix, &mut camera_matrix); 
-    //write_multiply_matrix(&eye_matrix, &projection_matrix, &mut camera_matrix); 
-    //model-view-projection
-    write_position_matrix(pos.x, pos.y, pos.z, &mut scratch_matrix);
-    write_multiply_matrix(&camera_matrix, &scratch_matrix, &mut mvp_matrix); 
-    webgl_renderer.set_uniform_matrix_name("u_modelViewProjection", UniformMatrixData::Float4(&mvp_matrix))?;
+    //Upload them to the GPU
+    webgl_renderer.upload_uniform_name("u_size", &Uniform::Matrix4(&scaling_mat.as_slice()))?;
+    webgl_renderer.upload_uniform_name("u_modelViewProjection", &Uniform::Matrix4(&mvp_mat.as_slice()))?;
 
+
+    //activate buffers
+    let (geom_id, colors_id, elements_id) = buffer_ids.unwrap();
     webgl_renderer.activate_buffer(elements_id, BufferTarget::ElementArrayBuffer)?;
 
     webgl_renderer.activate_buffer_for_attribute_name(
@@ -135,5 +130,6 @@ fn render(state:&State, buffer_ids: BufferIds, webgl_renderer:&mut WebGlRenderer
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
     webgl_renderer.draw_elements(BeginMode::Triangles, N_BOX_ELEMENTS, DataType::UnsignedByte, 0);
+
     Ok(())
 }

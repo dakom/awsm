@@ -21,7 +21,14 @@ ul {
 	list-style: none;	
 }
 
+.github-banner {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
 .app {
+    margin-top: 100px;
     text-align: center;
 }
 .center-links {

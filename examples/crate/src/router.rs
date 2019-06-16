@@ -74,23 +74,49 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
 }
 
 
-// enable logging only during debug builds 
+//Production deploys separate webgl1 vs webgl2 builds into their own directory
+//Dev is one at a time in the root
 cfg_if! {
     if #[cfg(debug_assertions)] {
         pub fn get_home_href() -> &'static str {
             "/"
         }
+    } else if #[cfg(feature = "webgl_1")] {
+        pub fn get_home_href() -> &'static str {
+            "/webgl1/"
+        }
+    } else if #[cfg(feature = "webgl_2")] {
+        pub fn get_home_href() -> &'static str {
+            "/webgl2/"
+        }
     } else {
         pub fn get_home_href() -> &'static str {
             "/"
-            //GITHHUB - no longer
-            //"/awsm/"
         }
     }
 }
 
+//Just basic stripping of urls to account for the difference in dev vs production
+//giving it unicode might go wonky
+fn get_root(input:&str) -> &str {
+    let strip_matched = |prefix:&str| -> Option<&str> {
+        input
+            .find(prefix)
+            .map(|len| input.split_at(len + prefix.len()-1).1)
+    };
+
+    let stripped = 
+        strip_matched("webgl1/")
+        .or(strip_matched("webgl2/"))
+        .or(Some(input))
+        .unwrap();
+
+    stripped.trim_matches('/')
+
+}
+
 pub fn get_static_href(path:&str) -> String {
-    format!("{}static/{}", get_home_href(), path)
+    format!("/static/{}", path)
 }
 
 fn create_home_link(document:&Document) -> Result<HtmlElement, JsValue> {
@@ -98,7 +124,7 @@ fn create_home_link(document:&Document) -> Result<HtmlElement, JsValue> {
 
     let contents: Element = document.create_element("div")?.into();
     contents.set_class_name("home button");
-    contents.set_text_content(Some("Home"));
+    contents.set_text_content(Some("Menu")); //It's not the ultimate home on deploys which has webgl1/2 menu on the root
     anchor.append_child(&contents)?;
     
     let anchor = anchor.unchecked_into::<HtmlHyperlinkElementUtils>();
@@ -124,30 +150,19 @@ fn create_source_link(href:&str, document:&Document) -> Result<HtmlElement, JsVa
     Ok(anchor)
 }
 
-fn get_root(input:&str) -> &str {
-    //account for github / relative path
-    let stripped = match input.find("awsm/") {
-        Some(len) => {
-            input.split_at(len + 4).1
-        },
-
-        None => {
-            match input.find("/") {
-                Some(len) => input.split_at(len + 1).1,
-                None => input
-            }
-        }
-    };
-
-    stripped.trim_matches('/')
-
-}
-
 #[test]
 fn routes() {
+    //get_root
     assert_eq!(get_root("/foo"), "foo");
+    assert_eq!(get_root("/foo/bar/"), "foo/bar");
     assert_eq!(get_root("/"), "");
-    assert_eq!(get_root("/awsm/foo"), "foo");
-    assert_eq!(get_root("/awsm/"), "");
-    assert_eq!(get_root("/awsm/"), "");
+    assert_eq!(get_root("/webgl1/foo"), "foo");
+    assert_eq!(get_root("/webgl1/foo/bar/"), "foo/bar");
+    assert_eq!(get_root("/webgl1/"), "");
+    assert_eq!(get_root("/webgl2/foo"), "foo");
+    assert_eq!(get_root("/webgl2/foo/bar/"), "foo/bar");
+    assert_eq!(get_root("/webgl2/"), "");
+    assert_eq!(get_root("/static/file.jpg"), "static/file.jpg");
+    //get_static
+    assert_eq!(get_static_href("images/smiley.svg"), "/static/images/smiley.svg");
 }

@@ -40,14 +40,11 @@ pub static N_BOX_ELEMENTS:u32 = 36;
 pub fn create_and_assign_unit_quad_buffer(webgl_renderer:&mut WebGlRenderer) -> Result<Id, Error> {
     let buffer_id = webgl_renderer.create_buffer()?;
 
-    webgl_renderer.upload_buffer_f32(
+    webgl_renderer.upload_buffer_f32_to_attribute_name(
         buffer_id,
         &QUAD_GEOM_UNIT,
         BufferTarget::ArrayBuffer,
-        BufferUsage::StaticDraw
-    )?;
-
-    webgl_renderer.activate_attribute_name(
+        BufferUsage::StaticDraw,
         "a_vertex",
         &AttributeOptions::new(2, DataType::Float)
     )?;

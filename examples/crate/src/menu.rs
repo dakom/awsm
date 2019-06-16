@@ -38,6 +38,8 @@ fn get_webgl_title() -> &'static str {
 pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
     let container: Node = document.create_element("div")?.into();
 
+    append_home_button(&container, &document)?;
+
     append_menu(&container, &document, "Ticker", vec![
       "clock" 
     ])?;
@@ -57,6 +59,23 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
     Ok(container)
 }
 
+fn append_home_button (container:&Node, document:&Document) -> Result<(), JsValue> {
+
+    let item:HtmlElement = document.create_element("div")?.dyn_into()?;
+    item.set_class_name("button");
+    item.set_text_content(Some("Home"));
+
+    let link = wrap_link("/", item, &document)?;
+
+    let item:HtmlElement = document.create_element("div")?.dyn_into()?;
+    item.set_class_name("home-button");
+
+    item.append_child(&link)?;
+    container.append_child(&item)?;
+    
+    Ok(())
+
+}
 fn append_menu (container:&Node, document:&Document, label:&str, menu_routes:Vec<&str>) -> Result<(), JsValue> {
 
     let menu_element: Element = document.create_element("div")?.into();

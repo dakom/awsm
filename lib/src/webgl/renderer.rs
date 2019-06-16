@@ -188,6 +188,27 @@ impl <'a> WebGlRenderer <'a> {
         buffers::upload_buffer_u8(&self.gl, &values, target, usage, &buffer)
     }
 
+    //Just some helpers to make it simpler
+    pub fn upload_buffer_f32_to_attribute_loc(&mut self, id:Id, values:&[f32], target: BufferTarget, usage:BufferUsage, loc:u32, opts:&attributes::AttributeOptions) -> Result<(), Error> {
+        self.upload_buffer_f32(id, &values, target, usage)?;
+        self.activate_attribute_loc(loc, &opts);
+        Ok(())
+    }
+
+    pub fn upload_buffer_f32_to_attribute_name(&mut self, id:Id, values:&[f32], target: BufferTarget, usage:BufferUsage, name:&'a str, opts:&attributes::AttributeOptions) -> Result<(), Error> {
+        self.upload_buffer_f32(id, &values, target, usage)?;
+        self.activate_attribute_name(&name, &opts)
+    }
+
+    pub fn upload_buffer_u8_to_attribute_loc(&mut self, id:Id, values:&[u8], target: BufferTarget, usage:BufferUsage, loc:u32, opts:&attributes::AttributeOptions) -> Result<(), Error> {
+        self.upload_buffer_u8(id, &values, target, usage)?;
+        self.activate_attribute_loc(loc, &opts);
+        Ok(())
+    }
+    pub fn upload_buffer_u8_to_attribute_name(&mut self, id:Id, values:&[u8], target: BufferTarget, usage:BufferUsage, name:&'a str, opts:&attributes::AttributeOptions) -> Result<(), Error> {
+        self.upload_buffer_u8(id, &values, target, usage)?;
+        self.activate_attribute_name(&name, &opts)
+    }
     //ATTRIBUTES
     pub fn get_attribute_location(&mut self, name:&'a str) -> Result<u32, Error> 
 
@@ -250,26 +271,20 @@ impl <'a> WebGlRenderer <'a> {
         }
     }
 
-    pub fn set_uniform_name(&mut self, name:&'a str, data: uniforms::UniformData) -> Result<(), Error> {
+    pub fn upload_uniform_name<U>(&mut self, name:&'a str, data:&U) -> Result<(), Error> 
+    where U: uniforms::UniformData
+    {
         let loc = self.get_uniform_loc(&name)?;
-        self.set_uniform_loc(&loc, data);
+        //TODO Maybe compare to local cache and avoid setting if data hasn't changed?
+        data.upload(&self.gl, &loc);
         Ok(())
     }
 
-    pub fn set_uniform_loc(&self, loc:&WebGlUniformLocation, data: uniforms::UniformData) {
+    pub fn upload_uniform_loc<U>(&mut self, loc:&WebGlUniformLocation, data:&U) -> Result<(), Error> 
+    where U: uniforms::UniformData {
         //TODO Maybe compare to local cache and avoid setting if data hasn't changed?
-        uniforms::set_uniform_data(&self.gl, &loc, data);
-    }
-
-    pub fn set_uniform_matrix_name(&mut self, name:&'a str, data: uniforms::UniformMatrixData) -> Result<(), Error> {
-        let loc = self.get_uniform_loc(&name)?;
-        self.set_uniform_matrix_loc(&loc, data);
+        data.upload(&self.gl, &loc);
         Ok(())
-    }
-
-    pub fn set_uniform_matrix_loc(&self, loc:&WebGlUniformLocation, data: uniforms::UniformMatrixData) {
-        //TODO Maybe compare to local cache and avoid setting if data hasn't changed?
-        uniforms::set_uniform_matrix_data(&self.gl, &loc, data);
     }
 
     //TEXTURES
@@ -283,64 +298,64 @@ impl <'a> WebGlRenderer <'a> {
 
     //public interfaces here are simple wrappers to pass the texture target along
 
-    pub fn assign_simple_texture_2d(&self, texture_id:Id, opts:&textures::SimpleTextureOptions, src:&textures::WebGlTextureSource) -> Result<(), Error> {
-        self.assign_simple_texture(texture_id, TextureTarget::Texture2D, &opts, &src)
+    pub fn assign_simple_texture(&self, texture_id:Id, opts:&textures::SimpleTextureOptions, src:&textures::WebGlTextureSource) -> Result<(), Error> {
+        self.assign_simple_texture_target(texture_id, TextureTarget::Texture2D, &opts, &src)
     }
-    pub fn assign_simple_texture_mips_2d(&self, texture_id:Id, opts:&textures::SimpleTextureOptions, srcs:&[&textures::WebGlTextureSource]) -> Result<(), Error> {
-        self.assign_simple_texture_mips(texture_id, TextureTarget::Texture2D, &opts, &srcs)
+    pub fn assign_simple_texture_mips(&self, texture_id:Id, opts:&textures::SimpleTextureOptions, srcs:&[&textures::WebGlTextureSource]) -> Result<(), Error> {
+        self.assign_simple_texture_mips_target(texture_id, TextureTarget::Texture2D, &opts, &srcs)
     }
-    pub fn assign_texture_2d(&self, texture_id: Id, opts:&textures::TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&textures::WebGlTextureSource) -> Result<(), Error> {
-        self.assign_texture(texture_id, TextureTarget::Texture2D, &opts, set_parameters, &src)
+    pub fn assign_texture(&self, texture_id: Id, opts:&textures::TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&textures::WebGlTextureSource) -> Result<(), Error> {
+        self.assign_texture_target(texture_id, TextureTarget::Texture2D, &opts, set_parameters, &src)
     }
-    pub fn assign_texture_mips_2d(&self, texture_id: Id, opts:&textures::TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&textures::WebGlTextureSource]) -> Result<(), Error> {
-        self.assign_texture_mips(texture_id, TextureTarget::Texture2D, &opts, set_parameters, &srcs)
+    pub fn assign_texture_mips(&self, texture_id: Id, opts:&textures::TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&textures::WebGlTextureSource]) -> Result<(), Error> {
+        self.assign_texture_mips_target(texture_id, TextureTarget::Texture2D, &opts, set_parameters, &srcs)
     }
-    pub fn activate_texture_for_sampler_2d(&mut self, texture_id: Id, sampler_index: u32) -> Result<(), Error> {
-        self.activate_texture_for_sampler(TextureTarget::Texture2D, texture_id, sampler_index)
+    pub fn activate_texture_for_sampler(&mut self, texture_id: Id, sampler_index: u32) -> Result<(), Error> {
+        self.activate_texture_for_sampler_target(TextureTarget::Texture2D, texture_id, sampler_index)
     }
 
     //Texture assigning will bind the texture - so the slot for activations effectively becomes None 
-    fn assign_simple_texture(&self, texture_id:Id, bind_target: TextureTarget, opts:&textures::SimpleTextureOptions, src:&textures::WebGlTextureSource) -> Result<(), Error> {
+    fn assign_simple_texture_target(&self, texture_id:Id, bind_target: TextureTarget, opts:&textures::SimpleTextureOptions, src:&textures::WebGlTextureSource) -> Result<(), Error> {
         let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
 
         self.current_texture_id.set(Some(texture_id));
         self.current_texture_slot.set(None);
 
-        textures::assign_simple_texture(&self.gl, bind_target, &opts, &src, &texture)
+        textures::assign_simple_texture_target(&self.gl, bind_target, &opts, &src, &texture)
 
     }
 
-    fn assign_simple_texture_mips(&self, texture_id:Id, bind_target: TextureTarget, opts:&textures::SimpleTextureOptions, srcs:&[&textures::WebGlTextureSource]) -> Result<(), Error> {
-
-        let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
-
-        self.current_texture_id.set(Some(texture_id));
-        self.current_texture_slot.set(None);
-
-        textures::assign_simple_texture_mips(&self.gl, bind_target, &opts, &srcs, &texture)
-    }
-
-
-    fn assign_texture(&self, texture_id: Id, bind_target: TextureTarget, opts:&textures::TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&textures::WebGlTextureSource) -> Result<(), Error> {
+    fn assign_simple_texture_mips_target(&self, texture_id:Id, bind_target: TextureTarget, opts:&textures::SimpleTextureOptions, srcs:&[&textures::WebGlTextureSource]) -> Result<(), Error> {
 
         let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
 
         self.current_texture_id.set(Some(texture_id));
         self.current_texture_slot.set(None);
 
-        textures::assign_texture(&self.gl, bind_target, &opts, set_parameters, &src, &texture)
+        textures::assign_simple_texture_mips_target(&self.gl, bind_target, &opts, &srcs, &texture)
     }
 
-    fn assign_texture_mips(&self, texture_id: Id, bind_target: TextureTarget, opts:&textures::TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&textures::WebGlTextureSource]) -> Result<(), Error> {
+
+    fn assign_texture_target(&self, texture_id: Id, bind_target: TextureTarget, opts:&textures::TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&textures::WebGlTextureSource) -> Result<(), Error> {
+
+        let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
+
+        self.current_texture_id.set(Some(texture_id));
+        self.current_texture_slot.set(None);
+
+        textures::assign_texture_target(&self.gl, bind_target, &opts, set_parameters, &src, &texture)
+    }
+
+    fn assign_texture_mips_target(&self, texture_id: Id, bind_target: TextureTarget, opts:&textures::TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&textures::WebGlTextureSource]) -> Result<(), Error> {
 
         let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
         self.current_texture_id.set(Some(texture_id));
         self.current_texture_slot.set(None);
 
-        textures::assign_texture_mips(&self.gl, bind_target, &opts, set_parameters, &srcs, &texture)
+        textures::assign_texture_mips_target(&self.gl, bind_target, &opts, set_parameters, &srcs, &texture)
     }
 
-    fn activate_texture_for_sampler(&mut self, bind_target:TextureTarget, texture_id: Id, sampler_index: u32) -> Result<(), Error> {
+    fn activate_texture_for_sampler_target(&mut self, bind_target:TextureTarget, texture_id: Id, sampler_index: u32) -> Result<(), Error> {
 
 
         let entry = self.texture_sampler_lookup.entry(sampler_index);
@@ -367,7 +382,7 @@ impl <'a> WebGlRenderer <'a> {
 
         if requires_activation {
             let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
-            textures::activate_texture_for_sampler(&self.gl, bind_target, sampler_index, &texture);
+            textures::activate_texture_for_sampler_target(&self.gl, bind_target, sampler_index, &texture);
         }
 
         Ok(())

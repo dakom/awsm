@@ -1,8 +1,6 @@
-use awsm::webgl::{ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, WebGlRenderer, AttributeOptions, DataType, UniformMatrixData, BeginMode};
-use awsm::helpers::*;
+use awsm::webgl::{ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, WebGlRenderer, AttributeOptions, DataType, Uniform, BeginMode};
 use awsm::loaders::{image};
 use crate::router::{get_static_href};
-use awsm::camera::{write_ortho};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
@@ -10,7 +8,43 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::futures_0_3::{future_to_promise};
 use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
+use crate::scenes::webgl::common::datatypes::*;
+use nalgebra::{Matrix4, Vector3, Vector4, Point2};
 use log::{info};
+
+struct State {
+    //mutable for each tick
+    pub positions: Vec<(Point2<f64>, Point2<f64>)>,
+    pub area: Area,
+    pub camera_width: f64,
+    pub camera_height: f64,
+    pub program_id: Option<Id>,
+    pub texture_id: Option<Id>,
+    pub instance_id: Option<Id>,
+}
+
+
+impl State {
+    pub fn new() -> Self {
+        Self {
+            positions: vec![
+                (   Point2::new(500.0, 500.0), 
+                    Point2::new(1.0, 1.0)
+                ),
+                (   Point2::new(800.0, 800.0), 
+                    Point2::new(-1.0, -1.0)
+                ),
+            ],
+            area: Area::new(300.0, 100.0),
+            camera_width: 0.0,
+            camera_height: 0.0,
+            program_id: None,
+            texture_id: None,
+            instance_id: None
+        }
+
+    }
+}
 
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
 
@@ -32,16 +66,21 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     let mut webgl_renderer = webgl_renderer.borrow_mut();
 
 
-    let _program_id = webgl_renderer.compile_program(
+    let program_id = webgl_renderer.compile_program(
         include_str!("shaders/instancing-vertex.glsl"),
         include_str!("shaders/instancing-fragment.glsl")
     )?;
 
+    state.borrow_mut().program_id = Some(program_id);
     let _buffer_id = create_and_assign_unit_quad_buffer(&mut webgl_renderer)?;
 
     let texture_id = webgl_renderer.create_texture()?;
 
-    let instance_pos_buffer_id = webgl_renderer.create_buffer()?; 
+    state.borrow_mut().texture_id = Some(texture_id);
+
+    let instance_id = webgl_renderer.create_buffer()?; 
+
+    state.borrow_mut().instance_id = Some(instance_id);
 
     let future = async move {
         let webgl_renderer = webgl_renderer_clone.borrow_mut();
@@ -57,18 +96,17 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                     height: img.natural_height().into() 
                 };
 
-                let center = Point{
-                    x: ((state_obj.camera_width as f64) - state_obj.area.width) / 2.0,
-                    y: ((state_obj.camera_height as f64) - state_obj.area.height) / 2.0,
-                    z: 0.0
-                };
+                let center = Point2::new(
+                    ((state_obj.camera_width as f64) - state_obj.area.width) / 2.0,
+                    ((state_obj.camera_height as f64) - state_obj.area.height) / 2.0,
+                );
 
                 for (pos, _) in state_obj.positions.iter_mut() {
                     pos.x = center.x; 
                     pos.y = center.y; 
                 };
 
-                webgl_renderer.assign_simple_texture_2d(
+                webgl_renderer.assign_simple_texture(
                     texture_id, 
                     &SimpleTextureOptions{
                         pixel_format: PixelFormat::Rgba,
@@ -87,7 +125,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                             pos.y += vel.y;
                         }
                         let mut webgl_renderer = webgl_renderer_raf.borrow_mut();
-                        render(&state, instance_pos_buffer_id, &mut webgl_renderer).unwrap();
+                        render(&state, &mut webgl_renderer).unwrap();
                     }
                 })?;
                 Ok(JsValue::null())
@@ -108,49 +146,25 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 }
 
 
-struct State {
-    //mutable for each tick
-    pub positions: Vec<(Point, Point)>,
-    pub area: Area,
-    pub camera_width: f64,
-    pub camera_height: f64,
-}
 
+fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
+    let State {positions, area, camera_width, camera_height, program_id, texture_id, instance_id} = state;
 
-impl State {
-    pub fn new() -> Self {
-        Self {
-            positions: vec![
-                (Point{x: 500.0, y: 500.0, z: 0.0}, Point{x: 1.0, y: 1.0, z: 0.0}),
-                (Point{x: 800.0, y: 800.0, z: 0.0}, Point{x: -1.0, y: -1.0, z: 0.0}),
-            ],
-            area: Area{width: 300.0, height: 100.0},
-            camera_width: 0.0,
-            camera_height: 0.0,
-        }
+    webgl_renderer.activate_program(program_id.unwrap());
 
-    }
+    //enable texture
+    webgl_renderer.activate_texture_for_sampler(texture_id.unwrap(), 0)?;
 
-}
-
-fn render(state:&State, instance_pos_buffer_id: Id, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let mut scale_matrix:[f32;16] = [0.0;16];
-    let mut camera_matrix:[f32;16] = [0.0;16];
-    let State {positions, area, ..} = state;
-
-
-    //scale
-    write_scale_matrix(area.width, area.height, 1.0, &mut scale_matrix);
-    webgl_renderer.set_uniform_matrix_name("u_size", UniformMatrixData::Float4(&scale_matrix))?;
-
-    //camera
-    write_ortho(0.0, state.camera_width, 0.0, state.camera_height, 0.0, 1.0, &mut camera_matrix);
-    webgl_renderer.set_uniform_matrix_name("u_camera", UniformMatrixData::Float4(&camera_matrix))?;
+    //Build our matrices (must cast to f32)
+    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(area.width as f32, area.height as f32, 0.0));
+    let camera_mat = Matrix4::new_orthographic(0.0, *camera_width as f32, 0.0, *camera_height as f32, 0.0, 1.0);
+    
+    //Upload them to the GPU
+    webgl_renderer.upload_uniform_name("u_size", &Uniform::Matrix4(&scaling_mat.as_slice()))?;
+    webgl_renderer.upload_uniform_name("u_camera", &Uniform::Matrix4(&camera_mat.as_slice()))?;
 
 
     //upload our buffer for instancing
-    //it's a big data move but we're doing it all at once.
-    //without instancing we'd be doing separate draw calls and setting the uniform each time
     //there's almost definitely faster ways of creating the pos_data but this is clear for demo purposes
     let mut pos_data:Vec<f32> = Vec::new();
     for (pos, _) in positions.iter() {
@@ -158,21 +172,19 @@ fn render(state:&State, instance_pos_buffer_id: Id, webgl_renderer:&mut WebGlRen
         pos_data.push(pos.y as f32);
     }
 
-    //info!("{:#?}", scale_matrix);
-
+    //need the location for the attrib_divisor below
     let loc = webgl_renderer.get_attribute_location("a_position")?;
     webgl_renderer.upload_buffer_f32(
-        instance_pos_buffer_id, 
+        instance_id.unwrap(), 
         &pos_data, 
         BufferTarget::ArrayBuffer, 
-        BufferUsage::StaticDraw
+        BufferUsage::StaticDraw,
     )?;
 
     webgl_renderer.activate_attribute_loc(
         loc,
         &AttributeOptions::new(2, DataType::Float)
     );
-
 
     //draw! (gotta clear first due to the extension needing mutability)
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);

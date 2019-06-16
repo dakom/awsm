@@ -1,8 +1,6 @@
-use awsm::webgl::{ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, WebGlRenderer, UniformMatrixData, BeginMode};
-use awsm::helpers::*;
+use awsm::webgl::{Id, ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, WebGlRenderer, Uniform, BeginMode};
 use awsm::loaders::{image};
 use crate::router::{get_static_href};
-use awsm::camera::{write_ortho};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
@@ -10,8 +8,34 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::futures_0_3::{future_to_promise};
 use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
+use crate::scenes::webgl::common::datatypes::*;
+use nalgebra::{Matrix4, Vector3, Vector4, Point2};
 use log::{info};
 
+struct State {
+    //mutable for each tick
+    pub pos: Point2<f64>,
+    pub area: Area,
+    pub camera_width: f64,
+    pub camera_height: f64,
+    pub program_id: Option<Id>,
+    pub texture_id: Option<Id>,
+}
+
+impl State {
+    pub fn new() -> Self {
+        Self {
+            pos: Point2::new(500.0, 500.0),
+            area: Area::new(300.0, 100.0),
+            camera_width: 0.0,
+            camera_height: 0.0,
+            program_id: None,
+            texture_id: None,
+        }
+
+    }
+
+}
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
 
     let state = Rc::new(RefCell::new(State::new()));
@@ -33,14 +57,18 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let mut webgl_renderer = webgl_renderer.borrow_mut();
 
-    let _program_id = webgl_renderer.compile_program(
+    let program_id = webgl_renderer.compile_program(
         include_str!("shaders/texture-vertex.glsl"),
         include_str!("shaders/texture-fragment.glsl")
     )?;
 
+    state.borrow_mut().program_id = Some(program_id);
+
     let _buffer_id = create_and_assign_unit_quad_buffer(&mut webgl_renderer)?;
 
     let texture_id = webgl_renderer.create_texture()?;
+
+    state.borrow_mut().texture_id = Some(texture_id);
 
     let future = async move {
         let webgl_renderer = webgl_renderer_clone.borrow_mut();
@@ -60,7 +88,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
                 reposition(&mut state_obj, width, height);
 
-                webgl_renderer.assign_simple_texture_2d(
+                webgl_renderer.assign_simple_texture(
                     texture_id, 
                     &SimpleTextureOptions{
                         pixel_format: PixelFormat::Rgba,
@@ -97,57 +125,35 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
 fn reposition(state:&mut State, width: u32, height: u32) {
 
-    state.pos = Point{
-        x: ((width as f64) - state.area.width) / 2.0,
-        y: ((height as f64) - state.area.height) / 2.0,
-        z: 0.0
-    };
+    state.pos = Point2::new(
+        ((width as f64) - state.area.width) / 2.0,
+        ((height as f64) - state.area.height) / 2.0,
+    );
 }
 
-struct State {
-    //mutable for each tick
-    pub pos: Point,
-    pub area: Area,
-    pub camera_width: f64,
-    pub camera_height: f64,
-}
-
-impl State {
-    pub fn new() -> Self {
-        Self {
-            pos: Point{x: 500.0, y: 500.0, z: 0.0},
-            area: Area{width: 300.0, height: 100.0},
-            camera_width: 0.0,
-            camera_height: 0.0,
-        }
-
-    }
-
-}
 
 fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let mut scratch_matrix:[f32;16] = [0.0;16]; 
-    let mut scale_matrix:[f32;16] = [0.0;16];
-    let mut mvp_matrix:[f32;16] = [0.0;16];
-    let mut camera_matrix:[f32;16] = [0.0;16];
-    let State {pos, area, ..} = state;
+    let State {pos, area, camera_width, camera_height, program_id, texture_id} = state;
 
+    webgl_renderer.activate_program(program_id.unwrap());
 
-    //scale
-    write_scale_matrix(area.width, area.height, 1.0, &mut scale_matrix);
-    webgl_renderer.set_uniform_matrix_name("u_size", UniformMatrixData::Float4(&scale_matrix))?;
+    //enable texture
+    webgl_renderer.activate_texture_for_sampler(texture_id.unwrap(), 0)?;
 
-    //camera
-    write_ortho(0.0, state.camera_width, 0.0, state.camera_height, -1000.0, 1000.0, &mut camera_matrix);
+    //Build our matrices (must cast to f32)
+    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(area.width as f32, area.height as f32, 0.0));
+    let camera_mat = Matrix4::new_orthographic(0.0, *camera_width as f32, 0.0, *camera_height as f32, 0.0, 1.0);
+    let model_mat = Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, 0.0));
+    let mvp_mat = camera_mat * model_mat;
 
-    //model-view-projection
-    write_position_matrix(pos.x, pos.y, 0.0, &mut scratch_matrix);
-    write_multiply_matrix(&camera_matrix, &scratch_matrix, &mut mvp_matrix); 
-    webgl_renderer.set_uniform_matrix_name("u_modelViewProjection", UniformMatrixData::Float4(&mvp_matrix))?;
+    //Upload them to the GPU
+    webgl_renderer.upload_uniform_name("u_size", &Uniform::Matrix4(&scaling_mat.as_slice()))?;
+    webgl_renderer.upload_uniform_name("u_modelViewProjection", &Uniform::Matrix4(&mvp_mat.as_slice()))?;
 
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
     webgl_renderer.draw_arrays(BeginMode::TriangleStrip, 0, 4);
+
 
     Ok(())
 }
