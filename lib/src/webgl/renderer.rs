@@ -649,7 +649,7 @@ impl WebGlRenderer {
 
     #[cfg(feature = "webgl_2")]
     fn _create_vertex_array(&mut self) -> Result<Id, Error> {
-        let vao = self.gl.create_vertex_array()?.ok_or(Error::from(NativeError::VertexArrayCreate))?;
+        let vao = self.gl.create_vertex_array().ok_or(Error::from(NativeError::VertexArrayCreate))?;
         let id = self.vao_lookup.insert(vao);
         Ok(id)
     }

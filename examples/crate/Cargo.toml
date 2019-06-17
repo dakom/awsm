@@ -59,4 +59,4 @@ features = [
 webgl_1 = ["awsm/webgl_1"]
 webgl_2 = ["awsm/webgl_2"]
 default = ["wee_alloc"]
-dev = ["webgl_1", "console_log", "console_error_panic_hook"]
+dev = ["webgl_2", "console_log", "console_error_panic_hook"]
