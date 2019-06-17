@@ -7,7 +7,7 @@ use gloo_events::{EventListener};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-pub fn start_webgl<ResizeCb>(window: Window, document: Document, body: HtmlElement, mut resize_cb: ResizeCb) -> Result<Rc<RefCell<WebGlRenderer<'static>>>, JsValue> 
+pub fn start_webgl<ResizeCb>(window: Window, document: Document, body: HtmlElement, mut resize_cb: ResizeCb) -> Result<Rc<RefCell<WebGlRenderer>>, JsValue> 
 where ResizeCb: (FnMut(u32, u32) -> ()) + 'static,
 {
 

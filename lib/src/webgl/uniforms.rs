@@ -51,9 +51,7 @@ impl <'a> UniformData for Uniform<'a, f32> {
             Uniform::TransposedMatrix2(ref v) => gl.uniform_matrix2fv_with_f32_array(loc, true, v),
             Uniform::Matrix3(ref v) => gl.uniform_matrix3fv_with_f32_array(loc, false, v),
             Uniform::TransposedMatrix3(ref v) => gl.uniform_matrix3fv_with_f32_array(loc, true, v),
-            Uniform::Matrix4(ref v) => {
-                gl.uniform_matrix4fv_with_f32_array(loc, false, v);
-            },
+            Uniform::Matrix4(ref v) => gl.uniform_matrix4fv_with_f32_array(loc, false, v),
             Uniform::TransposedMatrix4(ref v) => gl.uniform_matrix4fv_with_f32_array(loc, true, v),
         }
     }

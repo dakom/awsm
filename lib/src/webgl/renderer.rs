@@ -6,7 +6,7 @@ use std::collections::hash_map::OccupiedEntry;
 use std::collections::hash_map::VacantEntry;
 use std::collections::hash_map::Entry;
 use beach_map::{BeachMap, ID, DefaultVersion};
-use web_sys::{WebGlBuffer, WebGlTexture, HtmlCanvasElement, WebGlProgram, WebGlUniformLocation};
+use web_sys::{WebGlVertexArrayObject, WebGlBuffer, WebGlTexture, HtmlCanvasElement, WebGlProgram, WebGlUniformLocation};
 use log::{info};
 use crate::errors::{Error, NativeError};
 use super::context::{WebGlContext, get_context};
@@ -20,14 +20,15 @@ use super::enums::{DataType, BeginMode, GlToggle, ClearBufferMask, TextureTarget
 
 pub type Id = ID<DefaultVersion>; 
 
-pub struct WebGlRenderer <'a> {
+
+pub struct WebGlRenderer {
     pub gl:WebGlContext,
     pub canvas: HtmlCanvasElement,
     last_width: u32,
     last_height: u32,
 
     current_program_id: Cell<Option<Id>>,
-    program_lookup: BeachMap<DefaultVersion, ProgramInfo<'a>>, 
+    program_lookup: BeachMap<DefaultVersion, ProgramInfo>, 
 
     current_buffer_id: Cell<Option<Id>>,
     current_buffer_target: Cell<Option<BufferTarget>>,
@@ -38,20 +39,49 @@ pub struct WebGlRenderer <'a> {
     texture_lookup: BeachMap<DefaultVersion, WebGlTexture>,
     texture_sampler_lookup: HashMap<u32, TextureSamplerInfo>,
 
-    extension_lookup: HashMap<&'a str, js_sys::Object>,
+    extension_lookup: HashMap<String, js_sys::Object>,
     
     toggle_lookup: HashMap<u32, bool>,
+
+    current_vao_id: Cell<Option<Id>>,
+    vao_lookup: BeachMap<DefaultVersion, WebGlVertexArrayObject>
 }
 
-struct ProgramInfo <'a> {
+struct ProgramInfo {
     pub program: WebGlProgram,
-    pub attribute_lookup: HashMap<&'a str, u32>,
-    pub uniform_lookup: HashMap<&'a str, WebGlUniformLocation>
+    pub attribute_lookup: HashMap<String, u32>,
+    pub uniform_lookup: HashMap<String, WebGlUniformLocation>
 }
 
 struct TextureSamplerInfo {
     bind_target: TextureTarget,
     texture_id: Id,
+}
+
+pub struct VertexArray<'a> {
+    pub loc: AttributeLocation<'a>,
+    pub buffer_id: Id,
+    pub opts: &'a attributes::AttributeOptions
+}
+
+impl <'a> VertexArray<'a> {
+    pub fn new(loc:AttributeLocation<'a>, buffer_id: Id, opts: &'a attributes::AttributeOptions) -> Self {
+        Self {
+            loc,
+            buffer_id,
+            opts
+        }
+    }
+}
+
+pub enum AttributeLocation<'a> {
+    Name(&'a str),
+    Value(u32),
+}
+
+pub enum UniformLocation<'a> {
+    Name(&'a str),
+    Value(WebGlUniformLocation),
 }
 
 /*
@@ -62,7 +92,7 @@ struct TextureSamplerInfo {
  * 4. Setup global attribute locations?
  */
 
-impl <'a> WebGlRenderer <'a> {
+impl WebGlRenderer {
     pub fn new(canvas:HtmlCanvasElement) -> Result<Self, Error> {
         let gl = get_context(&canvas)?;
 
@@ -87,7 +117,10 @@ impl <'a> WebGlRenderer <'a> {
                 texture_sampler_lookup: HashMap::new(),
 
                 extension_lookup: HashMap::new(),
-                toggle_lookup: HashMap::new()
+                toggle_lookup: HashMap::new(),
+
+                current_vao_id: Cell::new(None), 
+                vao_lookup: BeachMap::default(),
             }
         )
     }
@@ -154,17 +187,23 @@ impl <'a> WebGlRenderer <'a> {
     }
 
 
+    fn _activate_buffer_nocheck(&self, buffer_id:Id, target: BufferTarget) -> Result<(), Error> {
+
+        self.current_buffer_id.set(Some(buffer_id));
+        self.current_buffer_target.set(Some(target));
+
+        let buffer = self.get_current_buffer()?; 
+        buffers::bind_buffer(&self.gl, target, &buffer);
+
+        Ok(())
+    }
     pub fn activate_buffer(&self, buffer_id:Id, target: BufferTarget) -> Result<(), Error> {
 
         if Some(buffer_id) != self.current_buffer_id.get() || Some(target) != self.current_buffer_target.get() {
-            self.current_buffer_id.set(Some(buffer_id));
-            self.current_buffer_target.set(Some(target));
-
-            let buffer = self.get_current_buffer()?; 
-            buffers::bind_buffer(&self.gl, target, &buffer);
+            self._activate_buffer_nocheck(buffer_id, target)
+        } else {
+            Ok(())
         }
-
-        Ok(())
     }
 
     fn get_current_buffer(&self) -> Result<&WebGlBuffer, Error> {
@@ -189,101 +228,86 @@ impl <'a> WebGlRenderer <'a> {
     }
 
     //Just some helpers to make it simpler
-    pub fn upload_buffer_f32_to_attribute_loc(&mut self, id:Id, values:&[f32], target: BufferTarget, usage:BufferUsage, loc:u32, opts:&attributes::AttributeOptions) -> Result<(), Error> {
+    pub fn upload_buffer_f32_to_attribute(&mut self, id:Id, values:&[f32], target: BufferTarget, usage:BufferUsage, attribute_loc:&AttributeLocation, opts:&attributes::AttributeOptions) -> Result<(), Error> {
         self.upload_buffer_f32(id, &values, target, usage)?;
-        self.activate_attribute_loc(loc, &opts);
+        self.activate_attribute(&attribute_loc, &opts)?;
         Ok(())
     }
 
-    pub fn upload_buffer_f32_to_attribute_name(&mut self, id:Id, values:&[f32], target: BufferTarget, usage:BufferUsage, name:&'a str, opts:&attributes::AttributeOptions) -> Result<(), Error> {
-        self.upload_buffer_f32(id, &values, target, usage)?;
-        self.activate_attribute_name(&name, &opts)
-    }
-
-    pub fn upload_buffer_u8_to_attribute_loc(&mut self, id:Id, values:&[u8], target: BufferTarget, usage:BufferUsage, loc:u32, opts:&attributes::AttributeOptions) -> Result<(), Error> {
+    pub fn upload_buffer_u8_to_attribute(&mut self, id:Id, values:&[u8], target: BufferTarget, usage:BufferUsage, attribute_loc:&AttributeLocation, opts:&attributes::AttributeOptions) -> Result<(), Error> {
         self.upload_buffer_u8(id, &values, target, usage)?;
-        self.activate_attribute_loc(loc, &opts);
+        self.activate_attribute(&attribute_loc, &opts)?;
         Ok(())
     }
-    pub fn upload_buffer_u8_to_attribute_name(&mut self, id:Id, values:&[u8], target: BufferTarget, usage:BufferUsage, name:&'a str, opts:&attributes::AttributeOptions) -> Result<(), Error> {
-        self.upload_buffer_u8(id, &values, target, usage)?;
-        self.activate_attribute_name(&name, &opts)
-    }
+
     //ATTRIBUTES
-    pub fn get_attribute_location(&mut self, name:&'a str) -> Result<u32, Error> 
+    pub fn get_attribute_location_value(&mut self, name:&str) -> Result<u32, Error> 
 
     {
 
         let program_id = self.current_program_id.get().ok_or(Error::from(NativeError::MissingShaderProgram))?;
         let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
 
-        let entry = program_info.attribute_lookup.entry(&name);
-
-        match entry {
-            Entry::Occupied(entry) => Ok(entry.into_mut().clone()),
-            Entry::Vacant(entry) => {
+        match program_info.attribute_lookup.get(name) {
+            Some(value) => Ok(*value),
+            None => {
                 let loc = attributes::get_attribute_location(&self.gl, &program_info.program, &name)?;
-                Ok(entry.insert(loc).clone())
+                program_info.attribute_lookup.insert(name.to_string(), loc);
+                Ok(loc)
             }
         }
     }
 
-    pub fn activate_attribute_loc(&self, loc:u32, opts:&attributes::AttributeOptions) {
+    pub fn activate_attribute(&mut self, loc:&AttributeLocation, opts:&attributes::AttributeOptions) -> Result<(), Error> {
+        let loc = match loc {
+            AttributeLocation::Name(ref name) => {
+                self.get_attribute_location_value(&name)?
+            },
+            AttributeLocation::Value(v) => *v
+        };
+
         self.gl.vertex_attrib_pointer_with_f64(loc, opts.size, opts.data_type as u32, opts.normalized, opts.stride, opts.offset as f64);
         self.gl.enable_vertex_attrib_array(loc);
-    }
-
-    pub fn activate_attribute_name(&mut self, name:&'a str, opts:&attributes::AttributeOptions) -> Result<(), Error> {
-        let loc = self.get_attribute_location(&name)?;
-
-        self.activate_attribute_loc(loc, &opts);
 
         Ok(())
     }
 
-    pub fn activate_buffer_for_attribute_name(&mut self, buffer_id:Id, buffer_target:BufferTarget, name:&'a str, opts:&attributes::AttributeOptions) -> Result<(), Error> {
-        let loc = self.get_attribute_location(&name)?;
-
-        self.activate_buffer_for_attribute_loc(buffer_id, buffer_target, loc, &opts)
-    }
-
-    pub fn activate_buffer_for_attribute_loc(&mut self, buffer_id:Id, buffer_target:BufferTarget, loc:u32, opts:&attributes::AttributeOptions) -> Result<(), Error> {
+    pub fn activate_buffer_for_attribute(&mut self, buffer_id:Id, buffer_target:BufferTarget, attribute_loc:&AttributeLocation, opts:&attributes::AttributeOptions) -> Result<(), Error> {
 
         self.activate_buffer(buffer_id, buffer_target)?;
-        self.activate_attribute_loc(loc, &opts);
+        self.activate_attribute(&attribute_loc, &opts)?;
         Ok(())
     }
 
     //UNIFORMS
-    pub fn get_uniform_loc(&mut self, name:&'a str) -> Result<WebGlUniformLocation, Error> {
+    pub fn get_uniform_location_value(&mut self, name:&str) -> Result<WebGlUniformLocation, Error> {
 
         let program_id = self.current_program_id.get().ok_or(Error::from(NativeError::MissingShaderProgram))?;
         let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
 
-        let entry = program_info.uniform_lookup.entry(&name);
-
-        match entry {
-            Entry::Occupied(entry) => Ok(entry.get().clone()),
-            Entry::Vacant(entry) => {
+        match program_info.uniform_lookup.get(name) {
+            Some(value) => Ok(value.clone()),
+            None => {
                 let loc = uniforms::get_uniform_location(&self.gl, &program_info.program, &name)?;
-                Ok(entry.insert(loc).clone())
+                program_info.uniform_lookup.insert(name.to_string(), loc.clone());
+                Ok(loc)
             }
         }
     }
 
-    pub fn upload_uniform_name<U>(&mut self, name:&'a str, data:&U) -> Result<(), Error> 
+    pub fn upload_uniform<U>(&mut self, loc:&UniformLocation, data:&U) -> Result<(), Error> 
     where U: uniforms::UniformData
     {
-        let loc = self.get_uniform_loc(&name)?;
         //TODO Maybe compare to local cache and avoid setting if data hasn't changed?
-        data.upload(&self.gl, &loc);
-        Ok(())
-    }
-
-    pub fn upload_uniform_loc<U>(&mut self, loc:&WebGlUniformLocation, data:&U) -> Result<(), Error> 
-    where U: uniforms::UniformData {
-        //TODO Maybe compare to local cache and avoid setting if data hasn't changed?
-        data.upload(&self.gl, &loc);
+        let loc = match loc {
+            UniformLocation::Name(ref name) => {
+                let loc = self.get_uniform_location_value(&name)?;
+                data.upload(&self.gl, &loc);
+            },
+            UniformLocation::Value(ref loc) => {
+                data.upload(&self.gl, &loc);
+            }
+        };
         Ok(())
     }
 
@@ -389,12 +413,12 @@ impl <'a> WebGlRenderer <'a> {
     }
 
     //EXTENSIONS
-    fn create_extension(&mut self, name:&'a str) -> Result<&js_sys::Object, Error> {
-        if self.extension_lookup.get(&name).is_none() {
+    fn create_extension(&mut self, name:&str) -> Result<&js_sys::Object, Error> {
+        if self.extension_lookup.get(name).is_none() {
             let ext = extensions::get_extension(&self.gl, &name)?;
-            self.extension_lookup.insert(&name, ext); 
+            self.extension_lookup.insert(name.to_string(), ext); 
         }
-        self.extension_lookup.get(&name).ok_or(
+        self.extension_lookup.get(name).ok_or(
             Error::from(NativeError::NoExtension)
         )
     }
@@ -443,6 +467,76 @@ impl <'a> WebGlRenderer <'a> {
         Ok(())
     }
 
+    //VERTEX ARRAYS
+    //
+    #[cfg(feature = "webgl_2")]
+    pub fn bind_vertex_array(&self, vao:Option<&WebGlVertexArrayObject>) {
+        self.gl.bind_vertex_array(vao);
+    }
+
+    #[cfg(feature = "webgl_2")]
+    pub fn _create_vertex_array(&self) -> Option<WebGlVertexArrayObject> {
+        self.gl.create_vertex_array()
+    }
+
+    pub fn create_vertex_array(&mut self) -> Result<Id, Error> {
+        let vao = self._create_vertex_array().ok_or(Error::from(NativeError::VertexArrayCreate))?;
+
+        let id = self.vao_lookup.insert(vao);
+        Ok(id)
+    }
+
+    pub fn activate_vertex_array(&self, vao_id:Id) -> Result<(), Error> {
+            if let Some(vao) = self.vao_lookup.get(vao_id) { 
+
+                self.bind_vertex_array(Some(&vao));
+                self.current_vao_id.set(Some(vao_id));
+                Ok(())
+            } else {
+                Err(Error::from(NativeError::VertexArrayMissing))
+            }
+        /*
+        if Some(vao_id) != self.current_vao_id.get() {
+            if let Some(vao) = self.vao_lookup.get(vao_id) { 
+
+                self.bind_vertex_array(Some(&vao));
+                self.current_vao_id.set(Some(vao_id));
+            } else {
+                return Err(Error::from(NativeError::VertexArrayMissing));
+            }
+        }
+        Ok(())
+        */
+    }
+
+    pub fn release_vertex_array(&self) {
+        self.bind_vertex_array(None);
+        self.current_vao_id.set(None);
+    }
+
+    pub fn assign_vertex_array(&mut self, vao_id:Id, element_buffer_id:Option<Id>, configs:&[VertexArray]) -> Result<(), Error> {
+        let result = if let Some(vao) = self.vao_lookup.get(vao_id) { 
+            self.bind_vertex_array(Some(&vao));
+
+            //Skip buffer assignment cache checks
+            if let Some(element_buffer_id) = element_buffer_id {
+                self._activate_buffer_nocheck(element_buffer_id, BufferTarget::ElementArrayBuffer)?;
+            }
+
+            for config in configs {
+                self._activate_buffer_nocheck(config.buffer_id, BufferTarget::ArrayBuffer)?;
+                self.activate_attribute(&config.loc, &config.opts)?;
+            }
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::VertexArrayMissing))
+        };
+            
+        self.release_vertex_array();
+
+        result
+    }
+    
     //TOGGLES
     pub fn toggle(&mut self, toggle:GlToggle, flag:bool) {
        

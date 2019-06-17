@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, WebGlRenderer, BufferTarget, BufferUsage, AttributeOptions, DataType};
+use awsm::webgl::{Id, AttributeLocation, WebGlRenderer, BufferTarget, BufferUsage, AttributeOptions, DataType};
 use awsm::errors::{Error};
 
 static QUAD_GEOM_UNIT:[f32; 8] = [  
@@ -40,12 +40,12 @@ pub static N_BOX_ELEMENTS:u32 = 36;
 pub fn create_and_assign_unit_quad_buffer(webgl_renderer:&mut WebGlRenderer) -> Result<Id, Error> {
     let buffer_id = webgl_renderer.create_buffer()?;
 
-    webgl_renderer.upload_buffer_f32_to_attribute_name(
+    webgl_renderer.upload_buffer_f32_to_attribute(
         buffer_id,
         &QUAD_GEOM_UNIT,
         BufferTarget::ArrayBuffer,
         BufferUsage::StaticDraw,
-        "a_vertex",
+        &AttributeLocation::Name("a_vertex"),
         &AttributeOptions::new(2, DataType::Float)
     )?;
 

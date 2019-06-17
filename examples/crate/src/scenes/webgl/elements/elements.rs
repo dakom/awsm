@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, GlToggle, BufferTarget, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, Uniform, BeginMode};
+use awsm::webgl::{Id, GlToggle, BufferTarget, UniformLocation, AttributeLocation, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, Uniform, BeginMode};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
@@ -104,25 +104,25 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let mvp_mat = projection.to_homogeneous() * (view.to_homogeneous() * model_mat);
 
     //Upload them to the GPU
-    webgl_renderer.upload_uniform_name("u_size", &Uniform::Matrix4(&scaling_mat.as_slice()))?;
-    webgl_renderer.upload_uniform_name("u_modelViewProjection", &Uniform::Matrix4(&mvp_mat.as_slice()))?;
+    webgl_renderer.upload_uniform(&UniformLocation::Name("u_size"), &Uniform::Matrix4(&scaling_mat.as_slice()))?;
+    webgl_renderer.upload_uniform(&UniformLocation::Name("u_modelViewProjection"), &Uniform::Matrix4(&mvp_mat.as_slice()))?;
 
 
     //activate buffers
     let (geom_id, colors_id, elements_id) = buffer_ids.unwrap();
     webgl_renderer.activate_buffer(elements_id, BufferTarget::ElementArrayBuffer)?;
 
-    webgl_renderer.activate_buffer_for_attribute_name(
+    webgl_renderer.activate_buffer_for_attribute(
         geom_id, 
         BufferTarget::ArrayBuffer,
-        "a_vertex",
+        &AttributeLocation::Name("a_vertex"),
         &AttributeOptions::new(3, DataType::Float)
     )?;
 
-    webgl_renderer.activate_buffer_for_attribute_name(
+    webgl_renderer.activate_buffer_for_attribute(
         colors_id, 
         BufferTarget::ArrayBuffer,
-        "a_color",
+        &AttributeLocation::Name("a_color"),
         &AttributeOptions::new(3, DataType::Float)
     )?;
 

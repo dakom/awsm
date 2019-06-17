@@ -1,4 +1,4 @@
-use awsm::webgl::{ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, WebGlRenderer, AttributeOptions, DataType, Uniform, BeginMode};
+use awsm::webgl::{ClearBufferMask, AttributeLocation, UniformLocation, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, WebGlRenderer, AttributeOptions, DataType, Uniform, BeginMode};
 use awsm::loaders::{image};
 use crate::router::{get_static_href};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
@@ -150,6 +150,9 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
     let State {positions, area, camera_width, camera_height, program_id, texture_id, instance_id} = state;
 
+    //draw! (gotta clear first due to the extension needing mutability)
+    webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
+
     webgl_renderer.activate_program(program_id.unwrap());
 
     //enable texture
@@ -160,8 +163,8 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let camera_mat = Matrix4::new_orthographic(0.0, *camera_width as f32, 0.0, *camera_height as f32, 0.0, 1.0);
     
     //Upload them to the GPU
-    webgl_renderer.upload_uniform_name("u_size", &Uniform::Matrix4(&scaling_mat.as_slice()))?;
-    webgl_renderer.upload_uniform_name("u_camera", &Uniform::Matrix4(&camera_mat.as_slice()))?;
+    webgl_renderer.upload_uniform(&UniformLocation::Name("u_size"), &Uniform::Matrix4(&scaling_mat.as_slice()))?;
+    webgl_renderer.upload_uniform(&UniformLocation::Name("u_camera"), &Uniform::Matrix4(&camera_mat.as_slice()))?;
 
 
     //upload our buffer for instancing
@@ -173,7 +176,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     }
 
     //need the location for the attrib_divisor below
-    let loc = webgl_renderer.get_attribute_location("a_position")?;
+    let loc = webgl_renderer.get_attribute_location_value("a_position")?;
     webgl_renderer.upload_buffer_f32(
         instance_id.unwrap(), 
         &pos_data, 
@@ -181,13 +184,11 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
         BufferUsage::StaticDraw,
     )?;
 
-    webgl_renderer.activate_attribute_loc(
-        loc,
+    webgl_renderer.activate_attribute(
+        &AttributeLocation::Value(loc),
         &AttributeOptions::new(2, DataType::Float)
     );
 
-    //draw! (gotta clear first due to the extension needing mutability)
-    webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
 
     webgl_renderer.vertex_attrib_divisor(loc, 1)?;
     webgl_renderer.draw_arrays_instanced(BeginMode::TriangleStrip, 0, 4, 2)?;

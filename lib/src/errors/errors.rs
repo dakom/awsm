@@ -25,6 +25,9 @@ pub enum NativeError {
     NoCreateTexture,
     MissingTexture,
     MissingBuffer,
+    VertexArrayMissing,
+    VertexArrayCreate,
+    Internal
 }
 
 impl Error {
@@ -66,6 +69,9 @@ impl NativeError {
             NativeError::NoCreateTexture => "unable to create texture",
             NativeError::MissingTexture => "couldn't get texture",
             NativeError::MissingBuffer => "couldn't get buffer",
+            NativeError::VertexArrayMissing => "no such vertex array",
+            NativeError::VertexArrayCreate => "unable to create vertex array",
+            NativeError::Internal => "internal error",
         }
     }
     pub fn to_string (self:&Self) -> String {

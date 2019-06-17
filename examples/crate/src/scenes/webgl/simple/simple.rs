@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, ClearBufferMask, WebGlRenderer, Uniform, BeginMode};
+use awsm::webgl::{Id, UniformLocation, ClearBufferMask, WebGlRenderer, Uniform, BeginMode};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
@@ -113,9 +113,9 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let mvp_mat = camera_mat * model_mat;
 
     //Upload them to the GPU
-    webgl_renderer.upload_uniform_name("u_size", &Uniform::Matrix4(&scaling_mat.as_slice()))?;
-    webgl_renderer.upload_uniform_name("u_modelViewProjection", &Uniform::Matrix4(&mvp_mat.as_slice()))?;
-    webgl_renderer.upload_uniform_name("u_color", &Uniform::Slice4(&color.values()))?;
+    webgl_renderer.upload_uniform(&UniformLocation::Name("u_size"), &Uniform::Matrix4(&scaling_mat.as_slice()))?;
+    webgl_renderer.upload_uniform(&UniformLocation::Name("u_modelViewProjection"), &Uniform::Matrix4(&mvp_mat.as_slice()))?;
+    webgl_renderer.upload_uniform(&UniformLocation::Name("u_color"), &Uniform::Slice4(&color.values()))?;
 
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
