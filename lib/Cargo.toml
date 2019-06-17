@@ -45,9 +45,10 @@ features = [
     'EventTarget',
     'Location',
     'Url',
-    'WebGlVertexArrayObject'
+    'WebGlVertexArrayObject',
+    'WebGlActiveInfo',
 ]
 
 [features]
-webgl_1 = ["web-sys/WebGlRenderingContext"]
+webgl_1 = ["web-sys/WebGlRenderingContext", "web-sys/OesVertexArrayObject", "web-sys/AngleInstancedArrays"]
 webgl_2 = ["web-sys/WebGl2RenderingContext"]

@@ -71,7 +71,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     state.borrow_mut().texture_id = Some(texture_id);
 
     let future = async move {
-        let webgl_renderer = webgl_renderer_clone.borrow_mut();
+        let mut webgl_renderer = webgl_renderer_clone.borrow_mut();
 
         let href = get_static_href("smiley.svg");
         info!("loading image! {}", href);

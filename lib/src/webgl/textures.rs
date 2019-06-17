@@ -187,8 +187,8 @@ pub fn assign_texture_mips_target(gl:&WebGlContext, bind_target: TextureTarget, 
     Ok(())
 }
 
-pub fn activate_texture_for_sampler_target(gl:&WebGlContext, bind_target: TextureTarget, sampler_index: u32, texture:&WebGlTexture) {
-    gl.active_texture(TextureUnit::Texture0 as u32 + sampler_index);
+pub fn activate_texture_for_sampler_target(gl:&WebGlContext, bind_target: TextureTarget, sampler_index: usize, texture:&WebGlTexture) {
+    gl.active_texture((TextureUnit::Texture0 as u32) + (sampler_index as u32));
 
     gl.bind_texture(bind_target as u32, Some(texture));
 }

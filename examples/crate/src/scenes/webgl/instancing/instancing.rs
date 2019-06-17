@@ -46,6 +46,16 @@ impl State {
     }
 }
 
+#[cfg(feature = "webgl_1")]
+fn register_extensions(webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
+    webgl_renderer.register_extension_instanced_arrays()
+        .map_err(|err| err.into())
+        .map(|_| ())
+}
+#[cfg(feature = "webgl_2")]
+fn register_extensions(webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
+    Ok(())
+}
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
 
     let state = Rc::new(RefCell::new(State::new()));
@@ -65,6 +75,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let mut webgl_renderer = webgl_renderer.borrow_mut();
 
+    register_extensions(&mut webgl_renderer)?;
 
     let program_id = webgl_renderer.compile_program(
         include_str!("shaders/instancing-vertex.glsl"),
@@ -83,7 +94,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     state.borrow_mut().instance_id = Some(instance_id);
 
     let future = async move {
-        let webgl_renderer = webgl_renderer_clone.borrow_mut();
+        let mut webgl_renderer = webgl_renderer_clone.borrow_mut();
 
         let href = get_static_href("smiley.svg");
         info!("loading image! {}", href);

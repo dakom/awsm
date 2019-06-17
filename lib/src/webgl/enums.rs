@@ -153,15 +153,85 @@ pub enum ClearBufferMask {
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum GlToggle {
-    CullFace = 0x0B44,
     Blend = 0x0BE2,
-    Dither = 0x0BD0,
-    StencilTest= 0x0B90,
+    CullFace = 0x0B44,
     DepthTest = 0x0B71,
-    ScissorTest = 0x0C11,
+    Dither = 0x0BD0,
     PolygonOffsetFill = 0x8037,
     SampleAlphaToCoverage = 0x809E,
-    SampleCoverage = 0x80A0
+    SampleCoverage = 0x80A0,
+    ScissorTest = 0x0C11,
+    StencilTest= 0x0B90,
+    RasterizerDiscard =0x8C89,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum GlQuery {
+    FragmentShader = 0x8B30,
+    VertexShader = 0x8B31,
+    MaxVertexAttribs = 0x8869,
+    MaxVertexUniformVectors = 0x8DFB,
+    MaxVaryingVectors = 0x8DFC,
+    MaxCombinedTextureImageUnits = 0x8B4D,
+    MaxVertexTextureImageUnits = 0x8B4C,
+    MaxTextureImageUnits = 0x8872,
+    MaxFragmentUniformVectors = 0x8DFD,
+    ShaderType = 0x8B4F,
+    DeleteStatus = 0x8B80,
+    LinkStatus = 0x8B82,
+    ValidateStatus = 0x8B83,
+    AttachedShaders = 0x8B85,
+    ActiveUniforms = 0x8B86,
+    ActiveAttributes = 0x8B89,
+    ShadingLanguageVersion = 0x8B8C,
+    CurrentProgram = 0x8B8D,
+    TransformFeedbackBufferMode = 0x8C7F,
+    TransformFeedbackVaryings = 0x8C83,
+    ActiveUniformBlocks = 0x8A36,
+}
+
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum CmpFunction {
+    Never = 0x0200,
+    Less = 0x0201,
+    Equal = 0x0202,
+    Lequal = 0x0203,
+    Greater = 0x0204,
+    NotEqual = 0x0205,
+    Gequal = 0x0206, 
+    Always = 0x0207,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum BlendEquation {
+    Add = 0x8006,
+    Subtract = 0x800A,
+    ReverseSubtract= 0x800B,
+    Min = 0x8007,
+    Max = 0x8008,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum BlendFactor {
+    Zero = 0,
+    One = 1,
+    SrcColor = 0x0300,
+    OneMinusSrcColor = 0x0301,
+    DstColor = 0x0306,
+    OneMinusDstColor= 0x0307,
+    SrcAlpha = 0x0302,
+    OneMinusSrcAlpha = 0x0303,
+    DstAlpha = 0x0304,
+    OneMinusDstAlpha = 0x0305,
+    ConstantColor = 0x8001,
+    OneMinusConstantColor = 0x8002,
+    ConstantAlpha = 0x8003,
+    OneMinusConstantAlpha = 0x8004
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -173,6 +243,9 @@ pub enum WebGlSpecific {
     UnpackColorspaceConversion= 0x9243,
     BrowserDefault = 0x9244,
 }
+
+
+
 
 /*
  * NOTE - all the below are copy/pasted from the WebIDL
@@ -250,16 +323,6 @@ ONE_MINUS_DST_ALPHA            = 0x0305;
     const GLenum FRONT                          = 0x0404;
     const GLenum BACK                           = 0x0405;
     const GLenum FRONT_AND_BACK                 = 0x0408;
-
-    * DepthFunction *
-    *      NEVER *
-    *      LESS *
-    *      EQUAL *
-    *      LEQUAL *
-    *      GREATER *
-    *      NOTEQUAL *
-    *      GEQUAL *
-    *      ALWAYS *
 
     * EnableCap *
     * TEXTURE_2D *
@@ -344,25 +407,6 @@ ONE_MINUS_DST_ALPHA            = 0x0305;
     const GLenum UNSIGNED_SHORT_5_5_5_1         = 0x8034;
     const GLenum UNSIGNED_SHORT_5_6_5           = 0x8363;
 
-    * Shaders *
-    const GLenum FRAGMENT_SHADER                  = 0x8B30;
-    const GLenum VERTEX_SHADER                    = 0x8B31;
-    const GLenum MAX_VERTEX_ATTRIBS               = 0x8869;
-    const GLenum MAX_VERTEX_UNIFORM_VECTORS       = 0x8DFB;
-    const GLenum MAX_VARYING_VECTORS              = 0x8DFC;
-    const GLenum MAX_COMBINED_TEXTURE_IMAGE_UNITS = 0x8B4D;
-    const GLenum MAX_VERTEX_TEXTURE_IMAGE_UNITS   = 0x8B4C;
-    const GLenum MAX_TEXTURE_IMAGE_UNITS          = 0x8872;
-    const GLenum MAX_FRAGMENT_UNIFORM_VECTORS     = 0x8DFD;
-    const GLenum SHADER_TYPE                      = 0x8B4F;
-    const GLenum DELETE_STATUS                    = 0x8B80;
-    const GLenum LINK_STATUS                      = 0x8B82;
-    const GLenum VALIDATE_STATUS                  = 0x8B83;
-    const GLenum ATTACHED_SHADERS                 = 0x8B85;
-    const GLenum ACTIVE_UNIFORMS                  = 0x8B86;
-    const GLenum ACTIVE_ATTRIBUTES                = 0x8B89;
-    const GLenum SHADING_LANGUAGE_VERSION         = 0x8B8C;
-    const GLenum CURRENT_PROGRAM                  = 0x8B8D;
 
     * StencilFunction *
     const GLenum NEVER                          = 0x0200;
