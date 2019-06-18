@@ -9,6 +9,7 @@ pub enum Error {
 }
 
 pub enum NativeError {
+    Canvas2dContext,
     WebGlContext,
     WebGlProgram,
     Window,
@@ -53,6 +54,7 @@ impl fmt::Debug for Error {
 impl NativeError {
     pub fn default_str (self:&Self) -> &'static str{
         match self {
+            NativeError::Canvas2dContext=> "couldn't create 2d canvas context",
             NativeError::WebGlContext=> "couldn't create webgl context",
             NativeError::WebGlProgram => "couldn't create webgl program",
             NativeError::Window => "couldn't get window",

@@ -6,17 +6,20 @@ use std::collections::hash_map::OccupiedEntry;
 use std::collections::hash_map::VacantEntry;
 use std::collections::hash_map::Entry;
 use beach_map::{BeachMap, ID, DefaultVersion};
-use web_sys::{console, WebGlVertexArrayObject, WebGlBuffer, WebGlTexture, HtmlCanvasElement, WebGlProgram, WebGlUniformLocation};
+use web_sys::{WebGlVertexArrayObject, WebGlBuffer, WebGlTexture, HtmlCanvasElement, WebGlProgram, WebGlUniformLocation};
 use log::{info};
 use crate::errors::{Error, NativeError};
-use super::context::{WebGlContext, get_context};
+use super::context::{WebGlContext, WebGlContextOptions, get_webgl_context};
+use crate::helpers::{clone_to_vec_f32};
 use super::buffers;
 use super::shader;
 use super::attributes;
 use super::uniforms;
 use super::textures;
-use super::extensions;
 use super::enums::{CmpFunction, BlendEquation, BlendFactor, GlQuery, DataType, BeginMode, GlToggle, ClearBufferMask, TextureTarget, BufferTarget, BufferUsage};
+
+#[cfg(debug_assertions)]
+use web_sys::{console};
 
 #[cfg(feature = "webgl_1")]
 use web_sys::{OesVertexArrayObject, AngleInstancedArrays};
@@ -59,9 +62,12 @@ pub struct WebGlRenderer {
 
     toggle_flags: ToggleFlags,
 
-    func_settings: FuncSettings
+    func_settings: FuncSettings,
+
+    depth_mask: bool
 }
 
+#[derive(Default)]
 struct ToggleFlags {
     blend: bool,
     cull_face: bool,
@@ -75,12 +81,27 @@ struct ToggleFlags {
     rasterizer_discard: bool,
 }
 
+
 struct FuncSettings {
     depth_func: CmpFunction,
+    blend_color: (f32, f32, f32, f32),
     blend_func: (BlendFactor, BlendFactor),
     blend_func_separate: (BlendFactor, BlendFactor, BlendFactor, BlendFactor),
     blend_equation: BlendEquation, 
     blend_equation_separate: (BlendEquation, BlendEquation) 
+}
+
+impl Default for FuncSettings {
+    fn default() -> Self { 
+        Self {
+            depth_func: CmpFunction::Less,
+            blend_color: (0.0, 0.0, 0.0, 0.0),
+            blend_func: (BlendFactor::One, BlendFactor::Zero),
+            blend_func_separate: (BlendFactor::One, BlendFactor::Zero, BlendFactor::One, BlendFactor::Zero),
+            blend_equation: BlendEquation::Add,
+            blend_equation_separate: (BlendEquation::Add, BlendEquation::Add) 
+        }
+    }
 }
 
 struct ProgramInfo {
@@ -128,9 +149,11 @@ pub enum UniformLocation<'a> {
  * 4. Setup global attribute locations?
  */
 
+
+
 impl WebGlRenderer {
-    pub fn new(canvas:HtmlCanvasElement) -> Result<Self, Error> {
-        let gl = get_context(&canvas)?;
+    pub fn new(canvas:HtmlCanvasElement, opts:Option<&WebGlContextOptions>) -> Result<Self, Error> {
+        let gl = get_webgl_context(&canvas, opts)?;
 
 
         let max_texture_units:usize = gl.get_parameter(GlQuery::MaxTextureImageUnits as u32)
@@ -148,7 +171,14 @@ impl WebGlRenderer {
         for i in 0..max_texture_units {
             texture_sampler_lookup.push(None);
         }
-        
+
+
+        //The webgl docs don't talk about a default value...
+        //seems to be 0 for all - but just in case... it's... set by browser? _shrug_
+        let blend_color:Vec<f32> = gl.get_parameter(GlQuery::BlendColor as u32)
+                .map(|value| value.into())
+                .map(|value| clone_to_vec_f32(&value))?;
+     
         Ok(
             Self {
                 gl,
@@ -174,26 +204,14 @@ impl WebGlRenderer {
                 current_vao_id: Cell::new(None),
                 vao_lookup: BeachMap::default(),
 
-                toggle_flags: ToggleFlags {
-                    blend: false,
-                    cull_face: false,
-                    depth_test: false,
-                    dither: false,
-                    polygon_offset_fill: false,
-                    sample_alpha_to_coverage: false,
-                    sample_coverage: false,
-                    scissor_test: false, 
-                    stencil_test: false,
-                    rasterizer_discard: false,
+                toggle_flags: ToggleFlags::default(),
+
+                func_settings: FuncSettings{
+                    blend_color: (blend_color[0], blend_color[1], blend_color[2], blend_color[3]),
+                    ..FuncSettings::default()
                 },
 
-                func_settings: FuncSettings {
-                    depth_func: CmpFunction::Less,
-                    blend_func: (BlendFactor::One, BlendFactor::Zero),
-                    blend_func_separate: (BlendFactor::One, BlendFactor::Zero, BlendFactor::One, BlendFactor::Zero),
-                    blend_equation: BlendEquation::Add,
-                    blend_equation_separate: (BlendEquation::Add, BlendEquation::Add) 
-                }
+                depth_mask: true
             }
         )
     }
@@ -547,7 +565,7 @@ impl WebGlRenderer {
     //EXTENSIONS
     pub fn register_extension(&mut self, name:&str) -> Result<&js_sys::Object, Error> {
         if self.extension_lookup.get(name).is_none() {
-            let ext = extensions::get_extension(&self.gl, &name)?;
+            let ext = self.gl.get_extension(name)?.ok_or(Error::from(NativeError::NoExtension))?;
             self.extension_lookup.insert(name.to_string(), ext); 
         }
         self.extension_lookup.get(name).ok_or(
@@ -731,6 +749,16 @@ impl WebGlRenderer {
             self.func_settings.depth_func = func;
         }
     }
+    pub fn set_blend_color(&mut self, r:f32, g:f32, b:f32, a:f32) {
+
+        let curr = self.func_settings.blend_color;
+
+        if curr.0 != r || curr.1 != g || curr.2 != b || curr.3 != a { 
+            self.gl.blend_color(r, g, b, a);
+            self.func_settings.blend_color= (r, g, b, a);
+        }
+    }
+
     pub fn set_blend_func(&mut self, sfactor: BlendFactor, dfactor: BlendFactor) {
 
         let curr = self.func_settings.blend_func;
@@ -762,6 +790,16 @@ impl WebGlRenderer {
         if curr.0 != rgb_mode || curr.1 != alpha_mode { 
             self.gl.blend_equation_separate(rgb_mode as u32, alpha_mode as u32);
             self.func_settings.blend_equation_separate = (rgb_mode, alpha_mode);
+        }
+    }
+
+
+    //MISC
+
+    pub fn set_depth_mask(&mut self, flag:bool) {
+        if self.depth_mask != flag {
+            self.gl.depth_mask(flag);
+            self.depth_mask = flag;
         }
     }
 

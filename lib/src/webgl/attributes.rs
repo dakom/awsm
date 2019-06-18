@@ -2,6 +2,12 @@ use web_sys::{WebGlProgram};
 use super::context::{WebGlContext};
 use super::enums::{DataType};
 use crate::errors::{Error, NativeError};
+use super::renderer::{WebGlRenderer};
+
+impl WebGlRenderer {
+    pub fn foo() {
+    }
+}
 
 pub struct AttributeOptions {
     pub size: i32, 

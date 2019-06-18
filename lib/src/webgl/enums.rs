@@ -189,6 +189,7 @@ pub enum GlQuery {
     TransformFeedbackBufferMode = 0x8C7F,
     TransformFeedbackVaryings = 0x8C83,
     ActiveUniformBlocks = 0x8A36,
+    BlendColor = 0x8005,
 }
 
 

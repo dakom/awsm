@@ -1,4 +1,4 @@
-use awsm::webgl::{ClearBufferMask, WebGlRenderer};
+use awsm::webgl::{ClearBufferMask, WebGlRenderer, WebGlContextOptions};
 use awsm::window;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -14,7 +14,11 @@ where ResizeCb: (FnMut(u32, u32) -> ()) + 'static,
     let canvas:HtmlCanvasElement = document.create_element("canvas")?.dyn_into()?;
     body.append_child(&canvas)?;
 
-    let webgl_renderer = WebGlRenderer::new(canvas)?;
+    let webgl_renderer = WebGlRenderer::new(canvas, Some(&WebGlContextOptions{
+        alpha: false,
+        ..WebGlContextOptions::default()
+    }))?;
+
     let webgl_renderer = Rc::new(RefCell::new(webgl_renderer));
    
     let window_clone = window.clone();

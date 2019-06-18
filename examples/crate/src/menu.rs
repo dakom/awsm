@@ -19,6 +19,7 @@ lazy_static! {
         //WebGl
         m.insert("webgl-simple", Menu {label: "Simple", source: "webgl/simple/simple.rs"});
         m.insert("webgl-texture", Menu {label: "Texture", source: "webgl/texture/texture.rs"});
+        m.insert("webgl-blending", Menu {label: "Blending", source: "webgl/blending/blending.rs"});
         m.insert("webgl-elements", Menu {label: "Elements", source: "webgl/elements/elements.rs"});
         m.insert("webgl-instancing", Menu {label: "Instancing", source: "webgl/instancing/instancing.rs"});
         m.insert("webgl-vaos", Menu {label: "Vertex Arrays", source: "webgl/vaos/vaos.rs"});
@@ -51,6 +52,7 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
     append_menu(&container, &document, get_webgl_title(), vec![
         "webgl-simple",
         "webgl-texture",
+        "webgl-blending",
         "webgl-elements",
         "webgl-instancing",
         "webgl-vaos",

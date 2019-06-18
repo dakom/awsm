@@ -17,9 +17,7 @@ pub enum WebGlTextureSource <'a> {
     VideoElement(&'a HtmlVideoElement),
 }
 
-// SimpleTexutreOptions uses enums that represent the typical use case
-// in order to support any possible options without making the wrappers
-// too verbose, TextureOptions itself uses plain scalars
+// SimpleTexutreOptions represents the typical use case 
 pub struct SimpleTextureOptions {
     pub flip_y: bool,
     pub wrap_s: TextureWrapMode,
@@ -64,7 +62,7 @@ cfg_if! {
         fn get_texture_from_video_target(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, video: &HtmlVideoElement) -> Result<(), JsValue> {
             gl.tex_image_2d_with_u32_and_u32_and_video( bind_target, mip_level, internal_format, data_format, data_type, video)
         }
-    } else {
+    } else if #[cfg(feature = "webgl_2")] {
         fn get_texture_from_image_target(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, image: &HtmlImageElement) -> Result<(), JsValue> {
             gl.tex_image_2d_with_u32_and_u32_and_html_image_element( bind_target, mip_level, internal_format, data_format, data_type, image)
         }
