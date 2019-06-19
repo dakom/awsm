@@ -1,10 +1,14 @@
 use web_sys::{WebGlProgram, WebGlUniformLocation};
-use super::context::{WebGlContext};
 use crate::errors::{Error, NativeError};
-use super::enums::{DataType};
+use super::{DataType, WebGlRenderer, WebGlContext};
 use log::{info};
 
-pub fn get_uniform_location(gl:&WebGlContext, program:&WebGlProgram, name:&str) -> Result<WebGlUniformLocation, Error> {
+pub enum UniformLocation<'a> {
+    Name(&'a str),
+    Value(WebGlUniformLocation),
+}
+
+pub fn get_uniform_location_direct(gl:&WebGlContext, program:&WebGlProgram, name:&str) -> Result<WebGlUniformLocation, Error> {
     gl.get_uniform_location(&program, &name)
         .ok_or(Error::from(NativeError::UniformLocation(Some(name.to_owned()))))
 }
@@ -339,3 +343,32 @@ impl <'a> UniformData for Uniform<'a, f64> {
     }
 }
 
+impl WebGlRenderer {
+    pub fn get_uniform_location_value(&self, name:&str) -> Result<WebGlUniformLocation, Error> {
+
+        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_info = self.program_lookup.get(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+
+        program_info.uniform_lookup
+            .get(name)
+            .map(|v| v.clone())
+            .ok_or_else(|| Error::from(NativeError::UniformLocation(Some(name.to_string()))))
+    }
+
+
+    pub fn upload_uniform<T>(&mut self, loc:&UniformLocation, data:&T) -> Result<(), Error> 
+    where T: UniformData
+    {
+        let loc = match loc {
+            UniformLocation::Name(ref name) => {
+                self.get_uniform_location_value(&name)?
+            },
+            UniformLocation::Value(ref loc) => {
+                loc.clone()
+            }
+        };
+        
+        data.upload(&self.gl, &loc);
+        Ok(())
+    }
+}

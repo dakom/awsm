@@ -1,12 +1,11 @@
 use web_sys::{WebGlProgram};
-use super::context::{WebGlContext};
-use super::enums::{DataType};
 use crate::errors::{Error, NativeError};
-use super::renderer::{WebGlRenderer};
+use super::{WebGlRenderer, WebGlContext, DataType, BufferTarget, Id};
 
-impl WebGlRenderer {
-    pub fn foo() {
-    }
+//ATTRIBUTES
+pub enum AttributeLocation<'a> {
+    Name(&'a str),
+    Value(u32),
 }
 
 pub struct AttributeOptions {
@@ -37,14 +36,52 @@ impl AttributeOptions {
     }
 }
 
-pub fn get_attribute_location(gl:&WebGlContext, program:&WebGlProgram, name:&str) -> Result<u32, Error> {
+pub fn get_attribute_location_direct(gl:&WebGlContext, program:&WebGlProgram, name:&str) -> Result<u32, Error> {
     Some(gl.get_attrib_location(&program, &name))
         .filter(|x| *x != -1)
         .map(|x| x as u32)
         .ok_or(Error::from(NativeError::AttributeLocation(Some(name.to_owned()))))
 }
 
-pub fn activate_attribute(gl:&WebGlContext, loc:u32, opts:&AttributeOptions) {
+pub fn activate_attribute_direct(gl:&WebGlContext, loc:u32, opts:&AttributeOptions) {
     gl.vertex_attrib_pointer_with_f64(loc, opts.size, opts.data_type as u32, opts.normalized, opts.stride, opts.offset as f64);
     gl.enable_vertex_attrib_array(loc);
 }
+
+
+impl WebGlRenderer {
+
+    pub fn get_attribute_location_value(&self, name:&str) -> Result<u32, Error> 
+
+    {
+
+        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_info = self.program_lookup.get(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+
+        program_info.attribute_lookup
+            .get(name)
+            .map(|v| *v)
+            .ok_or_else(|| Error::from(NativeError::AttributeLocation(Some(name.to_string()))))
+    }
+
+    pub fn activate_attribute(&self, loc:&AttributeLocation, opts:&AttributeOptions) -> Result<(), Error> {
+        let loc = match loc {
+            AttributeLocation::Name(ref name) => {
+                self.get_attribute_location_value(&name)?
+            },
+            AttributeLocation::Value(v) => *v
+        };
+
+        activate_attribute_direct(&self.gl, loc, &opts);
+
+        Ok(())
+    }
+
+    pub fn activate_buffer_for_attribute(&self, buffer_id:Id, buffer_target:BufferTarget, attribute_loc:&AttributeLocation, opts:&AttributeOptions) -> Result<(), Error> {
+
+        self.activate_buffer(buffer_id, buffer_target)?;
+        self.activate_attribute(&attribute_loc, &opts)?;
+        Ok(())
+    }
+}
+

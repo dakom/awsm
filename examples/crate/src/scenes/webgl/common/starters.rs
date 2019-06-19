@@ -34,7 +34,6 @@ where ResizeCb: (FnMut(u32, u32) -> ()) + 'static,
     {
         let webgl_renderer = &webgl_renderer.borrow_mut();
 
-
         webgl_renderer.gl.clear_color(0.3, 0.3, 0.3, 1.0);
         webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
     }

@@ -8,6 +8,7 @@ use crate::scenes::webgl::common::{start_webgl, create_unit_box_buffers, N_BOX_E
 use crate::scenes::webgl::common::datatypes::*;
 use nalgebra::{Matrix4, Vector3, Vector4, Point3, Perspective3, Isometry3};
 
+
 type BufferIds = (Id, Id, Id);
 struct State {
     //mutable for each tick

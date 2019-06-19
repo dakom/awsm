@@ -1,8 +1,122 @@
-use web_sys::{WebGlProgram, WebGlShader};
+use std::collections::HashMap;
+use std::collections::hash_map::OccupiedEntry;
+use std::collections::hash_map::VacantEntry;
+use std::collections::hash_map::Entry;
+use web_sys::{WebGlProgram, WebGlShader, WebGlUniformLocation};
 use wasm_bindgen::prelude::JsValue;
-use super::context::{WebGlContext};
 use crate::errors::{Error, NativeError};
+use super::id::{Id};
+use super::{WebGlRenderer, WebGlContext, UniformData, GlQuery, get_attribute_location_direct, get_uniform_location_direct};
+use log::{info};
 
+pub struct ProgramInfo {
+    pub program: WebGlProgram,
+    pub attribute_lookup: HashMap<String, u32>,
+    pub uniform_lookup: HashMap<String, WebGlUniformLocation>,
+}
+
+impl WebGlRenderer {
+    pub fn compile_program(&mut self, vertex:&str, fragment:&str) -> Result<Id, Error> {
+        let program = compile_program(&self.gl, &vertex, &fragment)?;
+
+        let program_info = ProgramInfo {
+            program,
+            attribute_lookup: HashMap::new(),
+            uniform_lookup: HashMap::new(),
+        };
+
+        let id = self.program_lookup.insert(program_info);
+        
+        self.activate_program(id)?;
+
+        self.cache_attributes_ids()?;
+        self.cache_uniforms_ids()?;
+
+        Ok(id)
+    }
+
+    pub fn activate_program(&mut self, program_id: Id) -> Result<(), Error> {
+        if Some(program_id) != self.current_program_id {
+            self.current_program_id = Some(program_id);
+            let program_info = self.program_lookup.get(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+            self.gl.use_program(Some(&program_info.program));
+            Ok(())
+        } else {
+            Ok(())
+        }
+    }
+
+    fn cache_attributes_ids(&mut self) -> Result<(), Error> {
+        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+
+        let max:u32 = self.gl.get_program_parameter(&program_info.program, GlQuery::ActiveAttributes as u32)
+            .as_f64()
+            .map(|val| val as u32)
+            .unwrap_or(0);
+
+        if(max <= 0) {
+            return Ok(());
+        }
+
+        for i in 0..max {
+            let name = self.gl.get_active_attrib(&program_info.program, i)
+                .map(|info| info.name())
+                .ok_or(Error::from(NativeError::AttributeLocation(None)))?;
+
+            let entry = program_info.attribute_lookup.entry(name.to_string());
+
+            match entry {
+                Entry::Occupied(entry) => { 
+                    info!("skipping attribute cache for [{}] (already exists)", &name);
+                },
+                Entry::Vacant(entry) => {
+                    let loc = get_attribute_location_direct(&self.gl, &program_info.program, &name)?;
+                    entry.insert(loc);
+                    info!("caching attribute [{}] at location [{}]", &name, loc);
+                }
+            }
+        };
+
+        Ok(())
+    }
+
+
+    fn cache_uniforms_ids(&mut self) -> Result<(), Error> {
+        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+
+        let max:u32 = self.gl.get_program_parameter(&program_info.program, GlQuery::ActiveUniforms as u32)
+            .as_f64()
+            .map(|val| val as u32)
+            .unwrap_or(0);
+
+        if max <= 0 {
+            return Ok(());
+        }
+
+        for i in 0..max {
+            let name = self.gl.get_active_uniform(&program_info.program, i)
+                .map(|info| info.name())
+                .ok_or(Error::from(NativeError::UniformLocation(None)))?;
+
+            let entry = program_info.uniform_lookup.entry(name.to_string());
+
+            match entry {
+                Entry::Occupied(entry) => { 
+                    info!("skipping uniform cache for [{}] (already exists)", &name);
+                },
+                Entry::Vacant(entry) => {
+                    let loc = get_uniform_location_direct(&self.gl, &program_info.program, &name)?;
+                    entry.insert(loc);
+                    info!("caching uniform [{}]", &name);
+                }
+            }
+        };
+
+        Ok(())
+    }
+}
 
 struct CompileSteps {
     program: Option<WebGlProgram>,
