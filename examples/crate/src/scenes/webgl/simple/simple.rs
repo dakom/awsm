@@ -119,7 +119,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
 
     let color_values = color.values();
     let color_values = UniformData((color_values[0] as f32, color_values[1] as f32, color_values[2] as f32, color_values[3] as f32));
-    webgl_renderer.upload_uniform_values(&Uniform::Name("u_color"), &color_values)?;
+    webgl_renderer.upload_uniform_values_4(&Uniform::Name("u_color"), &color_values)?;
 
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
