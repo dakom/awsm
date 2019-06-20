@@ -2,347 +2,678 @@ use web_sys::{WebGlProgram, WebGlUniformLocation};
 use crate::errors::{Error, NativeError};
 use super::{DataType, WebGlRenderer, WebGlContext};
 use log::{info};
+use std::mem;
 
-pub enum UniformLocation<'a> {
+//TODO 
+//1. followup with https://github.com/rustwasm/wasm-bindgen/pull/1539
+//When the i32 slices don't need mut anymore - simplify below
+
+//2. Rewrite all the below with macros!
+
+pub enum Uniform<'a> {
     Name(&'a str),
-    Value(WebGlUniformLocation),
+    Loc(WebGlUniformLocation),
 }
 
 pub fn get_uniform_location_direct(gl:&WebGlContext, program:&WebGlProgram, name:&str) -> Result<WebGlUniformLocation, Error> {
     gl.get_uniform_location(&program, &name)
         .ok_or(Error::from(NativeError::UniformLocation(Some(name.to_owned()))))
 }
-//Besides giving help to the typechecker, this will also automatically cast where needed
-pub enum Uniform<'a, N> {
-        Value1(N),
-        Slice1(&'a [N]),
 
-        Value2(N, N),
-        Slice2(&'a [N]),
 
-        Value3(N, N, N),
-        Slice3(&'a [N]),
-        
-        Value4(N, N, N, N),
-        Slice4(&'a [N]),
+/*
+ * The direct uniform uploads are written as traits in order to allow working either f32 or i32
+ * 
+ * Arrays, scalars, and tuples are guaranteed at compile-time to be the right size
+ * This also allows them to use the generic upload_uniform_[values/slice/matrix/matrix_transposed]
+ * Which doesn't even return a Result (since none is returned from the JS API)
+ *
+ * Slices require the user to specify the size (e.g. upload_unifrm_*_N()).
+ * These variants do return a Result (and check that the slice has enough elements)
+ */
 
-        Matrix2(&'a [N]),
-        Matrix3(&'a [N]),
-        Matrix4(&'a [N]),
-        
-        TransposedMatrix2(&'a [N]),
-        TransposedMatrix3(&'a [N]),
-        TransposedMatrix4(&'a [N]),
+pub trait UniformValues {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation);
 }
 
-pub trait UniformData {
-    fn upload(&self, gl:&WebGlContext, loc:&WebGlUniformLocation);
+pub trait UniformValues_1 {
+    fn upload_uniform_values_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+}
+pub trait UniformValues_2 {
+    fn upload_uniform_values_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+}
+pub trait UniformValues_3 {
+    fn upload_uniform_values_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+}
+pub trait UniformValues_4 {
+    fn upload_uniform_values_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+}
+pub trait UniformSlice {
+    fn upload_uniform_slice(&self, gl:&WebGlContext, loc:&WebGlUniformLocation);
 }
 
-impl <'a> UniformData for Uniform<'a, f32> {
-    fn upload(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
-        let loc = Some(loc);
-        match *self {
-            Uniform::Value1(a) => gl.uniform1f(loc, a),
-            Uniform::Slice1(ref v) => gl.uniform1fv_with_f32_array(loc, v),
-            Uniform::Value2(a, b) => gl.uniform2f(loc, a, b),
-            Uniform::Slice2(ref v) => gl.uniform2fv_with_f32_array(loc, v),
-            Uniform::Value3(a, b, c) => gl.uniform3f(loc, a, b, c),
-            Uniform::Slice3(ref v) => gl.uniform3fv_with_f32_array(loc, v),
-            Uniform::Value4(a, b, c, d) => gl.uniform4f(loc, a, b, c, d),
-            Uniform::Slice4(ref v) => gl.uniform4fv_with_f32_array(loc, v),
-            Uniform::Matrix2(ref v) => gl.uniform_matrix2fv_with_f32_array(loc, false, v),
-            Uniform::TransposedMatrix2(ref v) => gl.uniform_matrix2fv_with_f32_array(loc, true, v),
-            Uniform::Matrix3(ref v) => gl.uniform_matrix3fv_with_f32_array(loc, false, v),
-            Uniform::TransposedMatrix3(ref v) => gl.uniform_matrix3fv_with_f32_array(loc, true, v),
-            Uniform::Matrix4(ref v) => gl.uniform_matrix4fv_with_f32_array(loc, false, v),
-            Uniform::TransposedMatrix4(ref v) => gl.uniform_matrix4fv_with_f32_array(loc, true, v),
+pub trait UniformSlice_1 {
+    fn upload_uniform_slice_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+}
+pub trait UniformSlice_2 {
+    fn upload_uniform_slice_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+}
+pub trait UniformSlice_3 {
+    fn upload_uniform_slice_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+}
+pub trait UniformSlice_4 {
+    fn upload_uniform_slice_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+}
+pub trait UniformMatrix {
+    fn upload_uniform_matrix(&self, gl:&WebGlContext, loc:&WebGlUniformLocation);
+    fn upload_uniform_matrix_transposed(&self, gl:&WebGlContext, loc:&WebGlUniformLocation);
+}
+
+pub trait UniformMatrix_2 {
+    fn upload_uniform_matrix_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+    fn upload_uniform_matrix_transposed_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+}
+pub trait UniformMatrix_3 {
+    fn upload_uniform_matrix_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+    fn upload_uniform_matrix_transposed_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+}
+pub trait UniformMatrix_4 {
+    fn upload_uniform_matrix_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+    fn upload_uniform_matrix_transposed_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+
+}
+
+
+impl UniformValues for f32 {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform1f(Some(loc), *self);
+    }
+}
+impl UniformValues for i32 {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform1i(Some(loc), *self);
+    }
+}
+impl UniformValues_1 for f32 {
+    fn upload_uniform_values_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform1f(Some(loc), *self);
+        Ok(())
+    }
+}
+impl UniformValues_1 for i32 {
+    fn upload_uniform_values_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform1i(Some(loc), *self);
+        Ok(())
+    }
+}
+
+impl UniformValues for (f32, f32) {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform2f(Some(loc), self.0, self.1);
+    }
+}
+impl UniformValues for (i32, i32) {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform2i(Some(loc), self.0, self.1);
+    }
+}
+impl UniformValues_2 for (f32, f32) {
+    fn upload_uniform_values_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform2f(Some(loc), self.0, self.1);
+        Ok(())
+    }
+}
+impl UniformValues_2 for (i32, i32) {
+    fn upload_uniform_values_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform2i(Some(loc), self.0, self.1);
+        Ok(())
+    }
+}
+
+impl UniformValues for (f32, f32, f32) {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform3f(Some(loc), self.0, self.1, self.2);
+    }
+}
+impl UniformValues for (i32, i32, i32) {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform3i(Some(loc), self.0, self.1, self.2);
+    }
+}
+impl UniformValues_3 for (f32, f32, f32) {
+    fn upload_uniform_values_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform3f(Some(loc), self.0, self.1, self.2);
+        Ok(())
+    }
+}
+impl UniformValues_3 for (i32, i32, i32) {
+    fn upload_uniform_values_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform3i(Some(loc), self.0, self.1, self.2);
+        Ok(())
+    }
+}
+
+impl UniformValues for (f32, f32, f32, f32) {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform4f(Some(loc), self.0, self.1, self.2, self.3);
+    }
+}
+impl UniformValues for (i32, i32, i32, i32) {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform4i(Some(loc), self.0, self.1, self.2, self.3);
+    }
+}
+impl UniformValues_4 for (f32, f32, f32, f32) {
+    fn upload_uniform_values_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform4f(Some(loc), self.0, self.1, self.2, self.3);
+        Ok(())
+    }
+}
+impl UniformValues_4 for (i32, i32, i32, i32) {
+    fn upload_uniform_values_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform4i(Some(loc), self.0, self.1, self.2, self.3);
+        Ok(())
+    }
+}
+
+impl UniformValues for [f32;1] {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform1f(Some(loc), self[0]);
+    }
+}
+impl UniformValues for [i32;1] {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform1i(Some(loc), self[0]);
+    }
+}
+impl UniformValues_1 for [f32;1] {
+    fn upload_uniform_values_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform1f(Some(loc), self[0]);
+        Ok(())
+    }
+}
+impl UniformValues_1 for [i32;1] {
+    fn upload_uniform_values_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform1i(Some(loc), self[0]);
+        Ok(())
+    }
+}
+
+impl UniformValues for [f32;2] {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform2f(Some(loc), self[0], self[1]);
+    }
+}
+impl UniformValues for [i32;2] {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform2i(Some(loc), self[0], self[1]);
+    }
+}
+impl UniformValues_2 for [f32;2] {
+    fn upload_uniform_values_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform2f(Some(loc), self[0], self[1]);
+        Ok(())
+    }
+}
+impl UniformValues_2 for [i32;2] {
+    fn upload_uniform_values_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform2i(Some(loc), self[0], self[1]);
+        Ok(())
+    }
+}
+
+impl UniformValues for [f32;3] {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform3f(Some(loc), self[0], self[1], self[2]);
+    }
+}
+impl UniformValues for [i32;3] {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform3i(Some(loc), self[0], self[1], self[2]);
+    }
+}
+impl UniformValues_3 for [f32;3] {
+    fn upload_uniform_values_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform3f(Some(loc), self[0], self[1], self[2]);
+        Ok(())
+    }
+}
+impl UniformValues_3 for [i32;3] {
+    fn upload_uniform_values_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform3i(Some(loc), self[0], self[1], self[2]);
+        Ok(())
+    }
+}
+
+
+impl UniformValues for [f32;4] {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform4f(Some(loc), self[0], self[1], self[2], self[3]);
+    }
+}
+impl UniformValues for [i32;4] {
+    fn upload_uniform_values(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform4i(Some(loc), self[0], self[1], self[2], self[3]);
+    }
+}
+impl UniformValues_4 for [f32;4] {
+    fn upload_uniform_values_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform4f(Some(loc), self[0], self[1], self[2], self[3]);
+        Ok(())
+    }
+}
+impl UniformValues_4 for [i32;4] {
+    fn upload_uniform_values_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform4i(Some(loc), self[0], self[1], self[2], self[3]);
+        Ok(())
+    }
+}
+
+impl UniformValues_1 for &[f32] {
+    fn upload_uniform_values_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 1 {
+            gl.uniform1f(Some(loc), self[0]);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformValues_1 for &[i32] {
+    fn upload_uniform_values_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 1 {
+            gl.uniform1i(Some(loc), self[0]);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
         }
     }
 }
 
-impl <'a> UniformData for Uniform<'a, i32> {
-    fn upload(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
-        let loc = Some(loc);
-        //required due to https://github.com/rustwasm/wasm-bindgen/pull/1539
-        //TODO - followup and remove when no longer needed!
-        let mut values:[i32;4] = [0;4];
-
-        //this is needed anyway for casting
-        let mut matrix:[f32;16] = [0.0;16];
-
-        //First - regular uniforms
-        match *self {
-            Uniform::Value1(a) => gl.uniform1i(loc, a),
-            Uniform::Slice1(ref v) => {
-                values[0] = v[0];
-                gl.uniform1iv_with_i32_array(loc, &mut values);
-            },
-            Uniform::Value2(a, b) => gl.uniform2i(loc, a, b),
-            Uniform::Slice2(ref v) => {
-                values[0] = v[0];
-                values[1] = v[1];
-                gl.uniform2iv_with_i32_array(loc, &mut values);
-            },
-
-            Uniform::Value3(a, b, c) => gl.uniform3i(loc, a, b, c),
-            Uniform::Slice3(ref v) => {
-                values[0] = v[0];
-                values[1] = v[1];
-                values[2] = v[2];
-                gl.uniform3iv_with_i32_array(loc, &mut values);
-            },
-
-
-            Uniform::Value4(a, b, c, d) => gl.uniform4i(loc, a, b, c, d),
-            Uniform::Slice4(ref v) => {
-                values[0] = v[0];
-                values[1] = v[1];
-                values[2] = v[2];
-                values[3] = v[3];
-                gl.uniform4iv_with_i32_array(loc, &mut values);
-            },
-
-            Uniform::Matrix2(ref v) | Uniform::TransposedMatrix2(ref v) => {
-                matrix[0] = v[0] as f32;
-                matrix[1] = v[1] as f32;
-                matrix[2] = v[2] as f32;
-                matrix[3] = v[3] as f32;
-                match *self {
-                    Uniform::Matrix2(_) => gl.uniform_matrix2fv_with_f32_array(loc, false, &matrix),
-                    Uniform::TransposedMatrix2(_) => gl.uniform_matrix2fv_with_f32_array(loc, true, &matrix),
-                    _ => {}
-                }
-            },
-            Uniform::Matrix3(ref v) | Uniform::TransposedMatrix3(ref v) => {
-                matrix[0] = v[0] as f32;
-                matrix[1] = v[1] as f32;
-                matrix[2] = v[2] as f32;
-                matrix[3] = v[3] as f32;
-                matrix[4] = v[4] as f32;
-                matrix[5] = v[5] as f32;
-                matrix[6] = v[6] as f32;
-                matrix[7] = v[7] as f32;
-                matrix[8] = v[8] as f32;
-                match *self {
-                    Uniform::Matrix3(_) => gl.uniform_matrix3fv_with_f32_array(loc, false, &matrix),
-                    Uniform::TransposedMatrix3(_) => gl.uniform_matrix3fv_with_f32_array(loc, true, &matrix),
-                    _ => {}
-                }
-            },
-            Uniform::Matrix4(ref v) | Uniform::TransposedMatrix4(ref v) => {
-                matrix[0] = v[0] as f32;
-                matrix[1] = v[1] as f32;
-                matrix[2] = v[2] as f32;
-                matrix[3] = v[3] as f32;
-                matrix[4] = v[4] as f32;
-                matrix[5] = v[5] as f32;
-                matrix[6] = v[6] as f32;
-                matrix[7] = v[7] as f32;
-                matrix[8] = v[8] as f32;
-                matrix[9] = v[9] as f32;
-                matrix[10] = v[10] as f32;
-                matrix[11] = v[11] as f32;
-                matrix[12] = v[12] as f32;
-                matrix[13] = v[13] as f32;
-                matrix[14] = v[14] as f32;
-                matrix[15] = v[15] as f32;
-                match *self {
-                    Uniform::Matrix4(_) => gl.uniform_matrix4fv_with_f32_array(loc, false, &matrix),
-                    Uniform::TransposedMatrix4(_) => gl.uniform_matrix4fv_with_f32_array(loc, true, &matrix),
-                    _ => {}
-                }
-            }
+impl UniformValues_2 for &[f32] {
+    fn upload_uniform_values_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 2 {
+            gl.uniform2f(Some(loc), self[0], self[1]);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformValues_2 for &[i32] {
+    fn upload_uniform_values_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 2 {
+            gl.uniform2i(Some(loc), self[0], self[1]);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformValues_3 for &[f32] {
+    fn upload_uniform_values_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 3 {
+            gl.uniform3f(Some(loc), self[0], self[1], self[2]);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformValues_3 for &[i32] {
+    fn upload_uniform_values_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 3 {
+            gl.uniform3i(Some(loc), self[0], self[1], self[2]);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
         }
     }
 }
 
-impl <'a> UniformData for Uniform<'a, i64> {
-    fn upload(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
-        let loc = Some(loc);
-        //required due to casting 
-        let mut values:[i32;4] = [0;4];
-        let mut matrix:[f32;16] = [0.0;16];
-
-        match *self {
-            Uniform::Value1(a) => gl.uniform1i(loc, a as i32),
-            Uniform::Slice1(ref v) => {
-                values[0] = v[0] as i32;
-                gl.uniform1iv_with_i32_array(loc, &mut values);
-            },
-            Uniform::Value2(a, b) => gl.uniform2i(loc, a as i32, b as i32),
-            Uniform::Slice2(ref v) => {
-                values[0] = v[0] as i32;
-                values[1] = v[1] as i32;
-                gl.uniform2iv_with_i32_array(loc, &mut values);
-            },
-
-            Uniform::Value3(a, b, c) => gl.uniform3i(loc, a as i32, b as i32, c as i32),
-            Uniform::Slice3(ref v) => {
-                values[0] = v[0] as i32;
-                values[1] = v[1] as i32;
-                values[2] = v[2] as i32;
-                gl.uniform3iv_with_i32_array(loc, &mut values);
-            },
-
-            Uniform::Value4(a, b, c, d) => gl.uniform4i(loc, a as i32, b as i32, c as i32, d as i32),
-            Uniform::Slice4(ref v) => {
-                values[0] = v[0] as i32;
-                values[1] = v[1] as i32;
-                values[2] = v[2] as i32;
-                values[3] = v[3] as i32;
-                gl.uniform4iv_with_i32_array(loc, &mut values);
-            }
-
-
-            Uniform::Matrix2(ref v) | Uniform::TransposedMatrix2(ref v) => {
-                matrix[0] = v[0] as f32;
-                matrix[1] = v[1] as f32;
-                matrix[2] = v[2] as f32;
-                matrix[3] = v[3] as f32;
-                match *self {
-                    Uniform::Matrix2(_) => gl.uniform_matrix2fv_with_f32_array(loc, false, &matrix),
-                    Uniform::TransposedMatrix2(_) => gl.uniform_matrix2fv_with_f32_array(loc, true, &matrix),
-                    _ => {}
-                }
-            },
-            Uniform::Matrix3(ref v) | Uniform::TransposedMatrix3(ref v) => {
-                matrix[0] = v[0] as f32;
-                matrix[1] = v[1] as f32;
-                matrix[2] = v[2] as f32;
-                matrix[3] = v[3] as f32;
-                matrix[4] = v[4] as f32;
-                matrix[5] = v[5] as f32;
-                matrix[6] = v[6] as f32;
-                matrix[7] = v[7] as f32;
-                matrix[8] = v[8] as f32;
-                match *self {
-                    Uniform::Matrix3(_) => gl.uniform_matrix3fv_with_f32_array(loc, false, &matrix),
-                    Uniform::TransposedMatrix3(_) => gl.uniform_matrix3fv_with_f32_array(loc, true, &matrix),
-                    _ => {}
-                }
-            },
-            Uniform::Matrix4(ref v) | Uniform::TransposedMatrix4(ref v) => {
-                matrix[0] = v[0] as f32;
-                matrix[1] = v[1] as f32;
-                matrix[2] = v[2] as f32;
-                matrix[3] = v[3] as f32;
-                matrix[4] = v[4] as f32;
-                matrix[5] = v[5] as f32;
-                matrix[6] = v[6] as f32;
-                matrix[7] = v[7] as f32;
-                matrix[8] = v[8] as f32;
-                matrix[9] = v[9] as f32;
-                matrix[10] = v[10] as f32;
-                matrix[11] = v[11] as f32;
-                matrix[12] = v[12] as f32;
-                matrix[13] = v[13] as f32;
-                matrix[14] = v[14] as f32;
-                matrix[15] = v[15] as f32;
-                match *self {
-                    Uniform::Matrix4(_) => gl.uniform_matrix4fv_with_f32_array(loc, false, &matrix),
-                    Uniform::TransposedMatrix4(_) => gl.uniform_matrix4fv_with_f32_array(loc, true, &matrix),
-                    _ => {}
-                }
-            }
+impl UniformValues_4 for &[f32] {
+    fn upload_uniform_values_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 4 {
+            gl.uniform4f(Some(loc), self[0], self[1], self[2], self[3]);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
         }
+    }
+}
+impl UniformValues_4 for &[i32] {
+    fn upload_uniform_values_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 4 {
+            gl.uniform4i(Some(loc), self[0], self[1], self[2], self[3]);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+/*
+ * Uniform Slice
+ */
+
+impl UniformSlice for [f32;1] {
+    fn upload_uniform_slice(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform1fv_with_f32_array(Some(loc), self);
+    }
+}
+impl UniformSlice for [i32;1] {
+    fn upload_uniform_slice(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        let mut values:[i32;1] = [self[0]];
+        gl.uniform1iv_with_i32_array(Some(loc), &mut values);
+    }
+}
+impl UniformSlice_1 for [f32;1] {
+    fn upload_uniform_slice_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform1fv_with_f32_array(Some(loc), self);
+        Ok(())
+    }
+}
+impl UniformSlice_1 for [i32;1] {
+    fn upload_uniform_slice_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        let mut values:[i32;1] = [self[0]];
+        gl.uniform1iv_with_i32_array(Some(loc), &mut values);
+        Ok(())
     }
 }
 
 
-impl <'a> UniformData for Uniform<'a, f64> {
-    fn upload(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
-        let loc = Some(loc);
-        //required due to casting 
-        let mut values:[f32;4] = [0.0;4];
-        let mut matrix:[f32;16] = [0.0;16];
-
-        match *self {
-            Uniform::Value1(a) => gl.uniform1f(loc, a as f32),
-            Uniform::Slice1(ref v) => {
-                values[0] = v[0] as f32;
-                gl.uniform1fv_with_f32_array(loc, &mut values);
-            },
-            Uniform::Value2(a, b) => gl.uniform2f(loc, a as f32, b as f32),
-            Uniform::Slice2(ref v) => {
-                values[0] = v[0] as f32;
-                values[1] = v[1] as f32;
-                gl.uniform2fv_with_f32_array(loc, &mut values);
-            },
-
-            Uniform::Value3(a, b, c) => gl.uniform3f(loc, a as f32, b as f32, c as f32),
-            Uniform::Slice3(ref v) => {
-                values[0] = v[0] as f32;
-                values[1] = v[1] as f32;
-                values[2] = v[2] as f32;
-                gl.uniform3fv_with_f32_array(loc, &mut values);
-            },
+impl UniformSlice for [f32;2] {
+    fn upload_uniform_slice(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform2fv_with_f32_array(Some(loc), self);
+    }
+}
+impl UniformSlice for [i32;2] {
+    fn upload_uniform_slice(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        let mut values:[i32;2] = [self[0], self[1]];
+        gl.uniform2iv_with_i32_array(Some(loc), &mut values);
+    }
+}
+impl UniformSlice_2 for [f32;2] {
+    fn upload_uniform_slice_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform2fv_with_f32_array(Some(loc), self);
+        Ok(())
+    }
+}
+impl UniformSlice_2 for [i32;2] {
+    fn upload_uniform_slice_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        let mut values:[i32;2] = [self[0], self[1]];
+        gl.uniform2iv_with_i32_array(Some(loc), &mut values);
+        Ok(())
+    }
+}
 
 
-            Uniform::Value4(a, b, c, d) => gl.uniform4f(loc, a as f32, b as f32, c as f32, d as f32),
-            Uniform::Slice4(ref v) => {
-                values[0] = v[0] as f32;
-                values[1] = v[1] as f32;
-                values[2] = v[2] as f32;
-                values[3] = v[3] as f32;
-                gl.uniform4fv_with_f32_array(loc, &mut values);
-            }
+impl UniformSlice for [f32;3] {
+    fn upload_uniform_slice(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform3fv_with_f32_array(Some(loc), self);
+    }
+}
+impl UniformSlice for [i32;3] {
+    fn upload_uniform_slice(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        let mut values:[i32;3] = [self[0], self[1], self[2]];
+        gl.uniform3iv_with_i32_array(Some(loc), &mut values);
+    }
+}
+impl UniformSlice_3 for [f32;3] {
+    fn upload_uniform_slice_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform3fv_with_f32_array(Some(loc), self);
+        Ok(())
+    }
+}
+impl UniformSlice_3 for [i32;3] {
+    fn upload_uniform_slice_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        let mut values:[i32;3] = [self[0], self[1], self[2]];
+        gl.uniform3iv_with_i32_array(Some(loc), &mut values);
+        Ok(())
+    }
+}
+
+impl UniformSlice for [f32;4] {
+    fn upload_uniform_slice(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform4fv_with_f32_array(Some(loc), self);
+    }
+}
+impl UniformSlice for [i32;4] {
+    fn upload_uniform_slice(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        let mut values:[i32;4] = [self[0], self[1], self[2], self[3]];
+        gl.uniform4iv_with_i32_array(Some(loc), &mut values);
+    }
+}
+impl UniformSlice_4 for [f32;4] {
+    fn upload_uniform_slice_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform4fv_with_f32_array(Some(loc), self);
+        Ok(())
+    }
+}
+impl UniformSlice_4 for [i32;4] {
+    fn upload_uniform_slice_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        let mut values:[i32;4] = [self[0], self[1], self[2], self[3]];
+        gl.uniform4iv_with_i32_array(Some(loc), &mut values);
+        Ok(())
+    }
+}
 
 
-            Uniform::Matrix2(ref v) | Uniform::TransposedMatrix2(ref v) => {
-                matrix[0] = v[0] as f32;
-                matrix[1] = v[1] as f32;
-                matrix[2] = v[2] as f32;
-                matrix[3] = v[3] as f32;
-                match *self {
-                    Uniform::Matrix2(_) => gl.uniform_matrix2fv_with_f32_array(loc, false, &matrix),
-                    Uniform::TransposedMatrix2(_) => gl.uniform_matrix2fv_with_f32_array(loc, true, &matrix),
-                    _ => {}
-                }
-            },
-            Uniform::Matrix3(ref v) | Uniform::TransposedMatrix3(ref v) => {
-                matrix[0] = v[0] as f32;
-                matrix[1] = v[1] as f32;
-                matrix[2] = v[2] as f32;
-                matrix[3] = v[3] as f32;
-                matrix[4] = v[4] as f32;
-                matrix[5] = v[5] as f32;
-                matrix[6] = v[6] as f32;
-                matrix[7] = v[7] as f32;
-                matrix[8] = v[8] as f32;
-                match *self {
-                    Uniform::Matrix3(_) => gl.uniform_matrix3fv_with_f32_array(loc, false, &matrix),
-                    Uniform::TransposedMatrix3(_) => gl.uniform_matrix3fv_with_f32_array(loc, true, &matrix),
-                    _ => {}
-                }
-            },
-            Uniform::Matrix4(ref v) | Uniform::TransposedMatrix4(ref v) => {
-                matrix[0] = v[0] as f32;
-                matrix[1] = v[1] as f32;
-                matrix[2] = v[2] as f32;
-                matrix[3] = v[3] as f32;
-                matrix[4] = v[4] as f32;
-                matrix[5] = v[5] as f32;
-                matrix[6] = v[6] as f32;
-                matrix[7] = v[7] as f32;
-                matrix[8] = v[8] as f32;
-                matrix[9] = v[9] as f32;
-                matrix[10] = v[10] as f32;
-                matrix[11] = v[11] as f32;
-                matrix[12] = v[12] as f32;
-                matrix[13] = v[13] as f32;
-                matrix[14] = v[14] as f32;
-                matrix[15] = v[15] as f32;
-                match *self {
-                    Uniform::Matrix4(_) => gl.uniform_matrix4fv_with_f32_array(loc, false, &matrix),
-                    Uniform::TransposedMatrix4(_) => gl.uniform_matrix4fv_with_f32_array(loc, true, &matrix),
-                    _ => {}
-                }
-            }
+
+
+
+impl UniformSlice_1 for &[f32] {
+    fn upload_uniform_slice_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 1 {
+            gl.uniform1fv_with_f32_array(Some(loc), self);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
         }
     }
 }
 
+impl UniformSlice_1 for &[i32] {
+    fn upload_uniform_slice_1(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 1 {
+            let mut values:[i32;4] = [self[0], self[1], self[2], self[3]];
+            gl.uniform1iv_with_i32_array(Some(loc), &mut values);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformSlice_2 for &[f32] {
+    fn upload_uniform_slice_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 2 {
+            gl.uniform2fv_with_f32_array(Some(loc), self);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformSlice_2 for &[i32] {
+    fn upload_uniform_slice_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 2 {
+            let mut values:[i32;4] = [self[0], self[1], self[2], self[3]];
+            gl.uniform2iv_with_i32_array(Some(loc), &mut values);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformSlice_3 for &[f32] {
+    fn upload_uniform_slice_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 1 {
+            gl.uniform3fv_with_f32_array(Some(loc), self);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformSlice_3 for &[i32] {
+    fn upload_uniform_slice_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 3 {
+            let mut values:[i32;4] = [self[0], self[1], self[2], self[3]];
+            gl.uniform3iv_with_i32_array(Some(loc), &mut values);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformSlice_4 for &[f32] {
+    fn upload_uniform_slice_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 1 {
+            gl.uniform4fv_with_f32_array(Some(loc), self);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformSlice_4 for &[i32] {
+    fn upload_uniform_slice_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 1 {
+            let mut values:[i32;4] = [self[0], self[1], self[2], self[3]];
+            gl.uniform4iv_with_i32_array(Some(loc), &mut values);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+/*
+ * Uniform Matrix
+ */
+impl UniformMatrix for [f32;4] {
+    fn upload_uniform_matrix(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform_matrix2fv_with_f32_array(Some(loc), false, self);
+    }
+    fn upload_uniform_matrix_transposed(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform_matrix2fv_with_f32_array(Some(loc), true, self);
+    }
+}
+impl UniformMatrix_2 for [f32;4] {
+    fn upload_uniform_matrix_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform_matrix2fv_with_f32_array(Some(loc), false, self);
+        Ok(())
+    }
+    fn upload_uniform_matrix_transposed_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform_matrix2fv_with_f32_array(Some(loc), true, self);
+        Ok(())
+    }
+}
+
+
+impl UniformMatrix for [f32;9] {
+    fn upload_uniform_matrix(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform_matrix3fv_with_f32_array(Some(loc), false, self);
+    }
+    fn upload_uniform_matrix_transposed(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform_matrix3fv_with_f32_array(Some(loc), true, self);
+    }
+}
+impl UniformMatrix_3 for [f32;9] {
+    fn upload_uniform_matrix_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform_matrix3fv_with_f32_array(Some(loc), false, self);
+        Ok(())
+    }
+    fn upload_uniform_matrix_transposed_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform_matrix3fv_with_f32_array(Some(loc), true, self);
+        Ok(())
+    }
+}
+
+impl UniformMatrix for [f32;16] {
+    fn upload_uniform_matrix(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform_matrix4fv_with_f32_array(Some(loc), false, self);
+    }
+    fn upload_uniform_matrix_transposed(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) {
+        gl.uniform_matrix4fv_with_f32_array(Some(loc), true, self);
+    }
+}
+impl UniformMatrix_4 for [f32;16] {
+    fn upload_uniform_matrix_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform_matrix4fv_with_f32_array(Some(loc), false, self);
+        Ok(())
+    }
+    fn upload_uniform_matrix_transposed_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        gl.uniform_matrix4fv_with_f32_array(Some(loc), true, self);
+        Ok(())
+    }
+}
+
+
+impl UniformMatrix_2 for &[f32] {
+    fn upload_uniform_matrix_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 4 {
+            gl.uniform_matrix2fv_with_f32_array(Some(loc), false, self);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+    fn upload_uniform_matrix_transposed_2(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 4 {
+            gl.uniform_matrix2fv_with_f32_array(Some(loc), true, self);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+
+impl UniformMatrix_3 for &[f32] {
+    fn upload_uniform_matrix_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 9 {
+            gl.uniform_matrix3fv_with_f32_array(Some(loc), false, self);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+    fn upload_uniform_matrix_transposed_3(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 9 {
+            gl.uniform_matrix3fv_with_f32_array(Some(loc), true, self);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+impl UniformMatrix_4 for &[f32] {
+    fn upload_uniform_matrix_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 16 {
+            gl.uniform_matrix4fv_with_f32_array(Some(loc), false, self);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+    fn upload_uniform_matrix_transposed_4(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+        if self.len() >= 16 {
+            gl.uniform_matrix4fv_with_f32_array(Some(loc), true, self);
+            Ok(())
+        } else {
+            Err(Error::from(NativeError::UniformSliceSize))
+        }
+    }
+}
+//Renderer wrapper
 impl WebGlRenderer {
     pub fn get_uniform_location_value(&self, name:&str) -> Result<WebGlUniformLocation, Error> {
 
@@ -356,19 +687,94 @@ impl WebGlRenderer {
     }
 
 
-    pub fn upload_uniform<T>(&mut self, loc:&UniformLocation, data:&T) -> Result<(), Error> 
-    where T: UniformData
-    {
-        let loc = match loc {
-            UniformLocation::Name(ref name) => {
-                self.get_uniform_location_value(&name)?
+    fn _get_uniform_loc(&self, target:&Uniform) -> Result<WebGlUniformLocation, Error> {
+        match target {
+            Uniform::Name(ref name) => {
+                self.get_uniform_location_value(&name)
             },
-            UniformLocation::Value(ref loc) => {
-                loc.clone()
+            Uniform::Loc(ref loc) => {
+                Ok(loc.clone())
             }
-        };
-        
-        data.upload(&self.gl, &loc);
+        }
+    }
+
+    pub fn upload_uniform_values<T: UniformValues>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_values(&self.gl, &loc);
         Ok(())
+    }
+    pub fn upload_uniform_values_1<T: UniformValues_1>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_values_1(&self.gl, &loc)
+    }
+    pub fn upload_uniform_values_2<T: UniformValues_2>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_values_2(&self.gl, &loc)
+    }
+    pub fn upload_uniform_values_3<T: UniformValues_3>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_values_3(&self.gl, &loc)
+    }
+    pub fn upload_uniform_values_4<T: UniformValues_4>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_values_4(&self.gl, &loc)
+    }
+
+    pub fn upload_uniform_slice<T: UniformSlice>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_slice(&self.gl, &loc);
+        Ok(())
+    }
+    pub fn upload_uniform_slice_1<T: UniformSlice_1>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_slice_1(&self.gl, &loc)
+    }
+    pub fn upload_uniform_slice_2<T: UniformSlice_2>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_slice_2(&self.gl, &loc)
+    }
+    pub fn upload_uniform_slice_3<T: UniformSlice_3>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_slice_3(&self.gl, &loc)
+    }
+    pub fn upload_uniform_slice_4<T: UniformSlice_4>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_slice_4(&self.gl, &loc)
+    }
+
+    pub fn upload_uniform_matrix<T: UniformMatrix>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_matrix(&self.gl, &loc);
+        Ok(())
+    }
+    pub fn upload_uniform_matrix_2<T: UniformMatrix_2>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_matrix_2(&self.gl, &loc)
+    }
+    pub fn upload_uniform_matrix_3<T: UniformMatrix_3>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_matrix_3(&self.gl, &loc)
+    }
+    pub fn upload_uniform_matrix_4<T: UniformMatrix_4>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_matrix_4(&self.gl, &loc)
+    }
+
+    pub fn upload_uniform_matrix_transposed<T: UniformMatrix>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_matrix_transposed(&self.gl, &loc);
+        Ok(())
+    }
+    pub fn upload_uniform_matrix_transposed_2<T: UniformMatrix_2>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_matrix_transposed_2(&self.gl, &loc)
+    }
+    pub fn upload_uniform_matrix_transposed_3<T: UniformMatrix_3>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_matrix_transposed_3(&self.gl, &loc)
+    }
+    pub fn upload_uniform_matrix_transposed_4<T: UniformMatrix_4>(&self, target:&Uniform, data:&T) -> Result<(), Error> {
+        let loc = self._get_uniform_loc(&target)?;
+        data.upload_uniform_matrix_transposed_4(&self.gl, &loc)
     }
 }

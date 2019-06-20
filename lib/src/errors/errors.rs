@@ -26,6 +26,7 @@ pub enum NativeError {
     NoCreateTexture,
     MissingTexture,
     MissingBuffer,
+    UniformSliceSize,
     VertexArrayMissing,
     VertexArrayCreate,
     Internal
@@ -73,6 +74,7 @@ impl NativeError {
             NativeError::MissingBuffer => "couldn't get buffer",
             NativeError::VertexArrayMissing => "no such vertex array",
             NativeError::VertexArrayCreate => "unable to create vertex array",
+            NativeError::UniformSliceSize => "uniform slice is wrong size",
             NativeError::Internal => "internal error",
         }
     }

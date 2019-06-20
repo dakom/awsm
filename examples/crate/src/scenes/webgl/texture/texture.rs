@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, ClearBufferMask, UniformLocation, AttributeLocation, SimpleTextureOptions, WebGlTextureSource, PixelFormat, WebGlRenderer, Uniform, BeginMode};
+use awsm::webgl::{Id, ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, WebGlRenderer, Uniform, BeginMode};
 use awsm::loaders::{image};
 use crate::router::{get_static_href};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
@@ -141,14 +141,14 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     webgl_renderer.activate_texture_for_sampler(texture_id.unwrap(), 0)?;
 
     //Build our matrices (must cast to f32)
-    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(area.width as f32, area.height as f32, 0.0));
-    let camera_mat = Matrix4::new_orthographic(0.0, *camera_width as f32, 0.0, *camera_height as f32, 0.0, 1.0);
+    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(area.width as f32, area.height as f32, 0.0f32));
+    let projection_mat = Matrix4::new_orthographic(0.0, *camera_width as f32, 0.0, *camera_height as f32, 0.0, 1.0);
     let model_mat = Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, 0.0));
-    let mvp_mat = camera_mat * model_mat;
+    let mvp_mat = projection_mat * model_mat;
 
     //Upload them to the GPU
-    webgl_renderer.upload_uniform(&UniformLocation::Name("u_size"), &Uniform::Matrix4(&scaling_mat.as_slice()))?;
-    webgl_renderer.upload_uniform(&UniformLocation::Name("u_modelViewProjection"), &Uniform::Matrix4(&mvp_mat.as_slice()))?;
+    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_size"), &scaling_mat.as_slice())?; 
+    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_modelViewProjection"), &mvp_mat.as_slice())?; 
 
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);

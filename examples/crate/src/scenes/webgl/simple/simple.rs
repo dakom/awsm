@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, UniformLocation, ClearBufferMask, WebGlRenderer, Uniform, BeginMode};
+use awsm::webgl::{Id, ClearBufferMask, WebGlRenderer, Uniform, BeginMode};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
@@ -106,6 +106,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
 
     webgl_renderer.activate_program(program_id.unwrap());
 
+
     //Build our matrices (must cast to f32)
     let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(area.width as f32, area.height as f32, 0.0));
     let camera_mat = Matrix4::new_orthographic(0.0, *camera_width as f32, 0.0, *camera_height as f32, 0.0, 1.0);
@@ -113,9 +114,12 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let mvp_mat = camera_mat * model_mat;
 
     //Upload them to the GPU
-    webgl_renderer.upload_uniform(&UniformLocation::Name("u_size"), &Uniform::Matrix4(&scaling_mat.as_slice()))?;
-    webgl_renderer.upload_uniform(&UniformLocation::Name("u_modelViewProjection"), &Uniform::Matrix4(&mvp_mat.as_slice()))?;
-    webgl_renderer.upload_uniform(&UniformLocation::Name("u_color"), &Uniform::Slice4(&color.values()))?;
+    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_size"), &scaling_mat.as_slice())?;
+    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_modelViewProjection"), &mvp_mat.as_slice())?;
+
+    let color_values = color.values();
+    let color_values = (color_values[0] as f32, color_values[1] as f32, color_values[2] as f32, color_values[3] as f32);
+    webgl_renderer.upload_uniform_values(&Uniform::Name("u_color"), &color_values)?;
 
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);

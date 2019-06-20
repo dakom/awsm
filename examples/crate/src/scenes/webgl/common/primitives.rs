@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, AttributeLocation, WebGlRenderer, BufferTarget, BufferUsage, AttributeOptions, DataType};
+use awsm::webgl::{Id, Attribute, WebGlRenderer, BufferData, BufferTarget, BufferUsage, AttributeOptions, DataType};
 use awsm::errors::{Error};
 
 static QUAD_GEOM_UNIT:[f32; 8] = [  
@@ -40,12 +40,12 @@ pub static N_BOX_ELEMENTS:u32 = 36;
 pub fn create_and_assign_unit_quad_buffer(webgl_renderer:&mut WebGlRenderer) -> Result<Id, Error> {
     let buffer_id = webgl_renderer.create_buffer()?;
 
-    webgl_renderer.upload_buffer_f32_to_attribute(
+    webgl_renderer.upload_buffer_to_attribute(
         buffer_id,
-        &QUAD_GEOM_UNIT,
+        BufferData::F32(&QUAD_GEOM_UNIT),
         BufferTarget::ArrayBuffer,
         BufferUsage::StaticDraw,
-        &AttributeLocation::Name("a_vertex"),
+        &Attribute::Name("a_vertex"),
         &AttributeOptions::new(2, DataType::Float)
     )?;
 
@@ -58,23 +58,23 @@ pub fn create_unit_box_buffers(webgl_renderer:&mut WebGlRenderer) -> Result<(Id,
     let colors_id = webgl_renderer.create_buffer()?;
     let elements_id = webgl_renderer.create_buffer()?;
 
-    webgl_renderer.upload_buffer_f32(
+    webgl_renderer.upload_buffer(
         geom_id,
-        &BOX_GEOM_UNIT,
+        BufferData::F32(&BOX_GEOM_UNIT),
         BufferTarget::ArrayBuffer,
         BufferUsage::StaticDraw,
     )?;
 
-    webgl_renderer.upload_buffer_f32(
+    webgl_renderer.upload_buffer(
         colors_id,
-        &BOX_COLORS,
+        BufferData::F32(&BOX_COLORS),
         BufferTarget::ArrayBuffer,
         BufferUsage::StaticDraw,
     )?;
 
-    webgl_renderer.upload_buffer_u8(
+    webgl_renderer.upload_buffer(
         elements_id,
-        &BOX_ELEMENTS,
+        BufferData::U8(&BOX_ELEMENTS),
         BufferTarget::ElementArrayBuffer,
         BufferUsage::StaticDraw,
     )?;

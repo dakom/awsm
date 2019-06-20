@@ -4,6 +4,9 @@ pub trait SliceValues {
         let slice: &[f64] = unsafe { std::slice::from_raw_parts(pointer, 4) };
         slice
     }
+    fn to_vec_f32(self:&Self) -> Vec<f32> {
+        self.values().iter().map(|n| *n as f32).collect()
+    }
 }
 
 

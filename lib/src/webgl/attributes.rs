@@ -3,9 +3,9 @@ use crate::errors::{Error, NativeError};
 use super::{WebGlRenderer, WebGlContext, DataType, BufferTarget, Id};
 
 //ATTRIBUTES
-pub enum AttributeLocation<'a> {
+pub enum Attribute<'a> {
     Name(&'a str),
-    Value(u32),
+    Loc(u32),
 }
 
 pub struct AttributeOptions {
@@ -64,23 +64,27 @@ impl WebGlRenderer {
             .ok_or_else(|| Error::from(NativeError::AttributeLocation(Some(name.to_string()))))
     }
 
-    pub fn activate_attribute(&self, loc:&AttributeLocation, opts:&AttributeOptions) -> Result<(), Error> {
-        let loc = match loc {
-            AttributeLocation::Name(ref name) => {
-                self.get_attribute_location_value(&name)?
+    fn _get_attribute_loc(&self, target:&Attribute) -> Result<u32, Error> {
+        match target {
+            Attribute::Name(ref name) => {
+                self.get_attribute_location_value(&name)
             },
-            AttributeLocation::Value(v) => *v
-        };
+            Attribute::Loc(ref loc) => {
+                Ok(*loc)
+            }
+        }
+    }
 
+    pub fn activate_attribute(&self, target:&Attribute, opts:&AttributeOptions) -> Result<(), Error> {
+        let loc = self._get_attribute_loc(&target)?;
         activate_attribute_direct(&self.gl, loc, &opts);
-
         Ok(())
     }
 
-    pub fn activate_buffer_for_attribute(&self, buffer_id:Id, buffer_target:BufferTarget, attribute_loc:&AttributeLocation, opts:&AttributeOptions) -> Result<(), Error> {
+    pub fn activate_buffer_for_attribute(&self, buffer_id:Id, buffer_target:BufferTarget, attribute_target:&Attribute, opts:&AttributeOptions) -> Result<(), Error> {
 
         self.activate_buffer(buffer_id, buffer_target)?;
-        self.activate_attribute(&attribute_loc, &opts)?;
+        self.activate_attribute(&attribute_target, &opts)?;
         Ok(())
     }
 }

@@ -6,7 +6,7 @@ use web_sys::{WebGlProgram, WebGlShader, WebGlUniformLocation};
 use wasm_bindgen::prelude::JsValue;
 use crate::errors::{Error, NativeError};
 use super::id::{Id};
-use super::{WebGlRenderer, WebGlContext, UniformData, GlQuery, get_attribute_location_direct, get_uniform_location_direct};
+use super::{WebGlRenderer, WebGlContext, GlQuery, get_attribute_location_direct, get_uniform_location_direct};
 use log::{info};
 
 pub struct ProgramInfo {
