@@ -1,4 +1,4 @@
-use awsm::webgl::{ClearBufferMask, BufferData, Attribute, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, WebGlRenderer, AttributeOptions, DataType, Uniform, BeginMode};
+use awsm::webgl::{ClearBufferMask, UniformData, BufferData, Attribute, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, WebGlRenderer, AttributeOptions, DataType, Uniform, BeginMode};
 use awsm::loaders::{image};
 use crate::router::{get_static_href};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
@@ -174,8 +174,8 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let camera_mat = Matrix4::new_orthographic(0.0, *camera_width as f32, 0.0, *camera_height as f32, 0.0, 1.0);
     
     //Upload them to the GPU
-    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_size"), &scaling_mat.as_slice())?;
-    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_camera"), &camera_mat.as_slice())?;
+    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_size"), &UniformData(scaling_mat.as_slice()))?;
+    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_camera"), &UniformData(camera_mat.as_slice()))?;
 
 
     //upload our buffer for instancing

@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, GlToggle, BufferTarget, Attribute, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, Uniform, BeginMode};
+use awsm::webgl::{Id, GlToggle, BufferTarget, UniformData, Attribute, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, Uniform, BeginMode};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
@@ -105,8 +105,8 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let mvp_mat = projection.to_homogeneous() * (view.to_homogeneous() * model_mat);
 
     //Upload them to the GPU
-    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_size"), &scaling_mat.as_slice())?;
-    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_modelViewProjection"), &mvp_mat.as_slice())?;
+    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_size"), &UniformData(scaling_mat.as_slice()))?;
+    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_modelViewProjection"), &UniformData(mvp_mat.as_slice()))?;
 
 
     //activate buffers

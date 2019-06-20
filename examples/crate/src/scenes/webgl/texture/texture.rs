@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, WebGlRenderer, Uniform, BeginMode};
+use awsm::webgl::{Id, UniformData, ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, WebGlRenderer, Uniform, BeginMode};
 use awsm::loaders::{image};
 use crate::router::{get_static_href};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
@@ -147,8 +147,8 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let mvp_mat = projection_mat * model_mat;
 
     //Upload them to the GPU
-    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_size"), &scaling_mat.as_slice())?; 
-    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_modelViewProjection"), &mvp_mat.as_slice())?; 
+    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_size"), &UniformData(scaling_mat.as_slice()))?; 
+    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_modelViewProjection"), &UniformData(mvp_mat.as_slice()))?; 
 
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
