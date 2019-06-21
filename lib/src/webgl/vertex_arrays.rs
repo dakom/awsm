@@ -1,20 +1,20 @@
 use crate::errors::{Error, NativeError};
 use wasm_bindgen::{JsCast};
 use web_sys::{WebGlVertexArrayObject};
-use super::{WebGlRenderer, Id, Attribute, AttributeOptions, BufferTarget};
+use super::{WebGlRenderer, Id, AttributeOptions, BufferTarget};
 
 use cfg_if::cfg_if;
 
 pub struct VertexArray<'a> {
-    pub attribute: Attribute<'a>,
+    pub attribute_name: &'a str, 
     pub buffer_id: Id,
     pub opts: &'a AttributeOptions
 }
 
 impl <'a> VertexArray<'a> {
-    pub fn new(attribute:Attribute<'a>, buffer_id: Id, opts: &'a AttributeOptions) -> Self {
+    pub fn new(attribute_name:&'a str, buffer_id: Id, opts: &'a AttributeOptions) -> Self {
         Self {
-            attribute,
+            attribute_name,
             buffer_id,
             opts
         }
@@ -112,7 +112,7 @@ impl WebGlRenderer {
 
             for config in configs {
                 self._activate_buffer_nocheck(config.buffer_id, BufferTarget::ArrayBuffer)?;
-                self.activate_attribute(&config.attribute, &config.opts)?;
+                self.activate_attribute(&config.attribute_name, &config.opts)?;
             }
             Ok(())
         } else {

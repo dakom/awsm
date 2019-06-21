@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, Attribute, WebGlRenderer, BufferData, BufferTarget, BufferUsage, AttributeOptions, DataType};
+use awsm::webgl::{Id, WebGlRenderer, BufferData, BufferTarget, BufferUsage, AttributeOptions, DataType};
 use awsm::errors::{Error};
 
 static QUAD_GEOM_UNIT:[f32; 8] = [  
@@ -42,10 +42,8 @@ pub fn create_and_assign_unit_quad_buffer(webgl_renderer:&mut WebGlRenderer) -> 
 
     webgl_renderer.upload_buffer_to_attribute(
         buffer_id,
-        BufferData::F32(&QUAD_GEOM_UNIT),
-        BufferTarget::ArrayBuffer,
-        BufferUsage::StaticDraw,
-        &Attribute::Name("a_vertex"),
+        BufferData::new(&QUAD_GEOM_UNIT, BufferTarget::ArrayBuffer, BufferUsage::StaticDraw),
+        "a_vertex",
         &AttributeOptions::new(2, DataType::Float)
     )?;
 
@@ -58,25 +56,20 @@ pub fn create_unit_box_buffers(webgl_renderer:&mut WebGlRenderer) -> Result<(Id,
     let colors_id = webgl_renderer.create_buffer()?;
     let elements_id = webgl_renderer.create_buffer()?;
 
+    //Gotta use slices since arrays are only impl's up to 32 values
     webgl_renderer.upload_buffer(
         geom_id,
-        BufferData::F32(&BOX_GEOM_UNIT),
-        BufferTarget::ArrayBuffer,
-        BufferUsage::StaticDraw,
+        BufferData::new(&BOX_GEOM_UNIT[..], BufferTarget::ArrayBuffer, BufferUsage::StaticDraw)
     )?;
 
     webgl_renderer.upload_buffer(
         colors_id,
-        BufferData::F32(&BOX_COLORS),
-        BufferTarget::ArrayBuffer,
-        BufferUsage::StaticDraw,
+        BufferData::new(&BOX_COLORS[..], BufferTarget::ArrayBuffer, BufferUsage::StaticDraw)
     )?;
 
     webgl_renderer.upload_buffer(
         elements_id,
-        BufferData::U8(&BOX_ELEMENTS),
-        BufferTarget::ElementArrayBuffer,
-        BufferUsage::StaticDraw,
+        BufferData::new(&BOX_ELEMENTS[..], BufferTarget::ElementArrayBuffer, BufferUsage::StaticDraw)
     )?;
 
     Ok((geom_id, colors_id, elements_id))

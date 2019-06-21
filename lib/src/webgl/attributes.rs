@@ -3,10 +3,6 @@ use crate::errors::{Error, NativeError};
 use super::{WebGlRenderer, WebGlContext, DataType, BufferTarget, Id};
 
 //ATTRIBUTES
-pub enum Attribute<'a> {
-    Name(&'a str),
-    Loc(u32),
-}
 
 pub struct AttributeOptions {
     pub size: i32, 
@@ -49,6 +45,7 @@ pub fn activate_attribute_direct(gl:&WebGlContext, loc:u32, opts:&AttributeOptio
 }
 
 
+//The attribute lookups are cached at shader compilation (see shader.rs)
 impl WebGlRenderer {
 
     pub fn get_attribute_location_value(&self, name:&str) -> Result<u32, Error> 
@@ -64,27 +61,21 @@ impl WebGlRenderer {
             .ok_or_else(|| Error::from(NativeError::AttributeLocation(Some(name.to_string()))))
     }
 
-    fn _get_attribute_loc(&self, target:&Attribute) -> Result<u32, Error> {
-        match target {
-            Attribute::Name(ref name) => {
-                self.get_attribute_location_value(&name)
-            },
-            Attribute::Loc(ref loc) => {
-                Ok(*loc)
-            }
-        }
-    }
 
-    pub fn activate_attribute(&self, target:&Attribute, opts:&AttributeOptions) -> Result<(), Error> {
-        let loc = self._get_attribute_loc(&target)?;
+    pub fn activate_attribute_loc(&self, target_loc: u32, opts:&AttributeOptions) {
+        activate_attribute_direct(&self.gl, target_loc, &opts);
+    }
+    //convenience helpers
+    pub fn activate_attribute(&self, target_name: &str, opts:&AttributeOptions) -> Result<(), Error> {
+        let loc = self.get_attribute_location_value(&target_name)?;
         activate_attribute_direct(&self.gl, loc, &opts);
         Ok(())
     }
 
-    pub fn activate_buffer_for_attribute(&self, buffer_id:Id, buffer_target:BufferTarget, attribute_target:&Attribute, opts:&AttributeOptions) -> Result<(), Error> {
+    pub fn activate_buffer_for_attribute(&self, buffer_id:Id, buffer_target:BufferTarget, attribute_name:&str, opts:&AttributeOptions) -> Result<(), Error> {
 
         self.activate_buffer(buffer_id, buffer_target)?;
-        self.activate_attribute(&attribute_target, &opts)?;
+        self.activate_attribute(&attribute_name, &opts)?;
         Ok(())
     }
 }

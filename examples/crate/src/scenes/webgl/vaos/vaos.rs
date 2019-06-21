@@ -1,4 +1,4 @@
-use awsm::webgl::{UniformData, VertexArray, Id, GlToggle, BufferTarget, Attribute, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, Uniform, BeginMode};
+use awsm::webgl::{VertexArray, Id, GlToggle, BufferTarget, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, BeginMode};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use awsm::errors::{Error};
 use std::rc::Rc; 
@@ -81,13 +81,13 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         Some(elements_id),
         &vec![
             VertexArray{
-                attribute: Attribute::Name("a_vertex"),
+                attribute_name: "a_vertex",
                 buffer_id: geom_id,
                 opts: &AttributeOptions::new(3, DataType::Float)
             },
 
             VertexArray{
-                attribute: Attribute::Name("a_color"),
+                attribute_name: "a_color",
                 buffer_id: colors_id,
                 opts: &AttributeOptions::new(3, DataType::Float)
             }
@@ -139,8 +139,8 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let mvp_mat = projection.to_homogeneous() * (view.to_homogeneous() * model_mat);
 
     //Upload them to the GPU
-    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_size"), &UniformData(scaling_mat.as_slice()))?;
-    webgl_renderer.upload_uniform_matrix_4(&Uniform::Name("u_modelViewProjection"), &UniformData(mvp_mat.as_slice()))?;
+    webgl_renderer.upload_uniform_mat_4("u_size", scaling_mat.as_slice())?;
+    webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", mvp_mat.as_slice())?;
 
 
     //activate buffers

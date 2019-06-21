@@ -26,7 +26,9 @@ pub enum NativeError {
     NoCreateTexture,
     MissingTexture,
     MissingBuffer,
-    UniformSliceSize,
+    UniformSize,
+    UniformMatrixMustBeFloat,
+    UniformType,
     VertexArrayMissing,
     VertexArrayCreate,
     Internal
@@ -74,7 +76,9 @@ impl NativeError {
             NativeError::MissingBuffer => "couldn't get buffer",
             NativeError::VertexArrayMissing => "no such vertex array",
             NativeError::VertexArrayCreate => "unable to create vertex array",
-            NativeError::UniformSliceSize => "uniform slice is wrong size",
+            NativeError::UniformMatrixMustBeFloat => "uniform matrix must be floats",
+            NativeError::UniformType=> "wrong uniform type",
+            NativeError::UniformSize => "uniform data is not large enough",
             NativeError::Internal => "internal error",
         }
     }
