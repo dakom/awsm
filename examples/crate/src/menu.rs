@@ -3,6 +3,7 @@ use wasm_bindgen::JsCast;
 use web_sys::{Document, Node, Element, HtmlElement, HtmlHyperlinkElementUtils};
 use lazy_static::*;
 use std::collections::HashMap;
+use cfg_if::cfg_if;
 
 pub struct Menu <'a> {
     pub label: &'a str,
@@ -23,6 +24,7 @@ lazy_static! {
         m.insert("webgl-elements", Menu {label: "Elements", source: "webgl/elements/elements.rs"});
         m.insert("webgl-instancing", Menu {label: "Instancing", source: "webgl/instancing/instancing.rs"});
         m.insert("webgl-vaos", Menu {label: "Vertex Arrays", source: "webgl/vaos/vaos.rs"});
+        m.insert("webgl-ubos", Menu {label: "Uniform Buffers", source: "webgl/ubos/ubos.rs"});
         m
     };
 }
@@ -49,14 +51,29 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
         "loaders-image",
     ])?;
 
-    append_menu(&container, &document, get_webgl_title(), vec![
+    let mut webgl_menu = vec![
         "webgl-simple",
         "webgl-texture",
         "webgl-blending",
         "webgl-elements",
         "webgl-instancing",
         "webgl-vaos",
-    ])?;
+    ];
+
+    cfg_if! {
+        if #[cfg(feature = "webgl_2")] {
+            fn concat_more_menus(menus:&mut Vec<&str>) {
+                menus.push("webgl-ubos");
+            }
+        } else {
+            fn concat_more_menus(menus:&mut Vec<&str>) {
+            }
+        }
+    }
+
+    concat_more_menus(&mut webgl_menu);
+
+    append_menu(&container, &document, get_webgl_title(), webgl_menu)?;
 
     Ok(container)
 }

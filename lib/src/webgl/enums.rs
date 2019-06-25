@@ -15,6 +15,8 @@ pub enum DataType {
 pub enum BufferTarget {
     ArrayBuffer = 0x8892,
     ElementArrayBuffer = 0x8893,
+    #[cfg(feature = "webgl_2")]
+    UniformBuffer = 0x8A11,
 }
 
 
@@ -233,6 +235,17 @@ pub enum BlendFactor {
     OneMinusConstantColor = 0x8002,
     ConstantAlpha = 0x8003,
     OneMinusConstantAlpha = 0x8004
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum UniformBlockQuery {
+  BindingPoint = 0x8A3F,
+  DataSize = 0x8A40,
+  ActiveUniforms = 0x8A42,
+  ActiveUniformIndices = 0x8A43,
+  ReferencedByVertexShader = 0x8A44,
+  ReferencedByFragmentShader = 0x8A46,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]

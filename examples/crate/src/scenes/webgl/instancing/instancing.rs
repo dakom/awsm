@@ -174,8 +174,8 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let camera_mat = Matrix4::new_orthographic(0.0, *camera_width as f32, 0.0, *camera_height as f32, 0.0, 1.0);
     
     //Upload them to the GPU
-    webgl_renderer.upload_uniform_mat_4("u_size", scaling_mat.as_slice())?;
-    webgl_renderer.upload_uniform_mat_4("u_camera", camera_mat.as_slice())?;
+    webgl_renderer.upload_uniform_mat_4("u_size", &scaling_mat.as_slice())?;
+    webgl_renderer.upload_uniform_mat_4("u_camera", &camera_mat.as_slice())?;
 
 
     //upload our buffer for instancing

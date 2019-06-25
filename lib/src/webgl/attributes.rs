@@ -1,6 +1,6 @@
 use web_sys::{WebGlProgram};
 use crate::errors::{Error, NativeError};
-use super::{WebGlRenderer, WebGlContext, DataType, BufferTarget, Id};
+use super::{WebGlRenderer, WebGlContext, BufferDataImpl, DataType, BufferTarget, Id};
 
 //ATTRIBUTES
 
@@ -74,7 +74,13 @@ impl WebGlRenderer {
 
     pub fn activate_buffer_for_attribute(&self, buffer_id:Id, buffer_target:BufferTarget, attribute_name:&str, opts:&AttributeOptions) -> Result<(), Error> {
 
-        self.activate_buffer(buffer_id, buffer_target)?;
+        self.bind_buffer(buffer_id, buffer_target)?;
+        self.activate_attribute(&attribute_name, &opts)?;
+        Ok(())
+    }
+
+    pub fn upload_buffer_to_attribute<T: BufferDataImpl>(&self, id:Id, data:T, attribute_name:&str, opts:&AttributeOptions) -> Result<(), Error> {
+        self.upload_buffer(id, data)?;
         self.activate_attribute(&attribute_name, &opts)?;
         Ok(())
     }

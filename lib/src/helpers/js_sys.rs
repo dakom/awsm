@@ -1,4 +1,4 @@
-use js_sys::{Float32Array, Float64Array};
+use js_sys::{Float32Array, Float64Array, Uint32Array};
 
 pub fn clone_to_vec_f32(src:&Float32Array) -> Vec<f32> {
     let mut dest:Vec<f32> = vec![0.0; src.length() as usize];
@@ -8,6 +8,13 @@ pub fn clone_to_vec_f32(src:&Float32Array) -> Vec<f32> {
 
 pub fn clone_to_vec_f64(src:&Float64Array) -> Vec<f64> {
     let mut dest:Vec<f64> = vec![0.0; src.length() as usize];
+    src.copy_to(&mut dest);
+    dest
+}
+
+
+pub fn clone_to_vec_u32(src:&Uint32Array) -> Vec<u32> {
+    let mut dest:Vec<u32> = vec![0; src.length() as usize];
     src.copy_to(&mut dest);
     dest
 }

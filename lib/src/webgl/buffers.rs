@@ -36,6 +36,7 @@ pub trait BufferDataImpl {
 }
 
 
+//TODO - impls with buffer_sub_data
 impl <T: AsRef<[f32]>> BufferDataImpl for BufferData<T, f32> {
     fn upload_buffer(&self, gl:&WebGlContext) -> Result<(), Error> {
         wasm_bindgen::memory()
@@ -80,8 +81,13 @@ impl <T: AsRef<[u8]>> BufferDataImpl for BufferData<T, u8> {
     }
 }
 
-pub fn bind_buffer(gl:&WebGlContext, target:BufferTarget, buffer:&WebGlBuffer) {
+pub fn bind_buffer_direct(gl:&WebGlContext, target:BufferTarget, buffer:&WebGlBuffer) {
     gl.bind_buffer(target as u32, Some(buffer)); 
+}
+
+#[cfg(feature = "webgl_2")]
+pub fn bind_buffer_base_direct(gl:&WebGlContext, target:BufferTarget, index:u32, buffer:&WebGlBuffer) {
+    gl.bind_buffer_base(target as u32, index, Some(buffer)); 
 }
 
 impl WebGlRenderer {
@@ -96,39 +102,58 @@ impl WebGlRenderer {
 
 
     //only pub within the module - used elsewhere like attributes
-    pub(super) fn _activate_buffer_nocheck(&self, buffer_id:Id, target: BufferTarget) -> Result<(), Error> {
+    pub(super) fn _bind_buffer_nocheck(&self, buffer_id:Id, target: BufferTarget) -> Result<(), Error> {
 
         self.current_buffer_id.set(Some(buffer_id));
         self.current_buffer_target.set(Some(target));
+        self.current_buffer_index.set(None);
 
         let buffer = self.get_current_buffer()?; 
-        bind_buffer(&self.gl, target, &buffer);
+        bind_buffer_direct(&self.gl, target, &buffer);
 
         Ok(())
     }
-    pub fn activate_buffer(&self, buffer_id:Id, target: BufferTarget) -> Result<(), Error> {
+
+
+    pub fn bind_buffer(&self, buffer_id:Id, target: BufferTarget) -> Result<(), Error> {
 
         if Some(buffer_id) != self.current_buffer_id.get() || Some(target) != self.current_buffer_target.get() {
-            self._activate_buffer_nocheck(buffer_id, target)
+            self._bind_buffer_nocheck(buffer_id, target)
         } else {
             Ok(())
         }
     }
 
+    #[cfg(feature = "webgl_2")]
+    pub(super) fn _bind_buffer_base_nocheck(&self, buffer_id:Id, index: u32, target: BufferTarget) -> Result<(), Error> {
+
+        self.current_buffer_id.set(Some(buffer_id));
+        self.current_buffer_target.set(Some(target));
+        self.current_buffer_index.set(Some(index));
+        let buffer = self.get_current_buffer()?; 
+        bind_buffer_base_direct(&self.gl, target, index, &buffer);
+
+        Ok(())
+    }
+
+    #[cfg(feature = "webgl_2")]
+    pub fn bind_buffer_base(&self, buffer_id:Id, index: u32, target: BufferTarget) -> Result<(), Error> {
+
+        if Some(buffer_id) != self.current_buffer_id.get() 
+            || Some(target) != self.current_buffer_target.get() 
+            || Some(index) != self.current_buffer_index.get() {
+                self._bind_buffer_base_nocheck(buffer_id, index, target)
+        } else {
+            Ok(())
+        }
+    }
     fn get_current_buffer(&self) -> Result<&WebGlBuffer, Error> {
         let buffer_id = self.current_buffer_id.get().ok_or(Error::from(NativeError::MissingBuffer))?;
         self.buffer_lookup.get(buffer_id).ok_or(Error::from(NativeError::MissingShaderProgram))
     }
 
     pub fn upload_buffer<T: BufferDataImpl>(&self, id:Id, data:T) -> Result<(), Error> {
-        self.activate_buffer(id, data.get_target())?;
+        self.bind_buffer(id, data.get_target())?;
         data.upload_buffer(&self.gl)
-    }
-
-    //Just a helper to make it simpler
-    pub fn upload_buffer_to_attribute<T: BufferDataImpl>(&self, id:Id, data:T, attribute_name:&str, opts:&AttributeOptions) -> Result<(), Error> {
-        self.upload_buffer(id, data)?;
-        self.activate_attribute(&attribute_name, &opts)?;
-        Ok(())
     }
 }

@@ -29,6 +29,9 @@ pub enum NativeError {
     UniformSize,
     UniformMatrixMustBeFloat,
     UniformType,
+    UniformBufferName,
+    UniformBufferParameter,
+    UniformBufferMissing(Option<String>),
     VertexArrayMissing,
     VertexArrayCreate,
     Internal
@@ -79,6 +82,9 @@ impl NativeError {
             NativeError::UniformMatrixMustBeFloat => "uniform matrix must be floats",
             NativeError::UniformType=> "wrong uniform type",
             NativeError::UniformSize => "uniform data is not large enough",
+            NativeError::UniformBufferName => "couldn't get uniform block name",
+            NativeError::UniformBufferParameter => "couldn't get uniform block parameter",
+            NativeError::UniformBufferMissing(_optional_name) => "uniform buffer is missing",
             NativeError::Internal => "internal error",
         }
     }
@@ -93,6 +99,11 @@ impl NativeError {
                 match optional_name {
                     None => "Couldn't get uniform location".to_string(),
                     Some(name) => format!("couldn't get uniform location named {}", name.as_str())
+                },
+            NativeError::UniformBufferMissing(optional_name) => 
+                match optional_name {
+                    None => "Couldn't get uniform buffer".to_string(),
+                    Some(name) => format!("couldn't get uniform buffer named {}", name.as_str())
                 },
             _ => self.default_str().to_string()
         }

@@ -65,19 +65,42 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
         "webgl-vaos" => {
             webgl::vaos::start(window, document, body)
         },
+        "webgl-ubos" => {
+            start_additional_menu(&pathname, window, document, body)
+        },
         _ => {
-
-            let text = format!("unknown route: {}", &pathname);
-            let item: web_sys::HtmlElement = document.create_element("div")?.dyn_into()?;
-            item.set_text_content(Some(&text));
-
-            body.append_child(&item)?;
-            Ok(())
+            unknown_route(&pathname, window, document, body)
         }
     }
 }
 
 
+cfg_if! {
+    if #[cfg(feature = "webgl_2")] {
+        fn start_additional_menu(pathname:&str, window:web_sys::Window, document:web_sys::Document, body:web_sys::HtmlElement) -> Result<(), JsValue> {
+            match pathname {
+                "webgl-ubos" => webgl::ubos::start(window, document, body),
+                _ => unknown_route(&pathname, window, document, body)
+            }
+        }
+    } else {
+        fn start_additional_menu(pathname:&str, window:web_sys::Window, document:web_sys::Document, body:web_sys::HtmlElement) -> Result<(), JsValue> {
+            match pathname {
+                _ => unknown_route(&pathname, window, document, body)
+            }
+        }
+    }
+}
+
+fn unknown_route(pathname:&str, window:web_sys::Window, document:web_sys::Document, body:web_sys::HtmlElement) -> Result<(), JsValue> {
+    let text = format!("unknown route: {}", &pathname);
+    let item: web_sys::HtmlElement = document.create_element("div")?.dyn_into()?;
+    item.set_text_content(Some(&text));
+
+    body.append_child(&item)?;
+
+    Ok(())
+}
 //Production deploys separate webgl1 vs webgl2 builds into their own directory
 //Dev is one at a time in the root
 cfg_if! {

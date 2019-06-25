@@ -33,6 +33,7 @@ pub struct WebGlRenderer {
 
     pub(super) current_buffer_id: Cell<Option<Id>>,
     pub(super) current_buffer_target: Cell<Option<BufferTarget>>,
+    pub(super) current_buffer_index: Cell<Option<u32>>, //only used for webgl_2
     pub(super) buffer_lookup: BeachMap<DefaultVersion, WebGlBuffer>, 
 
     pub(super) current_texture_id: Option<Id>,
@@ -76,8 +77,8 @@ impl WebGlRenderer {
         //The webgl docs don't talk about a default value...
         //seems to be 0 for all - but just in case... it's... set by browser? _shrug_
         let blend_color:Vec<f32> = gl.get_parameter(GlQuery::BlendColor as u32)
-                .map(|value| value.into())
-                .map(|value| clone_to_vec_f32(&value))?;
+                .map(|value| value.into()) //JsValue -> Float32Array
+                .map(|value| clone_to_vec_f32(&value))?; //Float32Array -> Vec<f32>
      
         Ok(
             Self {
@@ -92,6 +93,7 @@ impl WebGlRenderer {
 
                 current_buffer_id: Cell::new(None),
                 current_buffer_target: Cell::new(None), 
+                current_buffer_index: Cell::new(None), 
                 buffer_lookup: BeachMap::default(),
 
                 current_texture_id: None, 

@@ -107,11 +107,11 @@ impl WebGlRenderer {
 
             //Skip buffer assignment cache checks
             if let Some(element_buffer_id) = element_buffer_id {
-                self._activate_buffer_nocheck(element_buffer_id, BufferTarget::ElementArrayBuffer)?;
+                self._bind_buffer_nocheck(element_buffer_id, BufferTarget::ElementArrayBuffer)?;
             }
 
             for config in configs {
-                self._activate_buffer_nocheck(config.buffer_id, BufferTarget::ArrayBuffer)?;
+                self._bind_buffer_nocheck(config.buffer_id, BufferTarget::ArrayBuffer)?;
                 self.activate_attribute(&config.attribute_name, &config.opts)?;
             }
             Ok(())

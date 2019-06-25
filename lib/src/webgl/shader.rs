@@ -5,32 +5,60 @@ use std::collections::hash_map::Entry;
 use web_sys::{WebGlProgram, WebGlShader, WebGlUniformLocation};
 use wasm_bindgen::prelude::JsValue;
 use crate::errors::{Error, NativeError};
+use crate::helpers::{clone_to_vec_u32};
 use super::id::{Id};
-use super::{WebGlRenderer, WebGlContext, GlQuery, get_attribute_location_direct, get_uniform_location_direct};
+use super::{WebGlRenderer, WebGlContext, GlQuery, UniformBlockQuery, get_attribute_location_direct, get_uniform_location_direct};
 use log::{info};
+
+#[cfg(feature="webgl_2")]
+use super::{UniformBuffer};
+
+#[cfg(debug_assertions)]
+use web_sys::{console};
 
 pub struct ProgramInfo {
     pub program: WebGlProgram,
     pub attribute_lookup: HashMap<String, u32>,
     pub uniform_lookup: HashMap<String, WebGlUniformLocation>,
+    #[cfg(feature="webgl_2")]
+    pub uniform_buffer_lookup: HashMap<String, UniformBuffer>,
 }
+
+impl ProgramInfo {
+    #[cfg(feature="webgl_1")]
+    fn new(program:WebGlProgram) -> Self {
+        Self {
+            program,
+            attribute_lookup: HashMap::new(),
+            uniform_lookup: HashMap::new(),
+        }
+    }
+
+    #[cfg(feature="webgl_2")]
+    fn new(program:WebGlProgram) -> Self {
+        Self {
+            program,
+            attribute_lookup: HashMap::new(),
+            uniform_lookup: HashMap::new(),
+            uniform_buffer_lookup: HashMap::new(),
+        }
+    }
+}
+
 
 impl WebGlRenderer {
     pub fn compile_program(&mut self, vertex:&str, fragment:&str) -> Result<Id, Error> {
         let program = compile_program(&self.gl, &vertex, &fragment)?;
 
-        let program_info = ProgramInfo {
-            program,
-            attribute_lookup: HashMap::new(),
-            uniform_lookup: HashMap::new(),
-        };
+        let program_info = ProgramInfo::new(program);
 
         let id = self.program_lookup.insert(program_info);
         
         self.activate_program(id)?;
 
-        self.cache_attributes_ids()?;
-        self.cache_uniforms_ids()?;
+        self.cache_attribute_ids()?;
+        let uniforms_in_blocks = self.cache_uniform_buffers()?;
+        self.cache_uniform_ids(&uniforms_in_blocks)?;
 
         Ok(id)
     }
@@ -46,7 +74,7 @@ impl WebGlRenderer {
         }
     }
 
-    fn cache_attributes_ids(&mut self) -> Result<(), Error> {
+    fn cache_attribute_ids(&mut self) -> Result<(), Error> {
         let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
         let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
 
@@ -81,8 +109,72 @@ impl WebGlRenderer {
         Ok(())
     }
 
+    #[cfg(feature="webgl_1")]
+    fn cache_uniform_block_ids(&mut self) -> Result<Vec<u32>, Error> {
+        Ok((vec![]))
+    }
 
-    fn cache_uniforms_ids(&mut self) -> Result<(), Error> {
+    #[cfg(feature="webgl_1")]
+    fn cache_uniform_buffers(&mut self) -> Result<Vec<u32>, Error> {
+        Ok(Vec::new())
+    }
+
+    //returns the uniforms that are in blocks, so they can be excluded from further caching
+    #[cfg(feature="webgl_2")]
+    fn cache_uniform_buffers(&mut self) -> Result<Vec<u32>, Error> {
+        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+
+        let mut uniforms_in_blocks:Vec<u32> = Vec::new();
+
+        let max:u32 = self.gl.get_program_parameter(&program_info.program, GlQuery::ActiveUniformBlocks as u32)
+            .as_f64()
+            .map(|val| val as u32)
+            .unwrap_or(0);
+
+        if max > 0 {
+            for i in 0..max {
+                let program = &program_info.program;
+
+                let name = self.gl.get_active_uniform_block_name(&program, i).ok_or(Error::from(NativeError::UniformBufferName))?;
+
+                let block_index = self.gl.get_uniform_block_index(&program, &name);
+
+                let bind_point = self.gl.get_active_uniform_block_parameter(&program, i, UniformBlockQuery::BindingPoint as u32)?
+                        .as_f64().ok_or(Error::from(NativeError::Internal))
+                        .map(|val| val as u32)
+                        .unwrap();
+
+                let entry = program_info.uniform_buffer_lookup.entry(name.to_string());
+
+                match entry {
+                    Entry::Occupied(entry) => { 
+                        info!("skipping uniform buffer cache for [{}] (already exists)", &name);
+                    },
+                    Entry::Vacant(entry) => {
+                        entry.insert(UniformBuffer{
+                            block_index,
+                            bind_point
+                        });
+                        info!("caching uniform buffer [{}]", &name);
+                    }
+                };
+
+                //Need to keep a list of the uniforms that are in blocks, 
+                //so they don't get double-cached
+                let mut active_uniforms:Vec<u32> = self.gl.get_active_uniform_block_parameter(&program, i, UniformBlockQuery::ActiveUniformIndices as u32)
+                    .map(|vals| vals.into())
+                    .map(|vals| clone_to_vec_u32(&vals))?;
+
+                uniforms_in_blocks.append(&mut active_uniforms);
+
+            }
+        }
+
+        Ok(uniforms_in_blocks)
+    }
+
+    fn cache_uniform_ids(&mut self, uniforms_in_blocks:&[u32]) -> Result<(), Error> {
         let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
         let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
 
@@ -95,7 +187,9 @@ impl WebGlRenderer {
             return Ok(());
         }
 
-        for i in 0..max {
+
+        for i in (0..max).filter(|n| !uniforms_in_blocks.contains(n)) {
+            info!("getting uniform cache info for uniform #{} ", i);
             let name = self.gl.get_active_uniform(&program_info.program, i)
                 .map(|info| info.name())
                 .ok_or(Error::from(NativeError::UniformLocation(None)))?;

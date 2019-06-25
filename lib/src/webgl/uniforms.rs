@@ -28,24 +28,39 @@ pub fn get_uniform_location_direct(gl:&WebGlContext, program:&WebGlProgram, name
         .ok_or(Error::from(NativeError::UniformLocation(Some(name.to_owned()))))
 }
 
-
 /*
- * The slice-based uploads are written as traits on this newtype wrapper
+ * The slice-based uploads are written as traits on this a newtype wrapper
  * in order to work with either f32 or i32 and still get simple checks 
  *
  * There is no need to wrap the scalar versions because the only check
  * for those is the length, which is known at compile-time
  *
  * Realistically, the renderer's convenience functions provide more value
- * since they expand on this to also get the location by name
+ * since they expand on this to also get the location by name and provide more wrappers
  *
- *
+ * Technique via https://users.rust-lang.org/t/different-impls-for-types-of-slices-and-arrays/29468
+ * Playground proof-of-concept: https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=19dc3ce889d1e7c8aedbd36ad45b8422
  * TODO 
  * 1. followup with https://github.com/rustwasm/wasm-bindgen/pull/1539
  * When the i32 slices don't need mut anymore - simplify below
  * 
  * 
  */
+
+
+
+pub fn upload_uniform_fvec_direct<T: AsRef<[f32]>> (gl:&WebGlContext, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error> {
+    UniformSlice::new(data, _type).upload(&gl, &loc)
+}
+
+pub fn upload_uniform_ivec_direct<T: AsRef<[i32]>> (gl:&WebGlContext, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error> {
+    UniformSlice::new(data, _type).upload(&gl, &loc)
+}
+#[cfg(feature = "webgl_2")]
+pub fn upload_uniform_uvec_direct<T: AsRef<[u32]>> (gl:&WebGlContext, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error> {
+    UniformSlice::new(data, _type).upload(&gl, &loc)
+}
+
 pub struct UniformSlice<T, U> {
     values: T,
     _type: UniformType,
@@ -194,84 +209,84 @@ impl WebGlRenderer {
     }
 
     //this covers all the slice-based versions due to the impl above
-    pub fn upload_uniform<T: UniformUploadImpl>(&self, target_name:&str, data:&T) -> Result<(), Error> {
-        let loc = self.get_uniform_location_value(&target_name)?;
-        data.upload(&self.gl, &loc)
-    }
 
     //Just some convenience helpers
-    pub fn upload_uniform_fvec<T: AsRef<[f32]>> (&self, target_name:&str, _type:UniformType, data:T) -> Result<(), Error> {
-        self.upload_uniform(target_name, &UniformSlice::new(data, _type))
+    pub fn upload_uniform_fvec<T: AsRef<[f32]>> (&self, target_name:&str, _type:UniformType, data:&T) -> Result<(), Error> {
+        let loc = self.get_uniform_location_value(&target_name)?;
+        upload_uniform_fvec_direct(&self.gl, &loc, _type, data)
     }
-    pub fn upload_uniform_ivec<T: AsRef<[i32]>> (&self, target_name:&str, _type:UniformType, data:T) -> Result<(), Error> {
-        self.upload_uniform(target_name, &UniformSlice::new(data, _type))
+
+    pub fn upload_uniform_ivec<T: AsRef<[i32]>> (&self, target_name:&str, _type:UniformType, data:&T) -> Result<(), Error> {
+        let loc = self.get_uniform_location_value(&target_name)?;
+        upload_uniform_ivec_direct(&self.gl, &loc, _type, data)
     }
 
     #[cfg(feature = "webgl_2")]
-    pub fn upload_uniform_uvec<T: AsRef<[u32]>> (&self, target_name:&str, _type:UniformType, data:T) -> Result<(), Error> {
-        self.upload_uniform(target_name, &UniformSlice::new(data, _type))
+    pub fn upload_uniform_uvec<T: AsRef<[u32]>> (&self, target_name:&str, _type:UniformType, data:&T) -> Result<(), Error> {
+        let loc = self.get_uniform_location_value(&target_name)?;
+        upload_uniform_uvec_direct(&self.gl, &loc, _type, data)
     }
 
-    pub fn upload_uniform_mat_4<T: AsRef<[f32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
-        self.upload_uniform_fvec(target_name, UniformType::Matrix4, data)
+    pub fn upload_uniform_mat_4<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
+        self.upload_uniform_fvec(target_name, UniformType::Matrix4, &data)
     }
-    pub fn upload_uniform_mat_3<T: AsRef<[f32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_mat_3<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_fvec(target_name, UniformType::Matrix3, data)
     }
-    pub fn upload_uniform_mat_2<T: AsRef<[f32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_mat_2<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_fvec(target_name, UniformType::Matrix2, data)
     }
-    pub fn upload_uniform_mat_transposed_4<T: AsRef<[f32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_mat_transposed_4<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_fvec(target_name, UniformType::MatrixTransposed4, data)
     }
-    pub fn upload_uniform_mat_transposed_3<T: AsRef<[f32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_mat_transposed_3<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_fvec(target_name, UniformType::MatrixTransposed3, data)
     }
-    pub fn upload_uniform_mat_transposed_2<T: AsRef<[f32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_mat_transposed_2<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_fvec(target_name, UniformType::MatrixTransposed2, data)
     }
 
-    pub fn upload_uniform_fvec_4<T: AsRef<[f32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_fvec_4<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_fvec(target_name, UniformType::Vector4, data)
     }
-    pub fn upload_uniform_fvec_3<T: AsRef<[f32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_fvec_3<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_fvec(target_name, UniformType::Vector3, data)
     }
-    pub fn upload_uniform_fvec_2<T: AsRef<[f32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_fvec_2<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_fvec(target_name, UniformType::Vector2, data)
     }
-    pub fn upload_uniform_fvec_1<T: AsRef<[f32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_fvec_1<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_fvec(target_name, UniformType::Vector1, data)
     }
 
-    pub fn upload_uniform_ivec_4<T: AsRef<[i32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_ivec_4<T: AsRef<[i32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_ivec(target_name, UniformType::Vector4, data)
     }
-    pub fn upload_uniform_ivec_3<T: AsRef<[i32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_ivec_3<T: AsRef<[i32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_ivec(target_name, UniformType::Vector3, data)
     }
-    pub fn upload_uniform_ivec_2<T: AsRef<[i32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_ivec_2<T: AsRef<[i32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_ivec(target_name, UniformType::Vector2, data)
     }
-    pub fn upload_uniform_ivec_1<T: AsRef<[i32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_ivec_1<T: AsRef<[i32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_ivec(target_name, UniformType::Vector1, data)
     }
 
 
     #[cfg(feature = "webgl_2")]
-    pub fn upload_uniform_uvec_4<T: AsRef<[u32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_uvec_4<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_uvec(target_name, UniformType::Vector4, data)
     }
     #[cfg(feature = "webgl_2")] 
-    pub fn upload_uniform_uvec_3<T: AsRef<[u32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_uvec_3<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_uvec(target_name, UniformType::Vector3, data)
     }
     #[cfg(feature = "webgl_2")] 
-    pub fn upload_uniform_uvec_2<T: AsRef<[u32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_uvec_2<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_uvec(target_name, UniformType::Vector2, data)
     }
     #[cfg(feature = "webgl_2")] 
-    pub fn upload_uniform_uvec_1<T: AsRef<[u32]>> (&self, target_name:&str, data:T) -> Result<(), Error> {
+    pub fn upload_uniform_uvec_1<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_uvec(target_name, UniformType::Vector1, data)
     }
 

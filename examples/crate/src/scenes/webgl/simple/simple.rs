@@ -114,8 +114,8 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     let mvp_mat = camera_mat * model_mat;
 
     //Upload them to the GPU
-    webgl_renderer.upload_uniform_mat_4("u_size", scaling_mat.as_slice())?;
-    webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", mvp_mat.as_slice())?;
+    webgl_renderer.upload_uniform_mat_4("u_size", &scaling_mat.as_slice())?;
+    webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice())?;
 
     let color_values = color.values();
     let color_values = ((color_values[0] as f32, color_values[1] as f32, color_values[2] as f32, color_values[3] as f32));
