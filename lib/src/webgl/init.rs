@@ -43,6 +43,9 @@ pub struct WebGlRenderer {
 
     pub(super) extension_lookup: HashMap<String, js_sys::Object>,
 
+    #[cfg(feature="webgl_2")]
+    pub(super) ubo_global_loc_lookup: Vec<String>,
+
     pub(super) current_vao_id: Cell<Option<Id>>,
     pub(super) vao_lookup: BeachMap<DefaultVersion, WebGlVertexArrayObject>,
 
@@ -105,6 +108,9 @@ impl WebGlRenderer {
 
                 current_vao_id: Cell::new(None),
                 vao_lookup: BeachMap::default(),
+
+                #[cfg(feature="webgl_2")] 
+                ubo_global_loc_lookup: Vec::new(),
 
                 toggle_flags: ToggleFlags::default(),
 

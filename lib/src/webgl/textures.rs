@@ -338,8 +338,6 @@ impl WebGlRenderer {
     }
 
     fn activate_texture_for_sampler_target(&mut self, bind_target:TextureTarget, texture_id: Id, sampler_index: usize) -> Result<(), Error> {
-
-
         let entry = self.texture_sampler_lookup.get(sampler_index).ok_or(Error::from(NativeError::Internal))?;
 
         let requires_activation = match entry {

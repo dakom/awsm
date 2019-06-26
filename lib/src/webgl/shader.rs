@@ -10,9 +10,6 @@ use super::id::{Id};
 use super::{WebGlRenderer, WebGlContext, GlQuery, UniformBlockQuery, get_attribute_location_direct, get_uniform_location_direct};
 use log::{info};
 
-#[cfg(feature="webgl_2")]
-use super::{UniformBuffer};
-
 #[cfg(debug_assertions)]
 use web_sys::{console};
 
@@ -21,7 +18,7 @@ pub struct ProgramInfo {
     pub attribute_lookup: HashMap<String, u32>,
     pub uniform_lookup: HashMap<String, WebGlUniformLocation>,
     #[cfg(feature="webgl_2")]
-    pub uniform_buffer_lookup: HashMap<String, UniformBuffer>,
+    pub uniform_buffer_loc_lookup: HashMap<String, u32>,
 }
 
 impl ProgramInfo {
@@ -40,7 +37,7 @@ impl ProgramInfo {
             program,
             attribute_lookup: HashMap::new(),
             uniform_lookup: HashMap::new(),
-            uniform_buffer_lookup: HashMap::new(),
+            uniform_buffer_loc_lookup: HashMap::new(),
         }
     }
 }
@@ -132,6 +129,8 @@ impl WebGlRenderer {
             .map(|val| val as u32)
             .unwrap_or(0);
 
+        let mut bind_point_offset = self.ubo_global_loc_lookup.len() as u32;
+
         if max > 0 {
             for i in 0..max {
                 let program = &program_info.program;
@@ -140,23 +139,36 @@ impl WebGlRenderer {
 
                 let block_index = self.gl.get_uniform_block_index(&program, &name);
 
-                let bind_point = self.gl.get_active_uniform_block_parameter(&program, i, UniformBlockQuery::BindingPoint as u32)?
+                let global_loc = 
+                    self.ubo_global_loc_lookup
+                        .iter()
+                        .position(|global_name| name == *global_name)
+                        .map(|n| n as u32);
+
+                let bind_point = match global_loc { 
+                    None => {
+                        let ret = bind_point_offset.clone();
+                        bind_point_offset += 1;
+                        ret
+                    },
+                    Some(n) => n
+                };
+                self.gl.uniform_block_binding(&program, block_index, bind_point);
+                /*let bind_point = self.gl.get_active_uniform_block_parameter(&program, i, UniformBlockQuery::BindingPoint as u32)?
                         .as_f64().ok_or(Error::from(NativeError::Internal))
                         .map(|val| val as u32)
                         .unwrap();
+                */
 
-                let entry = program_info.uniform_buffer_lookup.entry(name.to_string());
+                let entry = program_info.uniform_buffer_loc_lookup.entry(name.to_string());
 
                 match entry {
                     Entry::Occupied(entry) => { 
                         info!("skipping uniform buffer cache for [{}] (already exists)", &name);
                     },
                     Entry::Vacant(entry) => {
-                        entry.insert(UniformBuffer{
-                            block_index,
-                            bind_point
-                        });
-                        info!("caching uniform buffer [{}]", &name);
+                        entry.insert(bind_point);
+                        info!("caching uniform buffer [{}] at index {} and bind point {}", &name, block_index, bind_point);
                     }
                 };
 

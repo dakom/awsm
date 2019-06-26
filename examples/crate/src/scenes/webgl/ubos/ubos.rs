@@ -8,6 +8,7 @@ use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_unit_box_buffers, N_BOX_ELEMENTS}; 
 use crate::scenes::webgl::common::datatypes::*;
 use nalgebra::{Matrix4, Vector3, Vector4, Point3, Perspective3, Isometry3};
+use log::{info};
 
 type BufferIds = (Id, Id, Id);
 struct State {
@@ -18,7 +19,8 @@ struct State {
     pub camera_height: f64,
     pub program_id: Option<Id>,
     pub vao_id: Option<Id>,
-    pub ubo_buffer_id: Option<Id>
+    pub model_buffer_id: Option<Id>,
+    pub camera_buffer_id: Option<Id>,
 }
 
 impl State {
@@ -30,25 +32,17 @@ impl State {
             camera_height: 0.0,
             program_id: None,
             vao_id: None,
-            ubo_buffer_id: None
+            model_buffer_id: None,
+            camera_buffer_id: None,
         }
 
     }
 }
 
-#[cfg(feature = "webgl_1")]
-fn register_extensions(webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    webgl_renderer.register_extension_vertex_array()
-        .map_err(|err| err.into())
-        .map(|_| ())
-}
-#[cfg(feature = "webgl_2")]
-fn register_extensions(webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    Ok(())
-}
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
 
     let state = Rc::new(RefCell::new(State::new()));
+
 
     let on_resize = {
         let state = Rc::clone(&state);
@@ -65,22 +59,34 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let mut webgl_renderer = webgl_renderer.borrow_mut();
 
-    register_extensions(&mut webgl_renderer)?;
+
+    //simple test that the global registery works
+    //camera will be bound at 1 (due to being registered)
+    //model will be bound at 3 (due to not being registered
+    webgl_renderer.register_global_uniform_buffer("dog");
+    webgl_renderer.register_global_uniform_buffer("camera");
+    webgl_renderer.register_global_uniform_buffer("chair");
+
 
     let program_id = webgl_renderer.compile_program(
         include_str!("shaders/ubos-vertex.glsl"),
         include_str!("shaders/ubos-fragment.glsl")
     )?;
 
-    state.borrow_mut().program_id = Some(program_id);
+    let mut state_obj = state.borrow_mut();
+
+    state_obj.program_id = Some(program_id);
 
     let vao_id = webgl_renderer.create_vertex_array()?;
 
     let (geom_id, colors_id, elements_id) = create_unit_box_buffers(&mut webgl_renderer)?;
 
-    let ubo_buffer_id = webgl_renderer.create_buffer()?;
+    let camera_buffer_id = webgl_renderer.create_buffer()?;
+    state_obj.camera_buffer_id = Some(camera_buffer_id);
+    set_camera_buffer(&mut state_obj, &mut webgl_renderer)?;
 
-    state.borrow_mut().ubo_buffer_id = Some(ubo_buffer_id);
+    let model_buffer_id = webgl_renderer.create_buffer()?;
+    state_obj.model_buffer_id = Some(model_buffer_id);
 
     webgl_renderer.assign_vertex_array(
         vao_id,
@@ -100,7 +106,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         ]
     )?;
 
-    state.borrow_mut().vao_id = Some(vao_id);
+    state_obj.vao_id = Some(vao_id);
 
     let _ = start_raf_ticker_timestamp({
         let state = Rc::clone(&state);
@@ -114,9 +120,33 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 }
 
 
+fn set_camera_buffer(state:&State, webgl_renderer:&WebGlRenderer) -> Result<(), Error> {
+    // Our camera looks toward the point (1.0, 0.0, 0.0).
+    // It is located at (0.0, 0.0, 1.0).
+    let eye    = Point3::new(1000.0, 500.0, 1000.0);
+    let target = Point3::new(0.0, 0.0, 0.0);
+    let view   = Isometry3::look_at_rh(&eye, &target, &Vector3::y()).to_homogeneous();
+
+    // A perspective projection.
+    let projection = Perspective3::new(
+        state.camera_width as f32 / state.camera_height as f32, 
+        std::f32::consts::PI / 2.0, 
+        1.0, 
+        3000.0, 
+    ).to_homogeneous();
+
+
+    let camera = vec![projection.as_slice(), view.as_slice()].concat();
+
+    //Just set it in a buffer, will be used at render time
+    webgl_renderer.upload_buffer(
+        state.camera_buffer_id.unwrap(),
+        BufferData::new(&camera, BufferTarget::UniformBuffer, BufferUsage::DynamicDraw)
+    )
+}
 
 fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let State {pos, volume, camera_width, camera_height, program_id, vao_id, ubo_buffer_id} = state;
+    let State {pos, volume, camera_width, camera_height, program_id, vao_id, camera_buffer_id, model_buffer_id} = state;
 
 
     webgl_renderer.activate_program(program_id.unwrap());
@@ -126,38 +156,24 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     //Build our matrices (must cast to f32)
     let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(volume.width as f32, volume.height as f32, volume.depth as f32));
 
-
-    // Our camera looks toward the point (1.0, 0.0, 0.0).
-    // It is located at (0.0, 0.0, 1.0).
-    let eye    = Point3::new(1000.0, 500.0, 1000.0);
-    let target = Point3::new(0.0, 0.0, 0.0);
-    let view   = Isometry3::look_at_rh(&eye, &target, &Vector3::y());
-
-    // A perspective projection.
-    let projection = Perspective3::new(
-        state.camera_width as f32 / state.camera_height as f32, 
-        std::f32::consts::PI / 2.0, 
-        1.0, 
-        3000.0, 
-    );
-
     let model_mat = Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, pos.z as f32));
-    let mvp_mat = projection.to_homogeneous() * (view.to_homogeneous() * model_mat);
 
-    //Upload them to the GPU
-    let camera_and_size = vec![scaling_mat.as_slice(), mvp_mat.as_slice()].concat();
+    //Upload them to the GPU as a UBO
+    let model = vec![scaling_mat.as_slice(), model_mat.as_slice()].concat();
 
-    webgl_renderer.upload_buffer_to_uniform_buffer(
-        ubo_buffer_id.unwrap(),
-        BufferData::new(camera_and_size, BufferTarget::UniformBuffer, BufferUsage::DynamicDraw),
-        "camera_and_size"
+    //will activate it also
+    webgl_renderer.upload_buffer_to_uniform_buffer_f32(
+        "model",
+        model_buffer_id.unwrap(),
+        &model, 
+        BufferUsage::DynamicDraw,
     )?;
-    //
-    //webgl_renderer.upload_uniform_mat_4("u_size", &scaling_mat.as_slice())?;
-    //webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice())?;
+
+    //Camera just needs to be activated so that it pulls from the buffer (which was set above)
+    webgl_renderer.activate_uniform_buffer(camera_buffer_id.unwrap(), "camera")?;
 
 
-    //activate buffers
+    //activate VAO's 
     webgl_renderer.activate_vertex_array(vao_id.unwrap());
 
     //draw!

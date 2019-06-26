@@ -29,34 +29,58 @@ impl<T: AsRef<[U]>, U> BufferData<T, U> {
     }
 }
 
+
 pub trait BufferDataImpl {
     fn upload_buffer(&self, gl:&WebGlContext) -> Result<(), Error>;
+    #[cfg(feature = "webgl_1")]
+    fn upload_buffer_sub(&self, gl:&WebGlContext, offset:u32) -> Result<(), Error>;
+    #[cfg(feature = "webgl_2")]
+    fn upload_buffer_sub(&self, gl:&WebGlContext, dest_byte_offset:u32, src_offset:u32, length: u32) -> Result<(), Error>;
     fn get_target(&self) -> BufferTarget;
     fn get_usage(&self) -> BufferUsage;
 }
 
 
-//TODO - impls with buffer_sub_data
-impl <T: AsRef<[f32]>> BufferDataImpl for BufferData<T, f32> {
-    fn upload_buffer(&self, gl:&WebGlContext) -> Result<(), Error> {
+fn get_wasm_buffer_f32(values:&[f32]) -> Result<js_sys::Float32Array, Error> {
         wasm_bindgen::memory()
             .dyn_into::<WebAssembly::Memory>()
             .map(|m:WebAssembly::Memory| {
-                let values = self.values.as_ref();
-
                 let wasm_buffer = m.buffer();
                 let ptr_loc = values.as_ptr() as u32 / 4;
 
-                let float32 = js_sys::Float32Array::new(&wasm_buffer)
-                                .subarray(ptr_loc, ptr_loc + values.len() as u32);
-        
-                //Note - WebGL2 can do less GC hits by pointing at same memory with different start/end
-                gl.buffer_data_with_array_buffer_view(self.target as u32, &float32, self.usage as u32); 
-                
+                js_sys::Float32Array::new(&wasm_buffer)
+                                .subarray(ptr_loc, ptr_loc + values.len() as u32)
+
             })
             .map_err(|err| Error::from(err))
+}
+
+impl <T: AsRef<[f32]>> BufferDataImpl for BufferData<T, f32> {
+    fn upload_buffer(&self, gl:&WebGlContext) -> Result<(), Error> {
+        let typed_array = get_wasm_buffer_f32(self.values.as_ref())?;
+        gl.buffer_data_with_array_buffer_view(self.target as u32, &typed_array, self.usage as u32); 
+        Ok(())
     }
 
+    #[cfg(feature = "webgl_1")]
+    fn upload_buffer_sub(&self, gl:&WebGlContext, offset:u32) -> Result<(), Error> {
+        let typed_array = get_wasm_buffer_f32(self.values.as_ref())?;
+        gl.buffer_sub_data_with_f64_and_array_buffer_view(self.target as u32, offset as f64, &typed_array); 
+        Ok(())
+    }
+
+    #[cfg(feature = "webgl_2")]
+    fn upload_buffer_sub(&self, gl:&WebGlContext, dest_byte_offset:u32, src_offset:u32, length:u32) -> Result<(), Error> {
+        let typed_array = get_wasm_buffer_f32(self.values.as_ref())?;
+        gl.buffer_sub_data_with_f64_and_array_buffer_view_and_src_offset_and_length(
+            self.target as u32, 
+            dest_byte_offset as f64,
+            &typed_array,
+            src_offset,
+            length
+        );
+        Ok(())
+    }
     fn get_target(&self) -> BufferTarget {
         self.target
     }
@@ -73,6 +97,25 @@ impl <T: AsRef<[u8]>> BufferDataImpl for BufferData<T, u8> {
         Ok(())
     }
 
+    #[cfg(feature = "webgl_1")]
+    fn upload_buffer_sub(&self, gl:&WebGlContext, offset:u32) -> Result<(), Error> {
+        let values = self.values.as_ref();
+        gl.buffer_sub_data_with_f64_and_u8_array(self.target as u32, offset as f64, &values); 
+        Ok(())
+    }
+
+    #[cfg(feature = "webgl_2")]
+    fn upload_buffer_sub(&self, gl:&WebGlContext, dest_byte_offset:u32, src_offset:u32, length:u32) -> Result<(), Error> {
+        let values = self.values.as_ref();
+        gl.buffer_sub_data_with_f64_and_u8_array_and_src_offset_and_length(
+            self.target as u32, 
+            dest_byte_offset as f64,
+            &values,
+            src_offset,
+            length
+        );
+        Ok(())
+    }
     fn get_target(&self) -> BufferTarget {
         self.target
     }
@@ -83,6 +126,10 @@ impl <T: AsRef<[u8]>> BufferDataImpl for BufferData<T, u8> {
 
 pub fn bind_buffer_direct(gl:&WebGlContext, target:BufferTarget, buffer:&WebGlBuffer) {
     gl.bind_buffer(target as u32, Some(buffer)); 
+}
+
+pub fn release_buffer_direct(gl:&WebGlContext, target:BufferTarget) {
+    gl.bind_buffer(target as u32, None); 
 }
 
 #[cfg(feature = "webgl_2")]
@@ -108,7 +155,7 @@ impl WebGlRenderer {
         self.current_buffer_target.set(Some(target));
         self.current_buffer_index.set(None);
 
-        let buffer = self.get_current_buffer()?; 
+        let buffer = self.buffer_lookup.get(buffer_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
         bind_buffer_direct(&self.gl, target, &buffer);
 
         Ok(())
@@ -124,19 +171,47 @@ impl WebGlRenderer {
         }
     }
 
+    pub fn release_buffer(&self, target:BufferTarget) {
+        self.current_buffer_id.set(None);
+        self.current_buffer_target.set(Some(target));
+        self.current_buffer_index.set(None);
+
+        release_buffer_direct(&self.gl, target);
+    }
+
+    pub fn upload_buffer<T: BufferDataImpl>(&self, id:Id, data:T) -> Result<(), Error> {
+        self.bind_buffer(id, data.get_target())?;
+        data.upload_buffer(&self.gl)
+    }
+
+    #[cfg(feature = "webgl_1")]
+    pub fn upload_buffer_sub<T: BufferDataImpl>(&self, id:Id, offset:u32, data:T) -> Result<(), Error> {
+        self.bind_buffer(id, data.get_target())?;
+        data.upload_buffer_sub(&self.gl, offset)
+    }
+    
     #[cfg(feature = "webgl_2")]
+    pub fn upload_buffer_sub<T: BufferDataImpl>(&self, id:Id, dest_byte_offset:u32, src_offset:u32, length:u32, data:T) -> Result<(), Error> {
+        self.bind_buffer(id, data.get_target())?;
+        data.upload_buffer_sub(&self.gl, dest_byte_offset, src_offset, length)
+    }
+}
+
+
+#[cfg(feature = "webgl_2")]
+impl WebGlRenderer {
     pub(super) fn _bind_buffer_base_nocheck(&self, buffer_id:Id, index: u32, target: BufferTarget) -> Result<(), Error> {
 
         self.current_buffer_id.set(Some(buffer_id));
         self.current_buffer_target.set(Some(target));
         self.current_buffer_index.set(Some(index));
-        let buffer = self.get_current_buffer()?; 
+        
+        let buffer = self.buffer_lookup.get(buffer_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
         bind_buffer_base_direct(&self.gl, target, index, &buffer);
 
         Ok(())
     }
 
-    #[cfg(feature = "webgl_2")]
     pub fn bind_buffer_base(&self, buffer_id:Id, index: u32, target: BufferTarget) -> Result<(), Error> {
 
         if Some(buffer_id) != self.current_buffer_id.get() 
@@ -146,14 +221,5 @@ impl WebGlRenderer {
         } else {
             Ok(())
         }
-    }
-    fn get_current_buffer(&self) -> Result<&WebGlBuffer, Error> {
-        let buffer_id = self.current_buffer_id.get().ok_or(Error::from(NativeError::MissingBuffer))?;
-        self.buffer_lookup.get(buffer_id).ok_or(Error::from(NativeError::MissingShaderProgram))
-    }
-
-    pub fn upload_buffer<T: BufferDataImpl>(&self, id:Id, data:T) -> Result<(), Error> {
-        self.bind_buffer(id, data.get_target())?;
-        data.upload_buffer(&self.gl)
     }
 }

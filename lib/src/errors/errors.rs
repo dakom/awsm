@@ -32,6 +32,7 @@ pub enum NativeError {
     UniformBufferName,
     UniformBufferParameter,
     UniformBufferMissing(Option<String>),
+    UniformBufferTarget,
     VertexArrayMissing,
     VertexArrayCreate,
     Internal
@@ -85,6 +86,7 @@ impl NativeError {
             NativeError::UniformBufferName => "couldn't get uniform block name",
             NativeError::UniformBufferParameter => "couldn't get uniform block parameter",
             NativeError::UniformBufferMissing(_optional_name) => "uniform buffer is missing",
+            NativeError::UniformBufferTarget => "buffer target must be UniformBuffer for uniform buffers",
             NativeError::Internal => "internal error",
         }
     }
