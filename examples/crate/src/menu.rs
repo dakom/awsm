@@ -20,6 +20,7 @@ lazy_static! {
         //WebGl
         m.insert("webgl-simple", Menu {label: "Simple", source: "webgl/simple/simple.rs"});
         m.insert("webgl-texture", Menu {label: "Texture", source: "webgl/texture/texture.rs"});
+        m.insert("webgl-multi-texture", Menu {label: "Multi-Texture", source: "webgl/multi_texture/multi_texture.rs"});
         m.insert("webgl-blending", Menu {label: "Blending", source: "webgl/blending/blending.rs"});
         m.insert("webgl-elements", Menu {label: "Elements", source: "webgl/elements/elements.rs"});
         m.insert("webgl-instancing", Menu {label: "Instancing", source: "webgl/instancing/instancing.rs"});
@@ -54,6 +55,7 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
     let mut webgl_menu = vec![
         "webgl-simple",
         "webgl-texture",
+        "webgl-multi-texture",
         "webgl-blending",
         "webgl-elements",
         "webgl-instancing",

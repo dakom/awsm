@@ -5,6 +5,8 @@ use js_sys::{Object};
 use crate::errors::{Error, NativeError};
 use super::{Id, WebGlRenderer, WebGlContext, TextureUnit, TextureParameterName, TextureWrapMode, TextureMinFilter, TextureMagFilter, TextureTarget, PixelFormat, DataType, WebGlSpecific};
 use cfg_if::cfg_if;
+use log::{info};
+
 
 pub enum WebGlTextureSource <'a> {
     ArrayBufferView(&'a Object, i32, i32),
@@ -127,26 +129,26 @@ pub fn texture_sources_can_mipmap(srcs:&[&WebGlTextureSource]) -> Result<(), Err
     Ok(()) 
 }
 
-pub fn assign_simple_texture_target(gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
+pub fn assign_simple_texture_target_direct(gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
 
     let set_parameters = Some(|_:&WebGlContext| {
-        simple_parameters_target(&gl, bind_target, &opts, false);
+        simple_parameters_target_direct(&gl, bind_target, &opts, false);
     });
 
-    assign_texture_target(&gl, bind_target, &get_texture_options_from_simple(&opts), set_parameters, &src, &dest)
+    assign_texture_target_direct(&gl, bind_target, &get_texture_options_from_simple(&opts), set_parameters, &src, &dest)
 }
 
-pub fn assign_simple_texture_mips_target(gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
+pub fn assign_simple_texture_target_mips_direct(gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
 
     texture_sources_can_mipmap(&srcs)?;
     let set_parameters = Some(|_:&WebGlContext| {
-        simple_parameters_target(&gl, bind_target, &opts, true);
+        simple_parameters_target_direct(&gl, bind_target, &opts, true);
     });
 
-    assign_texture_mips_target(&gl, bind_target, &get_texture_options_from_simple(&opts), set_parameters, &srcs, &dest)
+    assign_texture_target_mips_direct(&gl, bind_target, &get_texture_options_from_simple(&opts), set_parameters, &srcs, &dest)
 }
 
-pub fn simple_parameters_target(gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, use_mips: bool) {
+pub fn simple_parameters_target_direct(gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, use_mips: bool) {
 
     let bind_target = bind_target as u32;
 
@@ -166,11 +168,11 @@ pub fn simple_parameters_target(gl:&WebGlContext, bind_target: TextureTarget, op
     }
 }
 
-pub fn assign_texture_target(gl:&WebGlContext, bind_target: TextureTarget, opts:&TextureOptions,set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
-    assign_texture_mips_target(&gl, bind_target, &opts, set_parameters, &[src], &dest)
+pub fn assign_texture_target_direct(gl:&WebGlContext, bind_target: TextureTarget, opts:&TextureOptions,set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
+    assign_texture_target_mips_direct(&gl, bind_target, &opts, set_parameters, &[src], &dest)
 }
 
-pub fn assign_texture_mips_target(gl:&WebGlContext, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
+pub fn assign_texture_target_mips_direct(gl:&WebGlContext, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
     let bind_target = bind_target as u32;
 
     gl.bind_texture(bind_target, Some(dest));
@@ -184,8 +186,8 @@ pub fn assign_texture_mips_target(gl:&WebGlContext, bind_target: TextureTarget, 
     Ok(())
 }
 
-pub fn activate_texture_for_sampler_target(gl:&WebGlContext, bind_target: TextureTarget, sampler_index: usize, texture:&WebGlTexture) {
-    gl.active_texture((TextureUnit::Texture0 as u32) + (sampler_index as u32));
+pub fn activate_texture_for_sampler_target_index_direct(gl:&WebGlContext, bind_target: TextureTarget, sampler_index: u32, texture:&WebGlTexture) {
+    gl.active_texture((TextureUnit::Texture0 as u32) + sampler_index );
 
     gl.bind_texture(bind_target as u32, Some(texture));
 }
@@ -268,6 +270,7 @@ pub(super) struct TextureSamplerInfo {
     bind_target: TextureTarget,
     texture_id: Id,
 }
+
 impl WebGlRenderer {
 
     pub fn create_texture(&mut self) -> Result<Id, Error> {
@@ -284,64 +287,82 @@ impl WebGlRenderer {
         self.assign_simple_texture_target(texture_id, TextureTarget::Texture2D, &opts, &src)
     }
     pub fn assign_simple_texture_mips(&mut self, texture_id:Id, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
-        self.assign_simple_texture_mips_target(texture_id, TextureTarget::Texture2D, &opts, &srcs)
+        self.assign_simple_texture_target_mips(texture_id, TextureTarget::Texture2D, &opts, &srcs)
     }
     pub fn assign_texture(&mut self, texture_id: Id, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&WebGlTextureSource) -> Result<(), Error> {
         self.assign_texture_target(texture_id, TextureTarget::Texture2D, &opts, set_parameters, &src)
     }
     pub fn assign_texture_mips(&mut self, texture_id: Id, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
-        self.assign_texture_mips_target(texture_id, TextureTarget::Texture2D, &opts, set_parameters, &srcs)
+        self.assign_texture_target_mips(texture_id, TextureTarget::Texture2D, &opts, set_parameters, &srcs)
     }
-    pub fn activate_texture_for_sampler(&mut self, texture_id: Id, sampler_index: usize) -> Result<(), Error> {
-        self.activate_texture_for_sampler_target(TextureTarget::Texture2D, texture_id, sampler_index)
+    pub fn activate_texture_for_sampler(&mut self, texture_id: Id, sampler_name: &str) -> Result<(), Error> {
+        self.activate_texture_for_sampler_target(TextureTarget::Texture2D, texture_id, sampler_name)
+    }
+
+    pub fn activate_texture_for_sampler_index(&mut self, texture_id: Id, sampler_index: u32) -> Result<(), Error> {
+        self.activate_texture_for_sampler_target_index(TextureTarget::Texture2D, texture_id, sampler_index)
     }
 
     //Texture assigning will bind the texture - so the slot for activations effectively becomes None 
-    fn assign_simple_texture_target(&mut self, texture_id:Id, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource) -> Result<(), Error> {
+    pub fn assign_simple_texture_target(&mut self, texture_id:Id, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource) -> Result<(), Error> {
         let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
 
         self.current_texture_id = Some(texture_id);
         self.current_texture_slot = None;
 
-        assign_simple_texture_target(&self.gl, bind_target, &opts, &src, &texture)
+        assign_simple_texture_target_direct(&self.gl, bind_target, &opts, &src, &texture)
 
     }
 
-    fn assign_simple_texture_mips_target(&mut self, texture_id:Id, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
-
-        let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
-
-        self.current_texture_id = Some(texture_id);
-        self.current_texture_slot = None;
-
-        assign_simple_texture_mips_target(&self.gl, bind_target, &opts, &srcs, &texture)
-    }
-
-
-    fn assign_texture_target(&mut self, texture_id: Id, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&WebGlTextureSource) -> Result<(), Error> {
+    pub fn assign_simple_texture_target_mips(&mut self, texture_id:Id, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
 
         let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
 
         self.current_texture_id = Some(texture_id);
         self.current_texture_slot = None;
 
-        assign_texture_target(&self.gl, bind_target, &opts, set_parameters, &src, &texture)
+        assign_simple_texture_target_mips_direct(&self.gl, bind_target, &opts, &srcs, &texture)
     }
 
-    fn assign_texture_mips_target(&mut self, texture_id: Id, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
+
+    pub fn assign_texture_target(&mut self, texture_id: Id, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&WebGlTextureSource) -> Result<(), Error> {
+
+        let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
+
+        self.current_texture_id = Some(texture_id);
+        self.current_texture_slot = None;
+
+        assign_texture_target_direct(&self.gl, bind_target, &opts, set_parameters, &src, &texture)
+    }
+
+    pub fn assign_texture_target_mips(&mut self, texture_id: Id, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
 
         let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
         self.current_texture_id = Some(texture_id);
         self.current_texture_slot = None;
 
-        assign_texture_mips_target(&self.gl, bind_target, &opts, set_parameters, &srcs, &texture)
+        assign_texture_target_mips_direct(&self.gl, bind_target, &opts, set_parameters, &srcs, &texture)
     }
 
-    fn activate_texture_for_sampler_target(&mut self, bind_target:TextureTarget, texture_id: Id, sampler_index: usize) -> Result<(), Error> {
-        let entry = self.texture_sampler_lookup.get(sampler_index).ok_or(Error::from(NativeError::Internal))?;
+    pub fn activate_texture_for_sampler_target(&mut self, bind_target:TextureTarget, texture_id: Id, sampler_name: &str) -> Result<(), Error> {
+        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_info = self.program_lookup.get(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+
+        let sampler_slot = program_info.texture_sampler_slot_lookup.get(sampler_name)
+            .ok_or(Error::from(NativeError::MissingTextureSampler(Some(sampler_name.to_string()))))?;
+
+        self.activate_texture_for_sampler_target_index(bind_target, texture_id, *sampler_slot)?;
+        Ok(())
+    }
+
+    pub fn activate_texture_for_sampler_target_index(&mut self, bind_target:TextureTarget, texture_id: Id, sampler_index: u32) -> Result<(), Error> {
+
+        let entry = self.texture_sampler_lookup.get(sampler_index as usize).ok_or(Error::from(NativeError::Internal))?;
 
         let requires_activation = match entry {
             Some(entry) => {
+
+
                 if entry.bind_target != bind_target || entry.texture_id != texture_id {
                     true
                 } else {
@@ -354,12 +375,12 @@ impl WebGlRenderer {
         };
 
         if requires_activation {
-            self.texture_sampler_lookup[sampler_index] = Some(TextureSamplerInfo{
+            self.texture_sampler_lookup[sampler_index as usize] = Some(TextureSamplerInfo{
                 texture_id,
                 bind_target
             });
             let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
-            activate_texture_for_sampler_target(&self.gl, bind_target, sampler_index, &texture);
+            activate_texture_for_sampler_target_index_direct(&self.gl, bind_target, sampler_index, &texture);
         }
 
         Ok(())

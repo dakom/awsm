@@ -75,45 +75,37 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
         let href = get_static_href("smiley.svg");
         info!("loading image! {}", href);
-        match image::fetch_image(href).await {
-            Ok(img) => {
+        let img = image::fetch_image(href).await?;
 
-                let mut state_obj = state.borrow_mut();
-                state_obj.area = Area{
-                    width: img.natural_width().into(),
-                    height: img.natural_height().into() 
-                };
+        let mut state_obj = state.borrow_mut();
+        state_obj.area = Area{
+            width: img.natural_width().into(),
+            height: img.natural_height().into() 
+        };
 
-                let (width, height) = webgl_renderer.current_size();
+        let (width, height) = webgl_renderer.current_size();
 
-                reposition(&mut state_obj, width, height);
+        reposition(&mut state_obj, width, height);
 
-                webgl_renderer.assign_simple_texture(
-                    texture_id, 
-                    &SimpleTextureOptions{
-                        pixel_format: PixelFormat::Rgba,
-                        ..SimpleTextureOptions::default()
-                    },
-                    &WebGlTextureSource::ImageElement(&img)
-                )?;
-
-                let _cancel = start_raf_ticker_timestamp({
-                    let state = Rc::clone(&state);
-                    let webgl_renderer_raf = Rc::clone(&webgl_renderer_clone);
-                    move |_timestamp:Timestamp| {
-                        let state = state.borrow_mut();
-                        let mut webgl_renderer = webgl_renderer_raf.borrow_mut();
-                        render(&state, &mut webgl_renderer).unwrap();
-                    }
-                })?;
-                Ok(JsValue::null())
+        webgl_renderer.assign_simple_texture(
+            texture_id, 
+            &SimpleTextureOptions{
+                pixel_format: PixelFormat::Rgba,
+                ..SimpleTextureOptions::default()
             },
+            &WebGlTextureSource::ImageElement(&img)
+        )?;
 
-            Err(err) => {
-                info!("error!");
-                Err(err.into())
+        let _cancel = start_raf_ticker_timestamp({
+            let state = Rc::clone(&state);
+            let webgl_renderer_raf = Rc::clone(&webgl_renderer_clone);
+            move |_timestamp:Timestamp| {
+                let state = state.borrow_mut();
+                let mut webgl_renderer = webgl_renderer_raf.borrow_mut();
+                render(&state, &mut webgl_renderer).unwrap();
             }
-        }
+        })?;
+        Ok(JsValue::null())
     };
 
     //we don't handle errors here because they are exceptions
@@ -138,7 +130,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     webgl_renderer.activate_program(program_id.unwrap());
 
     //enable texture
-    webgl_renderer.activate_texture_for_sampler(texture_id.unwrap(), 0)?;
+    webgl_renderer.activate_texture_for_sampler(texture_id.unwrap(), "u_sampler")?;
 
     //Build our matrices (must cast to f32)
     let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(area.width as f32, area.height as f32, 0.0f32));

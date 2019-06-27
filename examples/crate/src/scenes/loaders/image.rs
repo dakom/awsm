@@ -24,17 +24,10 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
             let future = async move {
                 let href = get_static_href("smiley.svg");
                 info!("loading image! {}", href);
-                match image::fetch_image(href).await {
-                    Ok(img) => {
-                        info!("loaded!!! {}", img.src());
-                        root.append_child(&img)
-                            .map(|_| JsValue::null())
-                    }
-                    Err(err) => {
-                        info!("error!");
-                        Err(err.into())
-                    }
-                }
+                let img = image::fetch_image(href).await?;
+                info!("loaded!!! {}", img.src());
+                root.append_child(&img)
+                    .map(|_| JsValue::null())
             };
 
             //we don't handle errors here because they are exceptions

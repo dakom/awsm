@@ -259,6 +259,40 @@ pub enum WebGlSpecific {
 }
 
 
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum UniformDataType {
+    FloatVec2 = 0x8B50,
+    FloatVec3 = 0x8B51,
+    FloatVec4 = 0x8B52,
+    IntVec2 = 0x8B53,
+    IntVec3 = 0x8B54,
+    IntVec4 = 0x8B55,
+    Bool = 0x8B56,
+    BoolVec2 = 0x8B57,
+    BoolVec3 = 0x8B58,
+    BoolVec4 = 0x8B59,
+    FloatMat2 = 0x8B5A,
+    FloatMat3 = 0x8B5B,
+    FloatMat4 = 0x8B5C,
+    Sampler2d = 0x8B5E,
+    SamplerCube = 0x8B60,
+
+    //WebGL2 only
+    Sampler3d = 0x8B5F,
+    Sampler2dShadow = 0x8B62,
+    SamplerCubeShadow = 0x8DC5,
+    Sampler2dArray = 0x8DC1,
+    Sampler2dArrayShadow = 0x8DC4,
+    IntSampler2d = 0x8DCA,
+    IntSampler3d = 0x8DCB,
+    IntSamplerCube = 0x8DCC,
+    IntSampler2dArray = 0x8DCF,
+    UnsignedIntSampler2d = 0x8DD2,
+    UnsignedIntSampler3d = 0x8DD3,
+    UnsignedIntSamplerCube = 0x8DD4,
+    UnsignedIntSampler2dArray= 0x8DD7,
+}
 
 
 /*
@@ -447,22 +481,6 @@ ONE_MINUS_DST_ALPHA            = 0x0305;
     const GLenum RENDERER                       = 0x1F01;
     const GLenum VERSION                        = 0x1F02;
 
-    * Uniform Types *
-    const GLenum FLOAT_VEC2                     = 0x8B50;
-    const GLenum FLOAT_VEC3                     = 0x8B51;
-    const GLenum FLOAT_VEC4                     = 0x8B52;
-    const GLenum INT_VEC2                       = 0x8B53;
-    const GLenum INT_VEC3                       = 0x8B54;
-    const GLenum INT_VEC4                       = 0x8B55;
-    const GLenum BOOL                           = 0x8B56;
-    const GLenum BOOL_VEC2                      = 0x8B57;
-    const GLenum BOOL_VEC3                      = 0x8B58;
-    const GLenum BOOL_VEC4                      = 0x8B59;
-    const GLenum FLOAT_MAT2                     = 0x8B5A;
-    const GLenum FLOAT_MAT3                     = 0x8B5B;
-    const GLenum FLOAT_MAT4                     = 0x8B5C;
-    const GLenum SAMPLER_2D                     = 0x8B5E;
-    const GLenum SAMPLER_CUBE                   = 0x8B60;
 
     * Vertex Arrays *
     const GLenum VERTEX_ATTRIB_ARRAY_ENABLED        = 0x8622;

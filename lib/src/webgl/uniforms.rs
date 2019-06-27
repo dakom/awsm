@@ -308,7 +308,7 @@ impl WebGlRenderer {
         self.gl.uniform2f(Some(&loc), data.0, data.1);
         Ok(())
     }
-    pub fn upload_uniform_fvals_1(&self, target_name:&str, data:f32) -> Result<(), Error> {
+    pub fn upload_uniform_fval(&self, target_name:&str, data:f32) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
         self.gl.uniform1f(Some(&loc), data);
         Ok(())
@@ -329,7 +329,7 @@ impl WebGlRenderer {
         self.gl.uniform2i(Some(&loc), data.0, data.1);
         Ok(())
     }
-    pub fn upload_uniform_ivals_1(&self, target_name:&str, data:i32) -> Result<(), Error> {
+    pub fn upload_uniform_ival(&self, target_name:&str, data:i32) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
         self.gl.uniform1i(Some(&loc), data);
         Ok(())
@@ -355,7 +355,7 @@ impl WebGlRenderer {
         Ok(())
     }
     #[cfg(feature = "webgl_2")] 
-    pub fn upload_uniform_uvals_1(&self, target_name:&str, data:u32) -> Result<(), Error> {
+    pub fn upload_uniform_uvals(&self, target_name:&str, data:u32) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
         self.gl.uniform1ui(Some(&loc), data);
         Ok(())

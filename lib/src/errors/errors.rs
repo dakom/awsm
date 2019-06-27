@@ -25,6 +25,7 @@ pub enum NativeError {
     NoExistingBuffer,
     NoCreateTexture,
     MissingTexture,
+    MissingTextureSampler(Option<String>),
     MissingBuffer,
     UniformSize,
     UniformMatrixMustBeFloat,
@@ -77,6 +78,7 @@ impl NativeError {
             NativeError::MissingShaderProgram => "No shader program activated",
             NativeError::NoCreateTexture => "unable to create texture",
             NativeError::MissingTexture => "couldn't get texture",
+            NativeError::MissingTextureSampler(_optional_name) => "couldn't get texture sampler",
             NativeError::MissingBuffer => "couldn't get buffer",
             NativeError::VertexArrayMissing => "no such vertex array",
             NativeError::VertexArrayCreate => "unable to create vertex array",
@@ -94,18 +96,23 @@ impl NativeError {
         match self {
             NativeError::AttributeLocation(optional_name) => 
                 match optional_name {
-                    None => "Couldn't get attribute location".to_string(),
+                    None => self.default_str().to_string(),
                     Some(name) => format!("couldn't get attribute location named {}", name.as_str())
                 },
             NativeError::UniformLocation(optional_name) => 
                 match optional_name {
-                    None => "Couldn't get uniform location".to_string(),
+                    None => self.default_str().to_string(),
                     Some(name) => format!("couldn't get uniform location named {}", name.as_str())
                 },
             NativeError::UniformBufferMissing(optional_name) => 
                 match optional_name {
-                    None => "Couldn't get uniform buffer".to_string(),
+                    None => self.default_str().to_string(),
                     Some(name) => format!("couldn't get uniform buffer named {}", name.as_str())
+                },
+            NativeError::MissingTextureSampler(optional_name) => 
+                match optional_name {
+                    None => self.default_str().to_string(),
+                    Some(name) => format!("couldn't get texture sampler named {}", name.as_str())
                 },
             _ => self.default_str().to_string()
         }

@@ -1,6 +1,7 @@
 pub mod common;
 pub mod simple;
 pub mod texture;
+pub mod multi_texture;
 pub mod blending;
 pub mod instancing;
 pub mod vaos;

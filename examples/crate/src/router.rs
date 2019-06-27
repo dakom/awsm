@@ -50,6 +50,10 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
             webgl::texture::start(window, document, body)
         },
 
+        "webgl-multi-texture" => {
+            webgl::multi_texture::start(window, document, body)
+        },
+
         "webgl-blending" => {
             webgl::blending::start(window, document, body)
         },
