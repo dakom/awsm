@@ -10,7 +10,7 @@ repository = "https://github.com/dakom/awsm"
 homepage = "https://github.com/dakom/awsm"
 description = "Wrappers for WASM"
 categories = ["wasm"]
-keywords = ["awsm", "webgl", "renderer", "3d", "graphics", "gamedev", "web"]
+keywords = ["webgl", "renderer", "3d", "graphics", "gamedev"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
