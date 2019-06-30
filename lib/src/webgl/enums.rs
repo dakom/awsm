@@ -250,6 +250,18 @@ pub enum UniformBlockQuery {
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
+pub enum UniformBlockActiveQuery {
+    Type = 0x8A37,
+    Size = 0x8A38,
+    BlockIndex = 0x8A3A,
+    Offset = 0x8A3B,
+    ArrayStride = 0x8A3C,
+    MatrixStride = 0x8A3D,
+    IsRowMajor = 0x8A3E,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
 pub enum WebGlSpecific {
     UnpackFlipY = 0x9240, 
     UnpackPremultiplyAlpha = 0x9241,

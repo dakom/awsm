@@ -5,7 +5,7 @@ use wasm_bindgen::prelude::JsValue;
 use crate::errors::{Error, NativeError};
 use crate::helpers::{clone_to_vec_u32};
 use super::id::{Id};
-use super::{WebGlRenderer, WebGlContext, GlQuery, UniformBlockQuery, get_attribute_location_direct, get_uniform_location_direct};
+use super::{WebGlRenderer, WebGlContext, GlQuery, UniformBlockQuery, UniformBlockActiveQuery, get_attribute_location_direct, get_uniform_location_direct};
 use log::{info};
 
 pub struct ProgramInfo {
@@ -14,6 +14,8 @@ pub struct ProgramInfo {
     pub uniform_lookup: HashMap<String, WebGlUniformLocation>,
     #[cfg(feature="webgl_2")]
     pub uniform_buffer_loc_lookup: HashMap<String, u32>,
+    #[cfg(feature="webgl_2")]
+    pub uniform_buffer_offset_lookup: HashMap<String, HashMap<String, u32>>,
     pub texture_sampler_slot_lookup: HashMap<String, u32>,
 }
 
@@ -35,6 +37,7 @@ impl ProgramInfo {
             attribute_lookup: HashMap::new(),
             uniform_lookup: HashMap::new(),
             uniform_buffer_loc_lookup: HashMap::new(),
+            uniform_buffer_offset_lookup: HashMap::new(),
             texture_sampler_slot_lookup: HashMap::new(),
         }
     }
@@ -202,7 +205,7 @@ impl WebGlRenderer {
             .map(|val| val as u32)
             .unwrap_or(0);
 
-        let mut bind_point_offset = self.ubo_global_loc_lookup.len() as u32;
+        let mut max_bind_point_offset = self.ubo_global_loc_lookup.len() as u32;
 
         if max > 0 {
             for i in 0..max {
@@ -220,13 +223,15 @@ impl WebGlRenderer {
 
                 let bind_point = match global_loc { 
                     None => {
-                        let ret = bind_point_offset.clone();
-                        bind_point_offset += 1;
+                        let ret = max_bind_point_offset.clone();
+                        max_bind_point_offset += 1;
                         ret
                     },
                     Some(n) => n
                 };
                 self.gl.uniform_block_binding(&program, block_index, bind_point);
+
+                //program_info.uniform_buffer_offset_lookup
                 /*let bind_point = self.gl.get_active_uniform_block_parameter(&program, i, UniformBlockQuery::BindingPoint as u32)?
                         .as_f64().ok_or(Error::from(NativeError::Internal))
                         .map(|val| val as u32)
@@ -245,14 +250,39 @@ impl WebGlRenderer {
                     }
                 };
 
+               
                 //Need to keep a list of the uniforms that are in blocks, 
                 //so they don't get double-cached
                 let mut active_uniforms:Vec<u32> = self.gl.get_active_uniform_block_parameter(&program, i, UniformBlockQuery::ActiveUniformIndices as u32)
                     .map(|vals| vals.into())
                     .map(|vals| clone_to_vec_u32(&vals))?;
 
-                uniforms_in_blocks.append(&mut active_uniforms);
+                uniforms_in_blocks.extend(&active_uniforms);
 
+                //Also need to cache their offsets
+                let block_lookup = program_info.uniform_buffer_offset_lookup
+                        .entry(name.to_string())
+                        .or_insert_with(|| HashMap::new());
+
+                let offsets:Vec<u32> = unsafe {
+                    let values = js_sys::Uint32Array::view(&active_uniforms);
+                    let active_uniform_offsets = self.gl.get_active_uniforms(&program, &values, UniformBlockActiveQuery::Offset as u32);
+                    clone_to_vec_u32(&active_uniform_offsets.into())
+                };
+
+                info!("{:?}", &offsets);
+
+                for (idx, loc) in active_uniforms.iter().enumerate() {
+                    let (u_name, u_type_, u_size) = self.gl.get_active_uniform(&program_info.program, *loc)
+                        .map(|info| (info.name(), info.type_(), info.size()))
+                        .ok_or(Error::from(NativeError::UniformLocation(None)))?;
+
+                    let offset = offsets[idx];
+
+                    block_lookup.insert(u_name.clone(), offset);
+
+                    info!("uniform {} in block {} has offset {}", u_name, name, offset);
+                }
             }
         }
 

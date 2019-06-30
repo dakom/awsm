@@ -8,7 +8,15 @@ use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_unit_box_buffers, N_BOX_ELEMENTS}; 
 use crate::scenes::webgl::common::datatypes::*;
 use nalgebra::{Matrix4, Vector3, Point3, Perspective3, Isometry3};
+use log::{info};
 
+/*
+ * In order to test the various ways of setting ubo's
+ * The model is fully set on init
+ * The camera is updated every tick 
+ * The scale is partially updated every tick 
+ *
+ */
 struct State {
     //mutable for each tick
     pub pos: Point3<f64>,
@@ -19,6 +27,7 @@ struct State {
     pub vao_id: Option<Id>,
     pub model_buffer_id: Option<Id>,
     pub camera_buffer_id: Option<Id>,
+    pub scale_buffer_id: Option<Id>,
 }
 
 impl State {
@@ -32,6 +41,7 @@ impl State {
             vao_id: None,
             model_buffer_id: None,
             camera_buffer_id: None,
+            scale_buffer_id: None,
         }
 
     }
@@ -81,10 +91,16 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let camera_buffer_id = webgl_renderer.create_buffer()?;
     state_obj.camera_buffer_id = Some(camera_buffer_id);
-    set_camera_buffer(&mut state_obj, &mut webgl_renderer)?;
 
     let model_buffer_id = webgl_renderer.create_buffer()?;
     state_obj.model_buffer_id = Some(model_buffer_id);
+
+    set_model_buffer(&mut state_obj, &webgl_renderer)?;
+
+    let scale_buffer_id = webgl_renderer.create_buffer()?;
+    state_obj.scale_buffer_id = Some(scale_buffer_id);
+
+    set_initial_scale_buffer(scale_buffer_id, &webgl_renderer)?;
 
     webgl_renderer.assign_vertex_array(
         vao_id,
@@ -118,7 +134,63 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 }
 
 
-fn set_camera_buffer(state:&State, webgl_renderer:&WebGlRenderer) -> Result<(), Error> {
+
+fn set_initial_scale_buffer(scale_buffer_id:Id, webgl_renderer:&WebGlRenderer) -> Result<(), Error> {
+    //Upload them to the GPU as a UBO
+    let scale:[f32;3] = [1.0;3]; 
+
+    //Just set it in a buffer, will be used at render time
+    webgl_renderer.upload_buffer(
+        scale_buffer_id,
+        BufferData::new(&scale, BufferTarget::UniformBuffer, BufferUsage::DynamicDraw)
+    )
+}
+
+fn update_scale_buffer(state:&State, webgl_renderer:&WebGlRenderer) -> Result<(), Error> {
+    let mut scale_y:[f32;3] = [0.0, 3.0, 0.0]; 
+
+    webgl_renderer.upload_sub_buffer_to_uniform_buffer_f32(
+        "u_scale_y",
+        "scale",
+        state.scale_buffer_id.unwrap(),
+        &scale_y[1..2], 
+        BufferUsage::DynamicDraw,
+    )
+
+    /*Note - setting a _range_ of uniforms in a block just needs to target the first offset
+      for example:
+            let mut scale_y:[f32;3] = [0.0, 3.0, 0.0]; 
+
+            webgl_renderer.upload_sub_buffer_to_uniform_buffer_f32(
+                "u_scale_y",
+                "scale",
+                state.scale_buffer_id.unwrap(),
+                &scale_y[1..2], 
+                BufferUsage::DynamicDraw,
+            )
+    */
+}
+
+fn set_model_buffer(state:&State, webgl_renderer:&WebGlRenderer) -> Result<(), Error> {
+    let State {pos, volume, program_id, vao_id, camera_buffer_id, model_buffer_id, ..} = state;
+
+    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(volume.width as f32, volume.height as f32, volume.depth as f32));
+
+    info!("{}", scaling_mat);
+
+    let model_mat = Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, pos.z as f32));
+
+    //Upload them to the GPU as a UBO
+    let model = vec![scaling_mat.as_slice(), model_mat.as_slice()].concat();
+
+    //Just set it in a buffer, will be used at render time
+    webgl_renderer.upload_buffer(
+        state.model_buffer_id.unwrap(),
+        BufferData::new(&model, BufferTarget::UniformBuffer, BufferUsage::DynamicDraw)
+    )
+}
+
+fn update_camera_buffer(state:&State, webgl_renderer:&WebGlRenderer) -> Result<(), Error> {
     // Our camera looks toward the point (1.0, 0.0, 0.0).
     // It is located at (0.0, 0.0, 1.0).
     let eye    = Point3::new(1000.0, 500.0, 1000.0);
@@ -134,45 +206,35 @@ fn set_camera_buffer(state:&State, webgl_renderer:&WebGlRenderer) -> Result<(), 
     ).to_homogeneous();
 
 
-    let camera = vec![projection.as_slice(), view.as_slice()].concat();
+    let camera = vec![view.as_slice(), projection.as_slice()].concat();
 
-    //Just set it in a buffer, will be used at render time
-    webgl_renderer.upload_buffer(
+    //will activate it too
+    webgl_renderer.upload_buffer_to_uniform_buffer_f32(
+        "camera",
         state.camera_buffer_id.unwrap(),
-        BufferData::new(&camera, BufferTarget::UniformBuffer, BufferUsage::DynamicDraw)
+        &camera, 
+        BufferUsage::DynamicDraw,
     )
 }
 
+
 fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let State {pos, volume, program_id, vao_id, camera_buffer_id, model_buffer_id, ..} = state;
-
-
-    webgl_renderer.activate_program(program_id.unwrap())?;
+    webgl_renderer.activate_program(state.program_id.unwrap())?;
 
     webgl_renderer.toggle(GlToggle::DepthTest, true);
 
-    //Build our matrices (must cast to f32)
-    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(volume.width as f32, volume.height as f32, volume.depth as f32));
 
-    let model_mat = Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, pos.z as f32));
+    //will partially upload (but fully activate) the buffer
+    update_scale_buffer(state, webgl_renderer)?;
 
-    //Upload them to the GPU as a UBO
-    let model = vec![scaling_mat.as_slice(), model_mat.as_slice()].concat();
+    //will upload and activate buffer
+    update_camera_buffer(state, webgl_renderer)?;
 
-    //will activate it also
-    webgl_renderer.upload_buffer_to_uniform_buffer_f32(
-        "model",
-        model_buffer_id.unwrap(),
-        &model, 
-        BufferUsage::DynamicDraw,
-    )?;
-
-    //Camera just needs to be activated so that it pulls from the buffer (which was set above)
-    webgl_renderer.activate_uniform_buffer(camera_buffer_id.unwrap(), "camera")?;
-
+    //Model just needs to be activated so that it pulls from the buffer (which was set at init time)
+    webgl_renderer.activate_uniform_buffer(state.model_buffer_id.unwrap(), "model")?;
 
     //activate VAO's 
-    webgl_renderer.activate_vertex_array(vao_id.unwrap())?;
+    webgl_renderer.activate_vertex_array(state.vao_id.unwrap())?;
 
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);

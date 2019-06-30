@@ -33,6 +33,7 @@ pub enum NativeError {
     UniformBufferName,
     UniformBufferParameter,
     UniformBufferMissing(Option<String>),
+    UniformBufferOffsetMissing(Option<(String, String)>),
     UniformBufferTarget,
     VertexArrayMissing,
     VertexArrayCreate,
@@ -88,6 +89,7 @@ impl NativeError {
             NativeError::UniformBufferName => "couldn't get uniform block name",
             NativeError::UniformBufferParameter => "couldn't get uniform block parameter",
             NativeError::UniformBufferMissing(_optional_name) => "uniform buffer is missing",
+            NativeError::UniformBufferOffsetMissing(_optional_name) => "uniform buffer offset is missing",
             NativeError::UniformBufferTarget => "buffer target must be UniformBuffer for uniform buffers",
             NativeError::Internal => "internal error",
         }
@@ -108,6 +110,11 @@ impl NativeError {
                 match optional_name {
                     None => self.default_str().to_string(),
                     Some(name) => format!("couldn't get uniform buffer named {}", name.as_str())
+                },
+            NativeError::UniformBufferOffsetMissing(optional_name) => 
+                match optional_name {
+                    None => self.default_str().to_string(),
+                    Some((block_name, uniform_name)) => format!("couldn't get offset for uniform named {} in buffer named {}", uniform_name, block_name.as_str())
                 },
             NativeError::MissingTextureSampler(optional_name) => 
                 match optional_name {

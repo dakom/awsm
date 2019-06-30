@@ -169,6 +169,9 @@ impl WebGlRenderer {
         Ok(())
     }
 
+    //Note - when refactoring from features... idea:
+    //always accept src/dest but if src isn't 0 and context is webgl1 return error
+    
     #[cfg(feature = "webgl_1")]
     pub fn upload_buffer_sub<T: BufferDataImpl>(&self, id:Id, offset:u32, data:T) -> Result<(), Error> {
         self.bind_buffer(id, data.get_target())?;
