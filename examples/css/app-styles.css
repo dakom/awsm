@@ -77,8 +77,9 @@ ul {
 	font-size: 2rem;
 }
 .menu-list {
-	display: flex;
-	flex-direction: row;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
 }
 
 
