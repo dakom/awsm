@@ -1,4 +1,5 @@
 use super::{WebGlRenderer, DataType, BeginMode};
+use wasm_bindgen::JsCast;
 use crate::errors::{Error};
 use cfg_if::cfg_if;
 
