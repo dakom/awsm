@@ -9,7 +9,7 @@ use wasm_bindgen_futures::futures_0_3::{future_to_promise};
 use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
 use crate::scenes::webgl::common::datatypes::*;
-use nalgebra::{Matrix4, Vector3, Vector4, Point2};
+use nalgebra::{Matrix4, Vector3, Point2};
 use log::{info};
 
 struct State {
@@ -53,7 +53,7 @@ fn register_extensions(webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue>
         .map(|_| ())
 }
 #[cfg(feature = "webgl_2")]
-fn register_extensions(webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
+fn register_extensions(_webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
     Ok(())
 }
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
@@ -131,8 +131,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
             move |timestamp:Timestamp| {
                 let mut state = state.borrow_mut();
                 for (pos, vel) in state.positions.iter_mut() {
-                    pos.x += (vel.x * timestamp.delta);
-                    pos.y += (vel.y * timestamp.delta);
+                    pos.x += vel.x * timestamp.delta;
+                    pos.y += vel.y * timestamp.delta;
                 }
                 let mut webgl_renderer = webgl_renderer_raf.borrow_mut();
                 render(&state, &mut webgl_renderer).unwrap();
@@ -156,7 +156,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     //draw! (gotta clear first due to the extension needing mutability)
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
 
-    webgl_renderer.activate_program(program_id.unwrap());
+    webgl_renderer.activate_program(program_id.unwrap())?;
 
     //enable texture
     webgl_renderer.activate_texture_for_sampler(texture_id.unwrap(), "u_sampler")?;

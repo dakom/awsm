@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Document, HtmlCanvasElement};
 use awsm::errors::{Error, NativeError};
-use awsm::canvas::{get_2d_context, Canvas2dContext};
+use awsm::canvas::{get_2d_context};
 
 pub fn generate_canvas_image(document: &Document, width:u32, height: u32, color:&str) -> Result<HtmlCanvasElement, Error> {
     let canvas:HtmlCanvasElement = document.create_element("canvas")?.dyn_into().map_err(|_| Error::from(NativeError::Internal))?;
@@ -15,5 +15,5 @@ pub fn generate_canvas_image(document: &Document, width:u32, height: u32, color:
     ctx.fill_rect(0.0, 0.0, width as f64, height as f64);
 
 
-    Ok((canvas))
+    Ok(canvas)
 }

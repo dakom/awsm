@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
-use nalgebra::{Matrix4, Vector3, Vector4, Point2};
+use nalgebra::{Matrix4, Vector3, Point2};
 use crate::scenes::webgl::common::datatypes::*;
 
 struct State {
@@ -104,7 +104,7 @@ impl State {
 fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
     let State {pos, area, color, camera_width, camera_height, program_id, ..} = state;
 
-    webgl_renderer.activate_program(program_id.unwrap());
+    webgl_renderer.activate_program(program_id.unwrap())?;
 
 
     //Build our matrices (must cast to f32)
@@ -118,7 +118,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice())?;
 
     let color_values = color.values();
-    let color_values = ((color_values[0] as f32, color_values[1] as f32, color_values[2] as f32, color_values[3] as f32));
+    let color_values = (color_values[0] as f32, color_values[1] as f32, color_values[2] as f32, color_values[3] as f32);
     webgl_renderer.upload_uniform_fvals_4("u_color", color_values)?;
 
     //draw!

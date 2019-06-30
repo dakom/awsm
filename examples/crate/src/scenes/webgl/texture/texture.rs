@@ -9,7 +9,7 @@ use wasm_bindgen_futures::futures_0_3::{future_to_promise};
 use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
 use crate::scenes::webgl::common::datatypes::*;
-use nalgebra::{Matrix4, Vector3, Vector4, Point2};
+use nalgebra::{Matrix4, Vector3, Point2};
 use log::{info};
 
 struct State {
@@ -127,7 +127,7 @@ fn reposition(state:&mut State, width: u32, height: u32) {
 fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
     let State {pos, area, camera_width, camera_height, program_id, texture_id} = state;
 
-    webgl_renderer.activate_program(program_id.unwrap());
+    webgl_renderer.activate_program(program_id.unwrap())?;
 
     //enable texture
     webgl_renderer.activate_texture_for_sampler(texture_id.unwrap(), "u_sampler")?;

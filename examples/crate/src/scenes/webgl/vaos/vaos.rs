@@ -1,15 +1,13 @@
-use awsm::webgl::{VertexArray, Id, GlToggle, BufferTarget, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, BeginMode};
+use awsm::webgl::{VertexArray, Id, GlToggle, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, BeginMode};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
-use awsm::errors::{Error};
 use std::rc::Rc; 
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_unit_box_buffers, N_BOX_ELEMENTS}; 
 use crate::scenes::webgl::common::datatypes::*;
-use nalgebra::{Matrix4, Vector3, Vector4, Point3, Perspective3, Isometry3};
+use nalgebra::{Matrix4, Vector3, Point3, Perspective3, Isometry3};
 
-type BufferIds = (Id, Id, Id);
 struct State {
     //mutable for each tick
     pub pos: Point3<f64>,
@@ -41,7 +39,7 @@ fn register_extensions(webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue>
         .map(|_| ())
 }
 #[cfg(feature = "webgl_2")]
-fn register_extensions(webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
+fn register_extensions(_webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
     Ok(())
 }
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
@@ -99,7 +97,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     let _ = start_raf_ticker_timestamp({
         let state = Rc::clone(&state);
         move |_timestamp:Timestamp| {
-            let mut state = state.borrow_mut();
+            let state = state.borrow();
             render(&state, &mut webgl_renderer_clone.borrow_mut()).unwrap();
         }
     })?;
@@ -110,10 +108,10 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
 
 fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let State {pos, volume, camera_width, camera_height, program_id, vao_id} = state;
+    let State {pos, volume, program_id, vao_id, ..} = state;
 
 
-    webgl_renderer.activate_program(program_id.unwrap());
+    webgl_renderer.activate_program(program_id.unwrap())?;
 
     webgl_renderer.toggle(GlToggle::DepthTest, true);
 
@@ -144,7 +142,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
 
 
     //activate buffers
-    webgl_renderer.activate_vertex_array(vao_id.unwrap());
+    webgl_renderer.activate_vertex_array(vao_id.unwrap())?;
 
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);

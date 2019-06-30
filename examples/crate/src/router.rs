@@ -96,7 +96,7 @@ cfg_if! {
     }
 }
 
-fn unknown_route(pathname:&str, window:web_sys::Window, document:web_sys::Document, body:web_sys::HtmlElement) -> Result<(), JsValue> {
+fn unknown_route(pathname:&str, _window:web_sys::Window, document:web_sys::Document, body:web_sys::HtmlElement) -> Result<(), JsValue> {
     let text = format!("unknown route: {}", &pathname);
     let item: web_sys::HtmlElement = document.create_element("div")?.dyn_into()?;
     item.set_text_content(Some(&text));

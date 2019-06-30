@@ -9,7 +9,7 @@ use wasm_bindgen_futures::futures_0_3::{future_to_promise};
 use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{generate_canvas_image, start_webgl, create_and_assign_unit_quad_buffer}; 
 use crate::scenes::webgl::common::datatypes::*;
-use nalgebra::{Matrix4, Vector3, Vector4, Point2};
+use nalgebra::{Matrix4, Vector3, Point2};
 use log::{info};
 
 struct State {
@@ -153,7 +153,7 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer, is_top: bool) -> Resu
         false => (-100.0, bottom_texture_id.unwrap()),
     };
 
-    webgl_renderer.activate_program(program_id.unwrap());
+    webgl_renderer.activate_program(program_id.unwrap())?;
     webgl_renderer.set_depth_mask(false); 
     webgl_renderer.toggle(GlToggle::Blend, true);
     webgl_renderer.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);

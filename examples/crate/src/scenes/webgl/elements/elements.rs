@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, GlToggle, BufferTarget, UniformSlice, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, BeginMode};
+use awsm::webgl::{Id, GlToggle, BufferTarget, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, BeginMode};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 use web_sys::{Window, Document, HtmlElement};
 use crate::scenes::webgl::common::{start_webgl, create_unit_box_buffers, N_BOX_ELEMENTS}; 
 use crate::scenes::webgl::common::datatypes::*;
-use nalgebra::{Matrix4, Vector3, Vector4, Point3, Perspective3, Isometry3};
+use nalgebra::{Matrix4, Vector3, Point3, Perspective3, Isometry3};
 
 
 type BufferIds = (Id, Id, Id);
@@ -66,7 +66,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     let _ = start_raf_ticker_timestamp({
         let state = Rc::clone(&state);
         move |_timestamp:Timestamp| {
-            let mut state = state.borrow_mut();
+            let state = state.borrow();
             render(&state, &mut webgl_renderer_clone.borrow_mut()).unwrap();
         }
     })?;
@@ -75,11 +75,10 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 }
 
 
-
 fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let State {pos, volume, camera_width, camera_height, program_id, buffer_ids} = state;
+    let State {pos, volume, program_id, buffer_ids, ..} = state;
 
-    webgl_renderer.activate_program(program_id.unwrap());
+    webgl_renderer.activate_program(program_id.unwrap())?;
 
     webgl_renderer.toggle(GlToggle::DepthTest, true);
 
