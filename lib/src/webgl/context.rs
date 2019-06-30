@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, CanvasRenderingContext2d};
+use web_sys::{HtmlCanvasElement};
 
 #[cfg(feature = "webgl_1")]
 use web_sys::{WebGlRenderingContext};

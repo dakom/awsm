@@ -7,9 +7,7 @@ impl WebGlRenderer {
             let ext = self.gl.get_extension(name)?.ok_or(Error::from(NativeError::NoExtension))?;
             self.extension_lookup.insert(name.to_string(), ext); 
         }
-        self.extension_lookup.get(name).ok_or(
-            Error::from(NativeError::NoExtension)
-        )
+        self.get_extension(name)
     }
 
     pub(super) fn get_extension(&self, name:&str) -> Result<&js_sys::Object, Error> {

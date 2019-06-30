@@ -1,13 +1,11 @@
 use std::collections::HashMap;
-use std::collections::hash_map::OccupiedEntry;
-use std::collections::hash_map::VacantEntry;
 use std::collections::hash_map::Entry;
 use web_sys::{WebGlProgram, WebGlShader, WebGlUniformLocation};
 use wasm_bindgen::prelude::JsValue;
 use crate::errors::{Error, NativeError};
 use crate::helpers::{clone_to_vec_u32};
 use super::id::{Id};
-use super::{WebGlRenderer, UniformDataType, WebGlContext, GlQuery, UniformBlockQuery, get_attribute_location_direct, get_uniform_location_direct};
+use super::{WebGlRenderer, WebGlContext, GlQuery, UniformBlockQuery, get_attribute_location_direct, get_uniform_location_direct};
 use log::{info};
 
 pub struct ProgramInfo {
@@ -87,8 +85,6 @@ impl WebGlRenderer {
         }
 
 
-        let mut sampler_index = 0;
-
         for i in (0..max).filter(|n| !uniforms_in_blocks.contains(n)) {
             info!("getting uniform cache info for uniform #{} ", i);
             let (name, type_) = self.gl.get_active_uniform(&program_info.program, i)
@@ -99,7 +95,7 @@ impl WebGlRenderer {
             let entry = program_info.uniform_lookup.entry(name.to_string());
 
             match entry {
-                Entry::Occupied(entry) => { 
+                Entry::Occupied(_) => { 
                     info!("skipping uniform cache for [{}] (already exists)", &name);
                 },
                 Entry::Vacant(entry) => {
@@ -157,7 +153,7 @@ impl WebGlRenderer {
             .map(|val| val as u32)
             .unwrap_or(0);
 
-        if(max <= 0) {
+        if max <= 0 {
             return Ok(());
         }
 
@@ -169,7 +165,7 @@ impl WebGlRenderer {
             let entry = program_info.attribute_lookup.entry(name.to_string());
 
             match entry {
-                Entry::Occupied(entry) => { 
+                Entry::Occupied(_) => { 
                     info!("skipping attribute cache for [{}] (already exists)", &name);
                 },
                 Entry::Vacant(entry) => {
@@ -240,7 +236,7 @@ impl WebGlRenderer {
                 let entry = program_info.uniform_buffer_loc_lookup.entry(name.to_string());
 
                 match entry {
-                    Entry::Occupied(entry) => { 
+                    Entry::Occupied(_) => { 
                         info!("skipping uniform buffer cache for [{}] (already exists)", &name);
                     },
                     Entry::Vacant(entry) => {

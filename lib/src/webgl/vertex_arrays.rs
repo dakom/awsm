@@ -1,5 +1,4 @@
 use crate::errors::{Error, NativeError};
-use wasm_bindgen::{JsCast};
 use web_sys::{WebGlVertexArrayObject};
 use super::{WebGlRenderer, Id, AttributeOptions, BufferTarget};
 
@@ -93,17 +92,18 @@ impl WebGlRenderer {
     pub fn activate_vertex_array(&self, vao_id:Id) -> Result<(), Error> {
         if Some(vao_id) != self.current_vao_id.get() {
             if let Some(vao) = self.vao_lookup.get(vao_id) { 
-                self._bind_vertex_array(Some(vao_id), Some(&vao));
+                self._bind_vertex_array(Some(vao_id), Some(&vao))
             } else {
-                return Err(Error::from(NativeError::VertexArrayMissing));
+                Err(Error::from(NativeError::VertexArrayMissing))
             }
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     pub fn assign_vertex_array(&self, vao_id:Id, element_buffer_id:Option<Id>, configs:&[VertexArray]) -> Result<(), Error> {
         let result = if let Some(vao) = self.vao_lookup.get(vao_id) { 
-            self._bind_vertex_array(Some(vao_id), Some(&vao));
+            self._bind_vertex_array(Some(vao_id), Some(&vao))?;
 
             //Skip buffer assignment cache checks
             if let Some(element_buffer_id) = element_buffer_id {
@@ -120,7 +120,7 @@ impl WebGlRenderer {
         };
            
         //relase it for the next call that might use elements
-        self.release_vertex_array();
+        self.release_vertex_array()?;
 
         result
     }

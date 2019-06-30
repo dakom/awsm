@@ -1,7 +1,6 @@
 use web_sys::{WebGlProgram, WebGlUniformLocation};
 use crate::errors::{Error, NativeError};
-use super::{DataType, WebGlRenderer, WebGlContext};
-use log::{info};
+use super::{WebGlRenderer, WebGlContext};
 use std::marker::PhantomData;
 
 

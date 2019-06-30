@@ -1,11 +1,9 @@
 use web_sys::{WebGlTexture, ImageBitmap, ImageData, HtmlImageElement, HtmlCanvasElement, HtmlVideoElement};
 use wasm_bindgen::prelude::JsValue;
-use wasm_bindgen::JsCast;
 use js_sys::{Object};
 use crate::errors::{Error, NativeError};
 use super::{Id, WebGlRenderer, WebGlContext, TextureUnit, TextureParameterName, TextureWrapMode, TextureMinFilter, TextureMagFilter, TextureTarget, PixelFormat, DataType, WebGlSpecific};
 use cfg_if::cfg_if;
-use log::{info};
 
 
 pub enum WebGlTextureSource <'a> {
@@ -125,7 +123,7 @@ pub fn texture_sources_can_mipmap(srcs:&[&WebGlTextureSource]) -> Result<(), Err
     }
 }
 #[cfg(feature = "webgl_2")] 
-pub fn texture_sources_can_mipmap(srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
+pub fn texture_sources_can_mipmap(_:&[&WebGlTextureSource]) -> Result<(), Error> {
     Ok(()) 
 }
 
@@ -255,7 +253,6 @@ fn _assign_texture_target (gl:&WebGlContext, bind_target: u32, mip_level: i32, o
         WebGlTextureSource::VideoElement(video) => {
             get_texture_from_video_target(gl, bind_target, mip_level, internal_format, data_format, data_type, video)
         },
-        _ => Ok(())
     }.map_err(|err| Error::from(err))
 }
 
@@ -345,13 +342,17 @@ impl WebGlRenderer {
     }
 
     pub fn activate_texture_for_sampler_target(&mut self, bind_target:TextureTarget, texture_id: Id, sampler_name: &str) -> Result<(), Error> {
-        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
-        let program_info = self.program_lookup.get(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let sampler_slot = {
+            let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
+            let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
 
-        let sampler_slot = program_info.texture_sampler_slot_lookup.get(sampler_name)
-            .ok_or(Error::from(NativeError::MissingTextureSampler(Some(sampler_name.to_string()))))?;
+            let sampler_slot = program_info.texture_sampler_slot_lookup.get(sampler_name)
+                .ok_or(Error::from(NativeError::MissingTextureSampler(Some(sampler_name.to_string()))))?;
 
-        self.activate_texture_for_sampler_target_index(bind_target, texture_id, *sampler_slot)?;
+            *sampler_slot
+        };
+
+        self.activate_texture_for_sampler_target_index(bind_target, texture_id, sampler_slot)?;
         Ok(())
     }
 

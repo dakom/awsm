@@ -1,7 +1,5 @@
 use crate::errors::{Error, NativeError};
-use wasm_bindgen::{JsCast};
-use web_sys::{WebGlVertexArrayObject};
-use super::{WebGlRenderer, Id, AttributeOptions, BufferData, BufferTarget, BufferDataImpl, BufferUsage};
+use super::{WebGlRenderer, Id, BufferData, BufferTarget, BufferUsage};
 
 
 impl WebGlRenderer {

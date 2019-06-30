@@ -72,7 +72,7 @@ impl WebGlRenderer {
 
         //Can't use the vec! macro since TextureSamplerInfo isn't Clone
         let mut texture_sampler_lookup = Vec::with_capacity(max_texture_units);
-        for i in 0..max_texture_units {
+        for _ in 0..max_texture_units {
             texture_sampler_lookup.push(None);
         }
 

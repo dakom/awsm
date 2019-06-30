@@ -2,7 +2,7 @@ use web_sys::{WebGlBuffer};
 use js_sys::{WebAssembly};
 use wasm_bindgen::JsCast;
 use crate::errors::{Error, NativeError};
-use super::{WebGlContext, Id, AttributeOptions, WebGlRenderer, BufferTarget, BufferUsage};
+use super::{WebGlContext, Id, WebGlRenderer, BufferTarget, BufferUsage};
 use std::marker::PhantomData;
 
 /*

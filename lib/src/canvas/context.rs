@@ -3,10 +3,6 @@ use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, CanvasRenderingContext2d};
 use serde::{Serialize};
 use crate::errors::{Error, NativeError};
-use cfg_if::cfg_if;
-use log::{info};
-
-
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -1,4 +1,4 @@
-use web_sys::{window, Window};
+use web_sys::{Window};
 use crate::errors::{Error, NativeError};
 
 pub fn get_size(window:&web_sys::Window) -> Result<(u32, u32), Error> {
