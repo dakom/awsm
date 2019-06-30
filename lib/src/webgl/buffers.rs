@@ -1,6 +1,4 @@
 use web_sys::{WebGlBuffer};
-use js_sys::{WebAssembly};
-use wasm_bindgen::JsCast;
 use crate::errors::{Error, NativeError};
 use super::{WebGlContext, Id, WebGlRenderer, BufferTarget, BufferUsage};
 use std::marker::PhantomData;
@@ -31,55 +29,44 @@ impl<T: AsRef<[U]>, U> BufferData<T, U> {
 
 
 pub trait BufferDataImpl {
-    fn upload_buffer(&self, gl:&WebGlContext) -> Result<(), Error>;
+    fn upload_buffer(&self, gl:&WebGlContext);
     #[cfg(feature = "webgl_1")]
-    fn upload_buffer_sub(&self, gl:&WebGlContext, offset:u32) -> Result<(), Error>;
+    fn upload_buffer_sub(&self, gl:&WebGlContext, offset:u32);
     #[cfg(feature = "webgl_2")]
-    fn upload_buffer_sub(&self, gl:&WebGlContext, dest_byte_offset:u32, src_offset:u32, length: u32) -> Result<(), Error>;
+    fn upload_buffer_sub(&self, gl:&WebGlContext, dest_byte_offset:u32, src_offset:u32, length: u32);
     fn get_target(&self) -> BufferTarget;
     fn get_usage(&self) -> BufferUsage;
 }
 
-
-fn get_wasm_buffer_f32(values:&[f32]) -> Result<js_sys::Float32Array, Error> {
-        wasm_bindgen::memory()
-            .dyn_into::<WebAssembly::Memory>()
-            .map(|m:WebAssembly::Memory| {
-                let wasm_buffer = m.buffer();
-                let ptr_loc = values.as_ptr() as u32 / 4;
-
-                js_sys::Float32Array::new(&wasm_buffer)
-                                .subarray(ptr_loc, ptr_loc + values.len() as u32)
-
-            })
-            .map_err(|err| Error::from(err))
-}
-
+//see example: https://github.com/rustwasm/wasm-bindgen/blob/master/examples/webgl/src/lib.rs#L42
 impl <T: AsRef<[f32]>> BufferDataImpl for BufferData<T, f32> {
-    fn upload_buffer(&self, gl:&WebGlContext) -> Result<(), Error> {
-        let typed_array = get_wasm_buffer_f32(self.values.as_ref())?;
-        gl.buffer_data_with_array_buffer_view(self.target as u32, &typed_array, self.usage as u32); 
-        Ok(())
+    fn upload_buffer(&self, gl:&WebGlContext) {
+        unsafe {
+            let typed_array = js_sys::Float32Array::view(self.values.as_ref());
+            gl.buffer_data_with_array_buffer_view(self.target as u32, &typed_array, self.usage as u32); 
+        }
     }
 
     #[cfg(feature = "webgl_1")]
-    fn upload_buffer_sub(&self, gl:&WebGlContext, offset:u32) -> Result<(), Error> {
-        let typed_array = get_wasm_buffer_f32(self.values.as_ref())?;
-        gl.buffer_sub_data_with_f64_and_array_buffer_view(self.target as u32, offset as f64, &typed_array); 
-        Ok(())
+    fn upload_buffer_sub(&self, gl:&WebGlContext, offset:u32) {
+        unsafe {
+            let typed_array = js_sys::Float32Array::view(self.values.as_ref());
+            gl.buffer_sub_data_with_f64_and_array_buffer_view(self.target as u32, offset as f64, &typed_array); 
+        }
     }
 
     #[cfg(feature = "webgl_2")]
-    fn upload_buffer_sub(&self, gl:&WebGlContext, dest_byte_offset:u32, src_offset:u32, length:u32) -> Result<(), Error> {
-        let typed_array = get_wasm_buffer_f32(self.values.as_ref())?;
-        gl.buffer_sub_data_with_f64_and_array_buffer_view_and_src_offset_and_length(
-            self.target as u32, 
-            dest_byte_offset as f64,
-            &typed_array,
-            src_offset,
-            length
-        );
-        Ok(())
+    fn upload_buffer_sub(&self, gl:&WebGlContext, dest_byte_offset:u32, src_offset:u32, length:u32) {
+        unsafe {
+            let typed_array = js_sys::Float32Array::view(self.values.as_ref());
+            gl.buffer_sub_data_with_f64_and_array_buffer_view_and_src_offset_and_length(
+                self.target as u32, 
+                dest_byte_offset as f64,
+                &typed_array,
+                src_offset,
+                length
+            );
+        }
     }
     fn get_target(&self) -> BufferTarget {
         self.target
@@ -91,21 +78,19 @@ impl <T: AsRef<[f32]>> BufferDataImpl for BufferData<T, f32> {
 
 
 impl <T: AsRef<[u8]>> BufferDataImpl for BufferData<T, u8> {
-    fn upload_buffer(&self, gl:&WebGlContext) -> Result<(), Error> {
+    fn upload_buffer(&self, gl:&WebGlContext) {
         let values = self.values.as_ref();
         gl.buffer_data_with_u8_array(self.target as u32, &values, self.usage as u32); 
-        Ok(())
     }
 
     #[cfg(feature = "webgl_1")]
-    fn upload_buffer_sub(&self, gl:&WebGlContext, offset:u32) -> Result<(), Error> {
+    fn upload_buffer_sub(&self, gl:&WebGlContext, offset:u32) {
         let values = self.values.as_ref();
         gl.buffer_sub_data_with_f64_and_u8_array(self.target as u32, offset as f64, &values); 
-        Ok(())
     }
 
     #[cfg(feature = "webgl_2")]
-    fn upload_buffer_sub(&self, gl:&WebGlContext, dest_byte_offset:u32, src_offset:u32, length:u32) -> Result<(), Error> {
+    fn upload_buffer_sub(&self, gl:&WebGlContext, dest_byte_offset:u32, src_offset:u32, length:u32) {
         let values = self.values.as_ref();
         gl.buffer_sub_data_with_f64_and_u8_array_and_src_offset_and_length(
             self.target as u32, 
@@ -114,7 +99,6 @@ impl <T: AsRef<[u8]>> BufferDataImpl for BufferData<T, u8> {
             src_offset,
             length
         );
-        Ok(())
     }
     fn get_target(&self) -> BufferTarget {
         self.target
@@ -181,19 +165,22 @@ impl WebGlRenderer {
 
     pub fn upload_buffer<T: BufferDataImpl>(&self, id:Id, data:T) -> Result<(), Error> {
         self.bind_buffer(id, data.get_target())?;
-        data.upload_buffer(&self.gl)
+        data.upload_buffer(&self.gl);
+        Ok(())
     }
 
     #[cfg(feature = "webgl_1")]
     pub fn upload_buffer_sub<T: BufferDataImpl>(&self, id:Id, offset:u32, data:T) -> Result<(), Error> {
         self.bind_buffer(id, data.get_target())?;
-        data.upload_buffer_sub(&self.gl, offset)
+        data.upload_buffer_sub(&self.gl, offset);
+        Ok(())
     }
     
     #[cfg(feature = "webgl_2")]
     pub fn upload_buffer_sub<T: BufferDataImpl>(&self, id:Id, dest_byte_offset:u32, src_offset:u32, length:u32, data:T) -> Result<(), Error> {
         self.bind_buffer(id, data.get_target())?;
-        data.upload_buffer_sub(&self.gl, dest_byte_offset, src_offset, length)
+        data.upload_buffer_sub(&self.gl, dest_byte_offset, src_offset, length);
+        Ok(())
     }
 }
 
