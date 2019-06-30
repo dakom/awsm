@@ -180,6 +180,11 @@ impl WebGlRenderer {
     }
     
     #[cfg(feature = "webgl_2")]
+    //note - dest_byte_offset are the BYTE offset (e.g. 4 for floats)
+    //src_offset and length are element amounts
+    //example: 4,1,1 will update the second float in the buffer (i.e. 4 bytes in)
+    //from the second float in the source (i.e. 1 element in) and just be one float (i.e. 1
+    //element)
     pub fn upload_buffer_sub<T: BufferDataImpl>(&self, id:Id, dest_byte_offset:u32, src_offset:u32, length:u32, data:T) -> Result<(), Error> {
         self.bind_buffer(id, data.get_target())?;
         data.upload_buffer_sub(&self.gl, dest_byte_offset, src_offset, length);
