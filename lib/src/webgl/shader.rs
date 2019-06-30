@@ -10,9 +10,6 @@ use super::id::{Id};
 use super::{WebGlRenderer, UniformDataType, WebGlContext, GlQuery, UniformBlockQuery, get_attribute_location_direct, get_uniform_location_direct};
 use log::{info};
 
-#[cfg(debug_assertions)]
-use web_sys::{console};
-
 pub struct ProgramInfo {
     pub program: WebGlProgram,
     pub attribute_lookup: HashMap<String, u32>,
