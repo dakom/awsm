@@ -7,7 +7,6 @@ install:
   - cargo install wasm-bindgen-cli
 
 script:
-  - cd lib
   - cargo test
   - cd ../examples/crate
   - cargo test --features webgl_1

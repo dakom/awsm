@@ -19,7 +19,7 @@ futures-preview = { version = "=0.3.0-alpha.16", features = ["async-await", "nig
 gloo-events = { git = "https://github.com/rustwasm/gloo" }
 lazy_static = "1.3.0"
 
-awsm = { path = "../../lib" }
+awsm = { path = "../.." }
 
 # logging is only enabled for debug builds
 cfg-if = "0.1"

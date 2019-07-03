@@ -6,7 +6,7 @@
     "license": "(MIT OR Apache-2.0)",
     "scripts": {
         "clean:all": "rimraf ./deploy && npm run clean:build",
-        "clean:build": "rimraf ./dist rimraf ./crate/pkg && rimraf ./crate/target && rimraf ../lib/target",
+        "clean:build": "rimraf ./dist rimraf ./crate/pkg && rimraf ./crate/target && rimraf ../target",
         "//": "start does NOT automatically watch/re-compile rust sources. Start watch-dev.bat in a separate process for that. See README.md for more info",
         "start": "npm run _rust:build:dev && cross-env NODE_ENV=development webpack-dev-server -d --progress --open --config webpack.dev.js",
         "deploy": "npm run bundle && npm run deploy:netlify", 
