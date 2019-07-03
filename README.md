@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/dakom/awsm.svg?branch=master)](https://travis-ci.org/dakom/awsm)
 
-## [DEMO](https://awsm.netlify.com/)
+## [DEMO](https://awsm.netlify.com/) - [CRATES.IO](https://crates.io/crates/awsm) - [DOCS](https://docs.rs/awsm/0.0.3/awsm/)
 
 ## Status
 
