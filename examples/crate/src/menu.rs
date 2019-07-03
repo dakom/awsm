@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{Document, Node, Element, HtmlElement, HtmlHyperlinkElementUtils};
+use web_sys::{Document, Node, Element, HtmlElement, HtmlAnchorElement};
 use lazy_static::*;
 use std::collections::HashMap;
 use cfg_if::cfg_if;
@@ -138,7 +138,7 @@ fn wrap_link(href:&str, contents:HtmlElement, document:&Document) -> Result<Html
 
     anchor.append_child(&contents)?;
     
-    let anchor = anchor.unchecked_into::<HtmlHyperlinkElementUtils>();
+    let anchor = anchor.unchecked_into::<HtmlAnchorElement>();
     anchor.set_href(&href);
 
     let anchor = anchor.unchecked_into::<HtmlElement>();

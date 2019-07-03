@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 use super::menu;
 use super::scenes::*;
 use wasm_bindgen::JsCast;
-use web_sys::{Document, Element, HtmlElement, HtmlHyperlinkElementUtils};
+use web_sys::{Document, Element, HtmlElement, HtmlAnchorElement};
 use cfg_if::cfg_if;
 // Called by our JS entry point to run the example.
 pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Result<(), JsValue> {
@@ -158,7 +158,7 @@ fn create_home_link(document:&Document) -> Result<HtmlElement, JsValue> {
     contents.set_text_content(Some("Menu")); //It's not the ultimate home on deploys which has webgl1/2 menu on the root
     anchor.append_child(&contents)?;
     
-    let anchor = anchor.unchecked_into::<HtmlHyperlinkElementUtils>();
+    let anchor = anchor.unchecked_into::<HtmlAnchorElement>();
     anchor.set_href(get_home_href());
 
     let anchor = anchor.unchecked_into::<HtmlElement>();
@@ -173,7 +173,7 @@ fn create_source_link(href:&str, document:&Document) -> Result<HtmlElement, JsVa
     contents.set_text_content(Some("View Source"));
     anchor.append_child(&contents)?;
     
-    let anchor = anchor.unchecked_into::<HtmlHyperlinkElementUtils>();
+    let anchor = anchor.unchecked_into::<HtmlAnchorElement>();
     anchor.set_href(&href);
 
     let anchor = anchor.unchecked_into::<HtmlElement>();
