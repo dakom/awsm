@@ -1,6 +1,7 @@
 use web_sys::{WebGlProgram, WebGlUniformLocation};
 use crate::errors::{Error, NativeError};
-use super::{WebGlRenderer, WebGlContext};
+use super::{WebGlRenderer, WebGlCommon};
+use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
 use std::marker::PhantomData;
 
 
@@ -22,11 +23,187 @@ pub enum UniformType {
 }
 
 
-pub fn get_uniform_location_direct(gl:&WebGlContext, program:&WebGlProgram, name:&str) -> Result<WebGlUniformLocation, Error> {
-    gl.get_uniform_location(&program, &name)
-        .ok_or(Error::from(NativeError::UniformLocation(Some(name.to_owned()))))
+pub trait PartialWebGlUniforms {
+    fn awsm_get_uniform_location(&self, program:&WebGlProgram, name:&str) -> Result<WebGlUniformLocation, Error>;
+    fn awsm_upload_uniform_fvec<T: AsRef<[f32]>> (&self, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error>;
+    fn awsm_upload_uniform_ivec<T: AsRef<[i32]>> (&self, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error>;
+
+    fn awsm_uniform1f(&self, loc: &WebGlUniformLocation, x: f32);
+    fn awsm_uniform2f(&self, loc: &WebGlUniformLocation, x: f32, y: f32);
+    fn awsm_uniform3f(&self, loc: &WebGlUniformLocation, x: f32, y: f32, z: f32);
+    fn awsm_uniform4f(&self, loc: &WebGlUniformLocation, x: f32, y: f32, z: f32, w: f32);
+
+    fn awsm_uniform1fv_with_f32_array(&self, loc: &WebGlUniformLocation, data: &[f32]);
+    fn awsm_uniform2fv_with_f32_array(&self, loc: &WebGlUniformLocation, data: &[f32]);
+    fn awsm_uniform3fv_with_f32_array(&self, loc: &WebGlUniformLocation, data: &[f32]);
+    fn awsm_uniform4fv_with_f32_array(&self, loc: &WebGlUniformLocation, data: &[f32]);
+
+    fn awsm_uniform1i(&self, loc: &WebGlUniformLocation, x: i32);
+    fn awsm_uniform2i(&self, loc: &WebGlUniformLocation, x: i32, y: i32);
+    fn awsm_uniform3i(&self, loc: &WebGlUniformLocation, x: i32, y: i32, z: i32);
+    fn awsm_uniform4i(&self, loc: &WebGlUniformLocation, x: i32, y: i32, z: i32, w: i32);
+
+    fn awsm_uniform1iv_with_i32_array(&self, loc: &WebGlUniformLocation, data: &[i32]);
+    fn awsm_uniform2iv_with_i32_array(&self, loc: &WebGlUniformLocation, data: &[i32]);
+    fn awsm_uniform3iv_with_i32_array(&self, loc: &WebGlUniformLocation, data: &[i32]);
+    fn awsm_uniform4iv_with_i32_array(&self, loc: &WebGlUniformLocation, data: &[i32]);
+
+    fn awsm_uniform_matrix2fv_with_f32_array(&self, loc: &WebGlUniformLocation, transpose: bool, data: &[f32]);
+    fn awsm_uniform_matrix3fv_with_f32_array(&self, loc: &WebGlUniformLocation, transpose: bool, data: &[f32]);
+    fn awsm_uniform_matrix4fv_with_f32_array(&self, loc: &WebGlUniformLocation, transpose: bool, data: &[f32]);
+
 }
 
+pub trait PartialWebGl2Uniforms {
+    fn awsm_upload_uniform_uvec<T: AsRef<[u32]>> (&self, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error>;
+    fn awsm_uniform1ui(&self, loc: &WebGlUniformLocation, x: u32);
+    fn awsm_uniform2ui(&self, loc: &WebGlUniformLocation, x: u32, y: u32);
+    fn awsm_uniform3ui(&self, loc: &WebGlUniformLocation, x: u32, y: u32, z: u32);
+    fn awsm_uniform4ui(&self, loc: &WebGlUniformLocation, x: u32, y: u32, z: u32, w: u32);
+
+    fn awsm_uniform1uiv_with_u32_array(&self, loc: &WebGlUniformLocation, data: &[u32]);
+    fn awsm_uniform2uiv_with_u32_array(&self, loc: &WebGlUniformLocation, data: &[u32]);
+    fn awsm_uniform3uiv_with_u32_array(&self, loc: &WebGlUniformLocation, data: &[u32]);
+    fn awsm_uniform4uiv_with_u32_array(&self, loc: &WebGlUniformLocation, data: &[u32]);
+}
+
+macro_rules! impl_context {
+    ($($type:ty { $($defs:tt)* })+) => {
+        $(impl PartialWebGlUniforms for $type {
+
+            fn awsm_get_uniform_location(&self, program:&WebGlProgram, name:&str) -> Result<WebGlUniformLocation, Error> {
+                self.get_uniform_location(&program, &name)
+                    .ok_or(Error::from(NativeError::UniformLocation(Some(name.to_owned()))))
+            }
+            
+            fn awsm_upload_uniform_fvec<T: AsRef<[f32]>> (&self, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error> {
+                UniformSlice::new(data, _type).upload(self, &loc)
+            }
+
+            fn awsm_upload_uniform_ivec<T: AsRef<[i32]>> (&self, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error> {
+                UniformSlice::new(data, _type).upload(self, &loc)
+            }
+
+
+            fn awsm_uniform1f(&self, loc: &WebGlUniformLocation, x: f32) {
+                self.uniform1f(Some(loc), x)
+            }
+            fn awsm_uniform2f(&self, loc: &WebGlUniformLocation, x: f32, y: f32) {
+                self.uniform2f(Some(loc), x, y)
+            }
+            fn awsm_uniform3f(&self, loc: &WebGlUniformLocation, x: f32, y: f32, z: f32) {
+                self.uniform3f(Some(loc), x, y, z)
+            }
+            fn awsm_uniform4f(&self, loc: &WebGlUniformLocation, x: f32, y: f32, z: f32, w: f32) {
+                self.uniform4f(Some(loc), x, y, z, w)
+            }
+
+            fn awsm_uniform1fv_with_f32_array(&self, loc: &WebGlUniformLocation, data: &[f32]) {
+                self.uniform1fv_with_f32_array(Some(loc), data)
+            }
+            fn awsm_uniform2fv_with_f32_array(&self, loc: &WebGlUniformLocation, data: &[f32]) {
+                self.uniform2fv_with_f32_array(Some(loc), data)
+            }
+            fn awsm_uniform3fv_with_f32_array(&self, loc: &WebGlUniformLocation, data: &[f32]) {
+                self.uniform3fv_with_f32_array(Some(loc), data)
+            }
+            fn awsm_uniform4fv_with_f32_array(&self, loc: &WebGlUniformLocation, data: &[f32]) {
+                self.uniform4fv_with_f32_array(Some(loc), data)
+            }
+
+
+            fn awsm_uniform1i(&self, loc: &WebGlUniformLocation, x: i32) {
+                self.uniform1i(Some(loc), x)
+            }
+            fn awsm_uniform2i(&self, loc: &WebGlUniformLocation, x: i32, y: i32) {
+                self.uniform2i(Some(loc), x, y)
+            }
+            fn awsm_uniform3i(&self, loc: &WebGlUniformLocation, x: i32, y: i32, z: i32) {
+                self.uniform3i(Some(loc), x, y, z)
+            }
+            fn awsm_uniform4i(&self, loc: &WebGlUniformLocation, x: i32, y: i32, z: i32, w: i32) {
+                self.uniform4i(Some(loc), x, y, z, w)
+            }
+
+             /* TODO - followup with https://github.com/rustwasm/wasm-bindgen/pull/1539
+             * When the i32 slices don't need mut anymore - get rid of making the mut clone
+             */
+            fn awsm_uniform1iv_with_i32_array(&self, loc: &WebGlUniformLocation, data: &[i32]) {
+                let mut values = data.to_owned();
+                self.uniform1iv_with_i32_array(Some(loc), &mut values)
+            }
+            fn awsm_uniform2iv_with_i32_array(&self, loc: &WebGlUniformLocation, data: &[i32]) {
+                let mut values = data.to_owned();
+                self.uniform2iv_with_i32_array(Some(loc), &mut values)
+            }
+            fn awsm_uniform3iv_with_i32_array(&self, loc: &WebGlUniformLocation, data: &[i32]) {
+                let mut values = data.to_owned();
+                self.uniform3iv_with_i32_array(Some(loc), &mut values)
+            }
+            fn awsm_uniform4iv_with_i32_array(&self, loc: &WebGlUniformLocation, data: &[i32]) {
+                let mut values = data.to_owned();
+                self.uniform4iv_with_i32_array(Some(loc), &mut values)
+            }
+
+
+            fn awsm_uniform_matrix2fv_with_f32_array(&self, loc: &WebGlUniformLocation, transpose: bool, data: &[f32]) {
+                self.uniform_matrix2fv_with_f32_array(Some(loc), transpose, data);
+            }
+            fn awsm_uniform_matrix3fv_with_f32_array(&self, loc: &WebGlUniformLocation, transpose: bool, data: &[f32]) {
+                self.uniform_matrix3fv_with_f32_array(Some(loc), transpose, data);
+            }
+            fn awsm_uniform_matrix4fv_with_f32_array(&self, loc: &WebGlUniformLocation, transpose: bool, data: &[f32]) {
+                self.uniform_matrix4fv_with_f32_array(Some(loc), transpose, data);
+            }
+            $($defs)*
+        })+
+    };
+}
+
+impl_context!{
+    WebGlRenderingContext{}
+    WebGl2RenderingContext{}
+}
+
+impl PartialWebGl2Uniforms for WebGl2RenderingContext {
+    fn awsm_upload_uniform_uvec<T: AsRef<[u32]>> (&self, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error> {
+        UniformSlice::new(data, _type).upload(self, &loc)
+    }
+
+    fn awsm_uniform1ui(&self, loc: &WebGlUniformLocation, x: u32) {
+        self.uniform1ui(Some(loc), x)
+    }
+    fn awsm_uniform2ui(&self, loc: &WebGlUniformLocation, x: u32, y: u32) {
+        self.uniform2ui(Some(loc), x, y)
+    }
+    fn awsm_uniform3ui(&self, loc: &WebGlUniformLocation, x: u32, y: u32, z: u32) {
+        self.uniform3ui(Some(loc), x, y, z)
+    }
+    fn awsm_uniform4ui(&self, loc: &WebGlUniformLocation, x: u32, y: u32, z: u32, w: u32) {
+        self.uniform4ui(Some(loc), x, y, z, w)
+    }
+
+     /* TODO - followup with https://github.com/rustwasm/wasm-bindgen/pull/1539
+     * When the u32 slices don't need mut anymore - get rid of making the mut clone
+     */
+    fn awsm_uniform1uiv_with_u32_array(&self, loc: &WebGlUniformLocation, data: &[u32]) {
+        let mut values = data.to_owned();
+        self.uniform1uiv_with_u32_array(Some(loc), &mut values)
+    }
+    fn awsm_uniform2uiv_with_u32_array(&self, loc: &WebGlUniformLocation, data: &[u32]) {
+        let mut values = data.to_owned();
+        self.uniform2uiv_with_u32_array(Some(loc), &mut values)
+    }
+    fn awsm_uniform3uiv_with_u32_array(&self, loc: &WebGlUniformLocation, data: &[u32]) {
+        let mut values = data.to_owned();
+        self.uniform3uiv_with_u32_array(Some(loc), &mut values)
+    }
+    fn awsm_uniform4uiv_with_u32_array(&self, loc: &WebGlUniformLocation, data: &[u32]) {
+        let mut values = data.to_owned();
+        self.uniform4uiv_with_u32_array(Some(loc), &mut values)
+    }
+
+}
 /*
  * The slice-based uploads are written as traits on this a newtype wrapper
  * in order to work with either f32 or i32 and still get simple checks 
@@ -46,20 +223,6 @@ pub fn get_uniform_location_direct(gl:&WebGlContext, program:&WebGlProgram, name
  * 
  */
 
-
-
-pub fn upload_uniform_fvec_direct<T: AsRef<[f32]>> (gl:&WebGlContext, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error> {
-    UniformSlice::new(data, _type).upload(&gl, &loc)
-}
-
-pub fn upload_uniform_ivec_direct<T: AsRef<[i32]>> (gl:&WebGlContext, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error> {
-    UniformSlice::new(data, _type).upload(&gl, &loc)
-}
-#[cfg(feature = "webgl_2")]
-pub fn upload_uniform_uvec_direct<T: AsRef<[u32]>> (gl:&WebGlContext, loc:&WebGlUniformLocation, _type:UniformType, data:&T) -> Result<(), Error> {
-    UniformSlice::new(data, _type).upload(&gl, &loc)
-}
-
 pub struct UniformSlice<T, U> {
     values: T,
     _type: UniformType,
@@ -77,7 +240,11 @@ impl<T: AsRef<[U]>, U> UniformSlice<T, U> {
 }
 
 pub trait UniformUploadImpl {
-    fn upload(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error>;
+    fn upload<T: PartialWebGlUniforms>(&self, gl:&T, loc:&WebGlUniformLocation) -> Result<(), Error>;
+}
+
+pub trait UniformUploadImpl2 {
+    fn upload<T: PartialWebGl2Uniforms>(&self, gl:&T, loc:&WebGlUniformLocation) -> Result<(), Error>;
 }
 
 fn is_length_enough(len:usize, _type:&UniformType) -> Result<(), Error> {
@@ -98,30 +265,28 @@ fn is_length_enough(len:usize, _type:&UniformType) -> Result<(), Error> {
 }
 
 impl <T: AsRef<[f32]>> UniformUploadImpl for UniformSlice<T, f32> {
-    fn upload(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+    fn upload<G: PartialWebGlUniforms>(&self, gl:&G, loc:&WebGlUniformLocation) -> Result<(), Error> {
         let values = self.values.as_ref();
         is_length_enough(values.len(), &self._type)?;
 
-        let loc = Some(loc);
-
         match self._type {
-            UniformType::Scalar1 => gl.uniform1f(loc, values[0]),
-            UniformType::Scalar2 => gl.uniform2f(loc, values[0], values[1]),
-            UniformType::Scalar3 => gl.uniform3f(loc, values[0], values[1], values[2]),
-            UniformType::Scalar4 => gl.uniform4f(loc, values[0], values[1], values[2], values[3]),
+            UniformType::Scalar1 => gl.awsm_uniform1f(loc, values[0]),
+            UniformType::Scalar2 => gl.awsm_uniform2f(loc, values[0], values[1]),
+            UniformType::Scalar3 => gl.awsm_uniform3f(loc, values[0], values[1], values[2]),
+            UniformType::Scalar4 => gl.awsm_uniform4f(loc, values[0], values[1], values[2], values[3]),
 
-            UniformType::Vector1 => gl.uniform1fv_with_f32_array(loc, values),
-            UniformType::Vector2 => gl.uniform2fv_with_f32_array(loc, values),
-            UniformType::Vector3 => gl.uniform3fv_with_f32_array(loc, values),
-            UniformType::Vector4 => gl.uniform4fv_with_f32_array(loc, values),
+            UniformType::Vector1 => gl.awsm_uniform1fv_with_f32_array(loc, values),
+            UniformType::Vector2 => gl.awsm_uniform2fv_with_f32_array(loc, values),
+            UniformType::Vector3 => gl.awsm_uniform3fv_with_f32_array(loc, values),
+            UniformType::Vector4 => gl.awsm_uniform4fv_with_f32_array(loc, values),
 
-            UniformType::Matrix2 => gl.uniform_matrix2fv_with_f32_array(loc, false, values),
-            UniformType::Matrix3 => gl.uniform_matrix3fv_with_f32_array(loc, false, values),
-            UniformType::Matrix4 => gl.uniform_matrix4fv_with_f32_array(loc, false, values),
+            UniformType::Matrix2 => gl.awsm_uniform_matrix2fv_with_f32_array(loc, false, values),
+            UniformType::Matrix3 => gl.awsm_uniform_matrix3fv_with_f32_array(loc, false, values),
+            UniformType::Matrix4 => gl.awsm_uniform_matrix4fv_with_f32_array(loc, false, values),
             
-            UniformType::MatrixTransposed2 => gl.uniform_matrix2fv_with_f32_array(loc, true, values),
-            UniformType::MatrixTransposed3 => gl.uniform_matrix3fv_with_f32_array(loc, true, values),
-            UniformType::MatrixTransposed4 => gl.uniform_matrix4fv_with_f32_array(loc, true, values),
+            UniformType::MatrixTransposed2 => gl.awsm_uniform_matrix2fv_with_f32_array(loc, true, values),
+            UniformType::MatrixTransposed3 => gl.awsm_uniform_matrix3fv_with_f32_array(loc, true, values),
+            UniformType::MatrixTransposed4 => gl.awsm_uniform_matrix4fv_with_f32_array(loc, true, values),
         };
 
         Ok(())
@@ -129,29 +294,20 @@ impl <T: AsRef<[f32]>> UniformUploadImpl for UniformSlice<T, f32> {
 }
 
 impl <T: AsRef<[i32]>> UniformUploadImpl for UniformSlice<T, i32> {
-    fn upload(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+    fn upload<G: PartialWebGlUniforms>(&self, gl:&G, loc:&WebGlUniformLocation) -> Result<(), Error> {
         let values = self.values.as_ref();
         is_length_enough(values.len(), &self._type)?;
 
-        let loc = Some(loc);
-
-
-         /* TODO - followup with https://github.com/rustwasm/wasm-bindgen/pull/1539
-         * When the i32 slices don't need mut anymore - get rid of making the mut clone
-         */
-
-        let mut values = self.values.as_ref().to_owned();
-
         match self._type {
-            UniformType::Scalar1 => gl.uniform1i(loc, values[0]),
-            UniformType::Scalar2 => gl.uniform2i(loc, values[0], values[1]),
-            UniformType::Scalar3 => gl.uniform3i(loc, values[0], values[1], values[2]),
-            UniformType::Scalar4 => gl.uniform4i(loc, values[0], values[1], values[2], values[3]),
+            UniformType::Scalar1 => gl.awsm_uniform1i(loc, values[0]),
+            UniformType::Scalar2 => gl.awsm_uniform2i(loc, values[0], values[1]),
+            UniformType::Scalar3 => gl.awsm_uniform3i(loc, values[0], values[1], values[2]),
+            UniformType::Scalar4 => gl.awsm_uniform4i(loc, values[0], values[1], values[2], values[3]),
 
-            UniformType::Vector1 => gl.uniform1iv_with_i32_array(loc, &mut values),
-            UniformType::Vector2 => gl.uniform2iv_with_i32_array(loc, &mut values),
-            UniformType::Vector3 => gl.uniform3iv_with_i32_array(loc, &mut values),
-            UniformType::Vector4 => gl.uniform4iv_with_i32_array(loc, &mut values),
+            UniformType::Vector1 => gl.awsm_uniform1iv_with_i32_array(loc, values),
+            UniformType::Vector2 => gl.awsm_uniform2iv_with_i32_array(loc, values),
+            UniformType::Vector3 => gl.awsm_uniform3iv_with_i32_array(loc, values),
+            UniformType::Vector4 => gl.awsm_uniform4iv_with_i32_array(loc, values),
 
             _ => return Err(Error::from(NativeError::UniformMatrixMustBeFloat))
         };
@@ -160,31 +316,21 @@ impl <T: AsRef<[i32]>> UniformUploadImpl for UniformSlice<T, i32> {
     }
 }
 
-#[cfg(feature = "webgl_2")]
-impl <T: AsRef<[u32]>> UniformUploadImpl for UniformSlice<T, u32> {
-    fn upload(&self, gl:&WebGlContext, loc:&WebGlUniformLocation) -> Result<(), Error> {
+impl <T: AsRef<[u32]>> UniformUploadImpl2 for UniformSlice<T, u32> {
+    fn upload<G: PartialWebGl2Uniforms>(&self, gl:&G, loc:&WebGlUniformLocation) -> Result<(), Error> {
         let values = self.values.as_ref();
         is_length_enough(values.len(), &self._type)?;
 
-        let loc = Some(loc);
-
-
-         /* TODO - followup with https://github.com/rustwasm/wasm-bindgen/pull/1539
-         * When the i32 slices don't need mut anymore - get rid of making the mut clone
-         */
-
-        let mut values = self.values.as_ref().to_owned();
-
         match self._type {
-            UniformType::Scalar1 => gl.uniform1ui(loc, values[0]),
-            UniformType::Scalar2 => gl.uniform2ui(loc, values[0], values[1]),
-            UniformType::Scalar3 => gl.uniform3ui(loc, values[0], values[1], values[2]),
-            UniformType::Scalar4 => gl.uniform4ui(loc, values[0], values[1], values[2], values[3]),
+            UniformType::Scalar1 => gl.awsm_uniform1ui(loc, values[0]),
+            UniformType::Scalar2 => gl.awsm_uniform2ui(loc, values[0], values[1]),
+            UniformType::Scalar3 => gl.awsm_uniform3ui(loc, values[0], values[1], values[2]),
+            UniformType::Scalar4 => gl.awsm_uniform4ui(loc, values[0], values[1], values[2], values[3]),
 
-            UniformType::Vector1 => gl.uniform1uiv_with_u32_array(loc, &mut values),
-            UniformType::Vector2 => gl.uniform2uiv_with_u32_array(loc, &mut values),
-            UniformType::Vector3 => gl.uniform3uiv_with_u32_array(loc, &mut values),
-            UniformType::Vector4 => gl.uniform4uiv_with_u32_array(loc, &mut values),
+            UniformType::Vector1 => gl.awsm_uniform1uiv_with_u32_array(loc, values),
+            UniformType::Vector2 => gl.awsm_uniform2uiv_with_u32_array(loc, values),
+            UniformType::Vector3 => gl.awsm_uniform3uiv_with_u32_array(loc, values),
+            UniformType::Vector4 => gl.awsm_uniform4uiv_with_u32_array(loc, values),
 
             _ => return Err(Error::from(NativeError::UniformMatrixMustBeFloat))
         };
@@ -195,7 +341,7 @@ impl <T: AsRef<[u32]>> UniformUploadImpl for UniformSlice<T, u32> {
 
 //Renderer wrapper
 //The uniform lookups are cached at shader compilation (see shader.rs)
-impl WebGlRenderer {
+impl <G: WebGlCommon> WebGlRenderer<G>{
     pub fn get_uniform_location_value(&self, name:&str) -> Result<WebGlUniformLocation, Error> {
 
         let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
@@ -212,19 +358,14 @@ impl WebGlRenderer {
     //Just some convenience helpers
     pub fn upload_uniform_fvec<T: AsRef<[f32]>> (&self, target_name:&str, _type:UniformType, data:&T) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        upload_uniform_fvec_direct(&self.gl, &loc, _type, data)
+        self.gl.awsm_upload_uniform_fvec(&loc, _type, data)
     }
 
     pub fn upload_uniform_ivec<T: AsRef<[i32]>> (&self, target_name:&str, _type:UniformType, data:&T) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        upload_uniform_ivec_direct(&self.gl, &loc, _type, data)
+        self.gl.awsm_upload_uniform_ivec(&loc, _type, data)
     }
 
-    #[cfg(feature = "webgl_2")]
-    pub fn upload_uniform_uvec<T: AsRef<[u32]>> (&self, target_name:&str, _type:UniformType, data:&T) -> Result<(), Error> {
-        let loc = self.get_uniform_location_value(&target_name)?;
-        upload_uniform_uvec_direct(&self.gl, &loc, _type, data)
-    }
 
     pub fn upload_uniform_mat_4<T: AsRef<[f32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
         self.upload_uniform_fvec(target_name, UniformType::Matrix4, &data)
@@ -272,91 +413,90 @@ impl WebGlRenderer {
     }
 
 
-    #[cfg(feature = "webgl_2")]
-    pub fn upload_uniform_uvec_4<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
-        self.upload_uniform_uvec(target_name, UniformType::Vector4, data)
-    }
-    #[cfg(feature = "webgl_2")] 
-    pub fn upload_uniform_uvec_3<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
-        self.upload_uniform_uvec(target_name, UniformType::Vector3, data)
-    }
-    #[cfg(feature = "webgl_2")] 
-    pub fn upload_uniform_uvec_2<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
-        self.upload_uniform_uvec(target_name, UniformType::Vector2, data)
-    }
-    #[cfg(feature = "webgl_2")] 
-    pub fn upload_uniform_uvec_1<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
-        self.upload_uniform_uvec(target_name, UniformType::Vector1, data)
-    }
-
     //Scalar versions - only need "convenience" form with string because if the caller 
     //already knows the location, there's no reason to just use the context directly 
 
     pub fn upload_uniform_fvals_4(&self, target_name:&str, data:(f32, f32, f32, f32)) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform4f(Some(&loc), data.0, data.1, data.2, data.3);
+        self.gl.awsm_uniform4f(&loc, data.0, data.1, data.2, data.3);
         Ok(())
     }
     pub fn upload_uniform_fvals_3(&self, target_name:&str, data:(f32, f32, f32)) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform3f(Some(&loc), data.0, data.1, data.2);
+        self.gl.awsm_uniform3f(&loc, data.0, data.1, data.2);
         Ok(())
     }
     pub fn upload_uniform_fvals_2(&self, target_name:&str, data:(f32, f32)) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform2f(Some(&loc), data.0, data.1);
+        self.gl.awsm_uniform2f(&loc, data.0, data.1);
         Ok(())
     }
     pub fn upload_uniform_fval(&self, target_name:&str, data:f32) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform1f(Some(&loc), data);
+        self.gl.awsm_uniform1f(&loc, data);
         Ok(())
     }
 
     pub fn upload_uniform_ivals_4(&self, target_name:&str, data:(i32, i32, i32, i32)) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform4i(Some(&loc), data.0, data.1, data.2, data.3);
+        self.gl.awsm_uniform4i(&loc, data.0, data.1, data.2, data.3);
         Ok(())
     }
     pub fn upload_uniform_ivals_3(&self, target_name:&str, data:(i32, i32, i32)) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform3i(Some(&loc), data.0, data.1, data.2);
+        self.gl.awsm_uniform3i(&loc, data.0, data.1, data.2);
         Ok(())
     }
     pub fn upload_uniform_ivals_2(&self, target_name:&str, data:(i32, i32)) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform2i(Some(&loc), data.0, data.1);
+        self.gl.awsm_uniform2i(&loc, data.0, data.1);
         Ok(())
     }
     pub fn upload_uniform_ival(&self, target_name:&str, data:i32) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform1i(Some(&loc), data);
+        self.gl.awsm_uniform1i(&loc, data);
         Ok(())
     }
 
+}
 
-    #[cfg(feature = "webgl_2")] 
+impl WebGlRenderer<WebGl2RenderingContext> {
+
+    pub fn upload_uniform_uvec<T: AsRef<[u32]>> (&self, target_name:&str, _type:UniformType, data:&T) -> Result<(), Error> {
+        let loc = self.get_uniform_location_value(&target_name)?;
+        self.gl.awsm_upload_uniform_uvec(&loc, _type, data)
+    }
+    pub fn upload_uniform_uvec_4<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
+        self.upload_uniform_uvec(target_name, UniformType::Vector4, data)
+    }
+    pub fn upload_uniform_uvec_3<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
+        self.upload_uniform_uvec(target_name, UniformType::Vector3, data)
+    }
+    pub fn upload_uniform_uvec_2<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
+        self.upload_uniform_uvec(target_name, UniformType::Vector2, data)
+    }
+    pub fn upload_uniform_uvec_1<T: AsRef<[u32]>> (&self, target_name:&str, data:&T) -> Result<(), Error> {
+        self.upload_uniform_uvec(target_name, UniformType::Vector1, data)
+    }
+
     pub fn upload_uniform_uvals_4(&self, target_name:&str, data:(u32, u32, u32, u32)) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform4ui(Some(&loc), data.0, data.1, data.2, data.3);
+        self.gl.awsm_uniform4ui(&loc, data.0, data.1, data.2, data.3);
         Ok(())
     }
-    #[cfg(feature = "webgl_2")] 
     pub fn upload_uniform_uvals_3(&self, target_name:&str, data:(u32, u32, u32)) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform3ui(Some(&loc), data.0, data.1, data.2);
+        self.gl.awsm_uniform3ui(&loc, data.0, data.1, data.2);
         Ok(())
     }
-    #[cfg(feature = "webgl_2")] 
     pub fn upload_uniform_uvals_2(&self, target_name:&str, data:(u32, u32)) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform2ui(Some(&loc), data.0, data.1);
+        self.gl.awsm_uniform2ui(&loc, data.0, data.1);
         Ok(())
     }
-    #[cfg(feature = "webgl_2")] 
     pub fn upload_uniform_uvals(&self, target_name:&str, data:u32) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
-        self.gl.uniform1ui(Some(&loc), data);
+        self.gl.awsm_uniform1ui(&loc, data);
         Ok(())
     }
 }

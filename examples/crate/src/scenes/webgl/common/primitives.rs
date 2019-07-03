@@ -1,4 +1,5 @@
-use awsm::webgl::{Id, WebGlRenderer, BufferData, BufferTarget, BufferUsage, AttributeOptions, DataType};
+use awsm::webgl::{Id, BufferData, BufferTarget, BufferUsage, AttributeOptions, DataType};
+use crate::{WebGlRenderer};
 use awsm::errors::{Error};
 
 static QUAD_GEOM_UNIT:[f32; 8] = [  

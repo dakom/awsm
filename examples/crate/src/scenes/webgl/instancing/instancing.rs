@@ -1,4 +1,5 @@
-use awsm::webgl::{ClearBufferMask, BufferData, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, WebGlRenderer, AttributeOptions, DataType, BeginMode};
+use awsm::webgl::{ClearBufferMask, BufferData, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, AttributeOptions, DataType, BeginMode};
+use crate::{WebGlRenderer};
 use awsm::loaders::{image};
 use crate::router::{get_static_href};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};

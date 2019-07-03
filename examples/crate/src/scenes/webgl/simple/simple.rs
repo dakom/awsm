@@ -1,4 +1,5 @@
-use awsm::webgl::{Id, ClearBufferMask, WebGlRenderer, BeginMode};
+use awsm::webgl::{Id, ClearBufferMask, BeginMode};
+use crate::{WebGlRenderer};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;

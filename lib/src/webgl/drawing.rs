@@ -1,31 +1,55 @@
-use super::{WebGlContext, WebGlRenderer, ClearBufferMask, BeginMode, DataType};
+use super::{WebGlRenderer, WebGlCommon, ClearBufferMask, BeginMode, DataType};
+use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
 
-pub fn clear_direct(gl:&WebGlContext, bits: &[ClearBufferMask]) {
-    let mut combined = 0u32;
-    for bit in bits {
-        combined = combined | *bit as u32;
-    }
-    gl.clear(combined);
+pub trait PartialWebGlDrawing {
+    fn awsm_clear(&self, bits: &[ClearBufferMask]);
+    fn awsm_draw_arrays(&self, mode: BeginMode, first: u32, count: u32);
+    fn awsm_draw_elements(&self, mode: BeginMode, count: u32, data_type:DataType, offset:u32);
 }
 
-pub fn draw_arrays_direct(gl:&WebGlContext, mode: BeginMode, first: u32, count: u32) {
-    gl.draw_arrays(mode as u32, first as i32, count as i32);
+
+macro_rules! impl_context {
+    ($($type:ty { $($defs:tt)* })+) => {
+        $(impl PartialWebGlDrawing for $type {
+
+            fn awsm_clear(&self, bits: &[ClearBufferMask]) {
+                let mut combined = 0u32;
+                for bit in bits {
+                    combined = combined | *bit as u32;
+                }
+                self.clear(combined);
+            }
+
+            fn awsm_draw_arrays(&self, mode: BeginMode, first: u32, count: u32) {
+                self.draw_arrays(mode as u32, first as i32, count as i32);
+            }
+
+            fn awsm_draw_elements(&self, mode: BeginMode, count: u32, data_type:DataType, offset:u32) {
+                self.draw_elements_with_i32(mode as u32, count as i32, data_type as u32, offset as i32);
+            }
+
+            $($defs)*
+        })+
+    };
 }
 
-pub fn draw_elements_direct(gl:&WebGlContext, mode: BeginMode, count: u32, data_type:DataType, offset:u32) {
-    gl.draw_elements_with_i32(mode as u32, count as i32, data_type as u32, offset as i32);
+impl_context!{
+    WebGlRenderingContext{}
+    WebGl2RenderingContext{}
 }
 
-impl WebGlRenderer {
+
+
+impl <T: WebGlCommon> WebGlRenderer <T>{
     pub fn clear(&self, bits: &[ClearBufferMask]) {
-        clear_direct(&self.gl, &bits);
+        self.gl.awsm_clear(&bits);
     }
 
     pub fn draw_arrays(&self, mode: BeginMode, first: u32, count: u32) {
-        draw_arrays_direct(&self.gl, mode, first, count);
+        self.gl.awsm_draw_arrays(mode, first, count);
     }
 
     pub fn draw_elements(&self, mode: BeginMode, count: u32, data_type:DataType, offset:u32) {
-        draw_elements_direct(&self.gl, mode, count, data_type, offset);
+        self.gl.awsm_draw_elements(mode, count, data_type, offset);
     }
 }

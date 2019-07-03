@@ -1,3 +1,8 @@
+pub enum WebGlVersion {
+    One,
+    Two
+}
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum DataType {
@@ -15,7 +20,7 @@ pub enum DataType {
 pub enum BufferTarget {
     ArrayBuffer = 0x8892,
     ElementArrayBuffer = 0x8893,
-    #[cfg(feature = "webgl_2")]
+    //webgl 2 only
     UniformBuffer = 0x8A11,
 }
 
@@ -179,18 +184,8 @@ pub enum GlQuery {
     MaxVertexTextureImageUnits = 0x8B4C,
     MaxTextureImageUnits = 0x8872,
     MaxFragmentUniformVectors = 0x8DFD,
-    ShaderType = 0x8B4F,
-    DeleteStatus = 0x8B80,
-    LinkStatus = 0x8B82,
-    ValidateStatus = 0x8B83,
-    AttachedShaders = 0x8B85,
-    ActiveUniforms = 0x8B86,
-    ActiveAttributes = 0x8B89,
     ShadingLanguageVersion = 0x8B8C,
     CurrentProgram = 0x8B8D,
-    TransformFeedbackBufferMode = 0x8C7F,
-    TransformFeedbackVaryings = 0x8C83,
-    ActiveUniformBlocks = 0x8A36,
     BlendColor = 0x8005,
 }
 
@@ -306,7 +301,34 @@ pub enum UniformDataType {
     UnsignedIntSampler2dArray= 0x8DD7,
 }
 
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum ShaderQuery {
+    DeleteStatus = 0x8B80,
+    CompileStatus = 0x8B81,
+    ShaderType = 0x8B4F,
+}
 
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum ShaderType {
+    Fragment = 0x8B30,
+    Vertex = 0x8B31,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum ProgramQuery {
+    DeleteStatus = 0x8B80,
+    LinkStatus = 0x8B82,
+    ValidateStatus = 0x8B83,
+    AttachedShaders = 0x8B85,
+    ActiveUniforms = 0x8B86,
+    ActiveAttributes = 0x8B89,
+    TransformFeedbackBufferMode = 0x8C7F,
+    TransformFeedbackVaryings = 0x8C83,
+    ActiveUniformBlocks = 0x8A36,
+}
 /*
  * NOTE - all the below are copy/pasted from the WebIDL
  * If they're implemented above, they are DELETED below!!
@@ -507,8 +529,6 @@ ONE_MINUS_DST_ALPHA            = 0x0305;
     const GLenum IMPLEMENTATION_COLOR_READ_TYPE   = 0x8B9A;
     const GLenum IMPLEMENTATION_COLOR_READ_FORMAT = 0x8B9B;
 
-    * Shader Source *
-    const GLenum COMPILE_STATUS                 = 0x8B81;
 
     * Shader Precision-Specified Types *
     const GLenum LOW_FLOAT                      = 0x8DF0;

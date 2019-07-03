@@ -11,12 +11,11 @@ mod toggles;
 mod funcs;
 mod extensions;
 mod instancing;
-mod init;
+mod base;
 mod vertex_arrays;
 mod misc;
 mod drawing;
-
-#[cfg(feature = "webgl_2")]
+mod query;
 mod uniform_buffers;
 /*
  * (RE)EXPORTS 
@@ -30,7 +29,5 @@ pub use self::textures::*;
 pub use self::shader::*;
 pub use self::context::*;
 pub use self::vertex_arrays::*;
-pub use self::init::*;
-
-#[cfg(feature = "webgl_2")]
+pub use self::base::*;
 pub use self::uniform_buffers::*;

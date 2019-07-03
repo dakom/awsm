@@ -1,5 +1,45 @@
-use super::{WebGlRenderer, CmpFunction, BlendFactor, BlendEquation};
+use super::{WebGlCommon, WebGlRenderer, CmpFunction, BlendFactor, BlendEquation};
+use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
 
+pub trait PartialWebGlFuncs {
+    fn awsm_depth_func(&self, func:CmpFunction);
+    fn awsm_blend_color(&self, r:f32, g:f32, b:f32, a:f32);
+    fn awsm_blend_func(&self, sfactor: BlendFactor, dfactor: BlendFactor);
+    fn awsm_blend_func_separate(&self, src_rgb: BlendFactor, dest_rgb: BlendFactor, src_alpha:BlendFactor, dest_alpha: BlendFactor);
+    fn awsm_blend_equation(&self, mode:BlendEquation);
+    fn awsm_blend_equation_separate(&self, rgb_mode:BlendEquation, alpha_mode:BlendEquation);
+}
+
+macro_rules! impl_context {
+    ($($type:ty { $($defs:tt)* })+) => {
+        $(impl PartialWebGlFuncs for $type {
+            fn awsm_depth_func(&self, func:CmpFunction) {
+                self.depth_func(func as u32);
+            }
+            fn awsm_blend_color(&self, r:f32, g:f32, b:f32, a:f32) {
+                self.blend_color(r, g, b, a);
+            }
+            fn awsm_blend_func(&self, sfactor: BlendFactor, dfactor: BlendFactor) {
+                self.blend_func(sfactor as u32, dfactor as u32);
+            }
+            fn awsm_blend_func_separate(&self, src_rgb: BlendFactor, dest_rgb: BlendFactor, src_alpha:BlendFactor, dest_alpha: BlendFactor) {
+                self.blend_func_separate(src_rgb as u32, dest_rgb as u32, src_alpha as u32, dest_alpha as u32);
+            }
+            fn awsm_blend_equation(&self, mode:BlendEquation) {
+                self.blend_equation(mode as u32);
+            }
+            fn awsm_blend_equation_separate(&self, rgb_mode:BlendEquation, alpha_mode:BlendEquation) {
+                self.blend_equation_separate(rgb_mode as u32, alpha_mode as u32);
+            }
+            $($defs)*
+        })+
+    };
+}
+
+impl_context!{
+    WebGlRenderingContext{}
+    WebGl2RenderingContext{}
+}
 
 pub struct FuncSettings {
     pub depth_func: CmpFunction,
@@ -23,11 +63,10 @@ impl Default for FuncSettings {
     }
 }
 
-impl WebGlRenderer {
-    //FUNCS
+impl <T: WebGlCommon> WebGlRenderer<T> {
     pub fn set_depth_func(&mut self, func:CmpFunction) {
         if self.func_settings.depth_func != func {
-            self.gl.depth_func(func as u32);
+            self.gl.awsm_depth_func(func);
             self.func_settings.depth_func = func;
         }
     }
@@ -36,7 +75,7 @@ impl WebGlRenderer {
         let curr = self.func_settings.blend_color;
 
         if curr.0 != r || curr.1 != g || curr.2 != b || curr.3 != a { 
-            self.gl.blend_color(r, g, b, a);
+            self.gl.awsm_blend_color(r, g, b, a);
             self.func_settings.blend_color= (r, g, b, a);
         }
     }
@@ -46,7 +85,7 @@ impl WebGlRenderer {
         let curr = self.func_settings.blend_func;
 
         if curr.0 != sfactor || curr.1 != dfactor { 
-            self.gl.blend_func(sfactor as u32, dfactor as u32);
+            self.gl.awsm_blend_func(sfactor, dfactor);
             self.func_settings.blend_func = (sfactor, dfactor);
         }
     }
@@ -55,13 +94,13 @@ impl WebGlRenderer {
         let curr = self.func_settings.blend_func_separate;
 
         if curr.0 != src_rgb || curr.1 != dest_rgb || curr.2 != src_alpha || curr.3 != dest_alpha { 
-            self.gl.blend_func_separate(src_rgb as u32, dest_rgb as u32, src_alpha as u32, dest_alpha as u32);
+            self.gl.awsm_blend_func_separate(src_rgb, dest_rgb, src_alpha, dest_alpha);
             self.func_settings.blend_func_separate = (src_rgb, dest_rgb, src_alpha, dest_alpha);
         }
     }
     pub fn set_blend_equation(&mut self, mode:BlendEquation) {
         if self.func_settings.blend_equation != mode {
-            self.gl.blend_equation(mode as u32);
+            self.gl.awsm_blend_equation(mode);
             self.func_settings.blend_equation = mode ;
         }
     }
@@ -70,7 +109,7 @@ impl WebGlRenderer {
         let curr = self.func_settings.blend_equation_separate;
 
         if curr.0 != rgb_mode || curr.1 != alpha_mode { 
-            self.gl.blend_equation_separate(rgb_mode as u32, alpha_mode as u32);
+            self.gl.awsm_blend_equation_separate(rgb_mode, alpha_mode);
             self.func_settings.blend_equation_separate = (rgb_mode, alpha_mode);
         }
     }

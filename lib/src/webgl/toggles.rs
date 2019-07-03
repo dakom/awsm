@@ -1,5 +1,29 @@
-use super::{WebGlRenderer, GlToggle};
+use super::{WebGlRenderer, WebGlCommon, GlToggle};
+use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
 
+pub trait PartialWebGlToggle {
+    fn awsm_enable(&self, toggle:GlToggle);
+    fn awsm_disable(&self, toggle:GlToggle);
+}
+
+macro_rules! impl_context {
+    ($($type:ty { $($defs:tt)* })+) => {
+        $(impl PartialWebGlToggle for $type {
+            fn awsm_enable(&self, toggle:GlToggle) {
+                self.enable(toggle as u32);
+            }
+            fn awsm_disable(&self, toggle:GlToggle) {
+                self.disable(toggle as u32);
+            }
+            $($defs)*
+        })+
+    };
+}
+
+impl_context!{
+    WebGlRenderingContext{}
+    WebGl2RenderingContext{}
+}
 #[derive(Default)]
 pub(super) struct ToggleFlags {
     blend: bool,
@@ -14,7 +38,7 @@ pub(super) struct ToggleFlags {
     rasterizer_discard: bool,
 }
 
-impl WebGlRenderer {
+impl <T: WebGlCommon> WebGlRenderer<T> {
     pub fn toggle(&mut self, toggle:GlToggle, flag:bool) {
     
         let curr = match toggle {
@@ -32,10 +56,9 @@ impl WebGlRenderer {
        
         if *curr != flag {
             *curr = flag;
-            let toggle = toggle as u32;
             match flag {
-                true => self.gl.enable(toggle),
-                false => self.gl.disable(toggle)
+                true => self.gl.awsm_enable(toggle),
+                false => self.gl.awsm_disable(toggle)
             };
         }
     }

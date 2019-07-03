@@ -1,9 +1,9 @@
 use web_sys::{WebGlTexture, ImageBitmap, ImageData, HtmlImageElement, HtmlCanvasElement, HtmlVideoElement};
+use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
 use wasm_bindgen::prelude::JsValue;
 use js_sys::{Object};
 use crate::errors::{Error, NativeError};
-use super::{Id, WebGlRenderer, WebGlContext, TextureUnit, TextureParameterName, TextureWrapMode, TextureMinFilter, TextureMagFilter, TextureTarget, PixelFormat, DataType, WebGlSpecific};
-use cfg_if::cfg_if;
+use super::{Id, WebGlCommon, WebGlRenderer, TextureUnit, TextureParameterName, TextureWrapMode, TextureMinFilter, TextureMagFilter, TextureTarget, PixelFormat, DataType, WebGlSpecific};
 
 
 pub enum WebGlTextureSource <'a> {
@@ -49,27 +49,206 @@ pub struct TextureOptions {
     data_type: DataType,
 }
 
-//for some reason the function names are different for webgl 1 vs 2
-cfg_if! {
-    if #[cfg(feature = "webgl_1")] {
-        fn get_texture_from_image_target(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, image: &HtmlImageElement) -> Result<(), JsValue> {
-            gl.tex_image_2d_with_u32_and_u32_and_image( bind_target, mip_level, internal_format, data_format, data_type, image)
+pub trait PartialWebGlTextures {
+    fn awsm_create_texture(&self) -> Result<WebGlTexture, Error>;
+
+    fn awsm_get_texture_from_image_target(&self, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, image: &HtmlImageElement) -> Result<(), JsValue>;
+    fn awsm_get_texture_from_canvas_target(&self, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, canvas: &HtmlCanvasElement) -> Result<(), JsValue>;
+    fn awsm_get_texture_from_video_target(&self, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, video: &HtmlVideoElement) -> Result<(), JsValue>;
+
+    fn awsm_texture_sources_can_mipmap(&self, srcs:&[&WebGlTextureSource]) -> Result<(), Error>;
+
+    fn awsm_assign_simple_texture_target(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error>;
+
+    fn awsm_assign_simple_texture_target_mips(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error>;
+
+    fn awsm_simple_parameters_target(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, use_mips: bool);
+
+    fn awsm_assign_texture_target(&self, bind_target: TextureTarget, opts:&TextureOptions,set_parameters:Option<impl Fn(&Self) -> ()>, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error>;
+
+    fn awsm_assign_texture_target_mips(&self, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&Self) -> ()>, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error>;
+
+    fn awsm_activate_texture_for_sampler_target_index(&self, bind_target: TextureTarget, sampler_index: u32, texture:&WebGlTexture);
+
+    fn _awsm_assign_texture_target(&self, bind_target: u32, mip_level: i32, opts:&TextureOptions, src:&WebGlTextureSource) -> Result<(), Error>;
+}
+
+macro_rules! impl_context {
+    ($($type:ty { $($defs:tt)* })+) => {
+        $(impl PartialWebGlTextures for $type {
+
+            fn awsm_create_texture(&self) -> Result<WebGlTexture, Error> {
+                self.create_texture().ok_or(Error::from(NativeError::NoCreateTexture))
+            }
+
+            fn awsm_assign_simple_texture_target(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
+
+                let set_parameters = Some(|_:&$type| {
+                    self.awsm_simple_parameters_target(bind_target, &opts, false);
+                });
+
+                self.awsm_assign_texture_target(bind_target, &get_texture_options_from_simple(&opts), set_parameters, &src, &dest)
+            }
+
+            fn awsm_assign_simple_texture_target_mips(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
+
+                self.awsm_texture_sources_can_mipmap(&srcs)?;
+                let set_parameters = Some(|_:&$type| {
+                    self.awsm_simple_parameters_target(bind_target, &opts, true);
+                });
+
+                self.awsm_assign_texture_target_mips(bind_target, &get_texture_options_from_simple(&opts), set_parameters, &srcs, &dest)
+            }
+
+            fn awsm_simple_parameters_target(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, use_mips: bool) {
+
+                let bind_target = bind_target as u32;
+
+                if opts.flip_y {
+                    self.pixel_storei(WebGlSpecific::UnpackFlipY as u32, 1);
+                } else {
+                    self.pixel_storei(WebGlSpecific::UnpackFlipY as u32, 0);
+                }
+
+                if use_mips {
+                    self.generate_mipmap(bind_target);
+                } else {
+                    self.tex_parameteri(bind_target, TextureParameterName::TextureWrapS as u32, opts.wrap_s as i32); 
+                    self.tex_parameteri(bind_target, TextureParameterName::TextureWrapT as u32, opts.wrap_t as i32); 
+                    self.tex_parameteri(bind_target, TextureParameterName::TextureMinFilter as u32, opts.filter_min as i32); 
+                    self.tex_parameteri(bind_target, TextureParameterName::TextureMagFilter as u32, opts.filter_mag as i32); 
+                }
+            }
+
+            fn awsm_assign_texture_target(&self, bind_target: TextureTarget, opts:&TextureOptions,set_parameters:Option<impl Fn(&Self) -> ()>, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
+                self.awsm_assign_texture_target_mips(bind_target, &opts, set_parameters, &[src], &dest)
+            }
+
+
+            fn awsm_assign_texture_target_mips(&self, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&Self) -> ()>, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
+                let bind_target = bind_target as u32;
+
+                self.bind_texture(bind_target, Some(dest));
+
+                set_parameters.map(|f| f(self));
+
+                for (mip_level, src) in srcs.iter().enumerate() {
+                    self._awsm_assign_texture_target(bind_target, mip_level as i32, &opts, &src)?;
+                }
+
+                Ok(())
+            }
+
+            fn awsm_activate_texture_for_sampler_target_index(&self, bind_target: TextureTarget, sampler_index: u32, texture:&WebGlTexture) {
+                self.active_texture((TextureUnit::Texture0 as u32) + sampler_index );
+
+                self.bind_texture(bind_target as u32, Some(texture));
+            }
+
+            //internal use only
+            fn _awsm_assign_texture_target(&self, bind_target: u32, mip_level: i32, opts:&TextureOptions, src:&WebGlTextureSource) -> Result<(), Error> {
+
+                let internal_format = opts.internal_format as i32;
+                let data_format = opts.data_format as u32;
+                let data_type = opts.data_type as u32;
+
+                match src {
+                    WebGlTextureSource::ArrayBufferView(buffer_view, width, height) => {
+                        self.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
+                            bind_target,
+                            mip_level,
+                            internal_format,
+                            *width,
+                            *height,
+                            0,
+                            data_format,
+                            data_type,
+                            Some(buffer_view)
+                            )
+                    },
+                    WebGlTextureSource::ByteArray(buffer, width, height) => {
+                        self.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
+                            bind_target,
+                            mip_level,
+                            internal_format,
+                            *width,
+                            *height,
+                            0,
+                            data_format,
+                            data_type,
+                            Some(*buffer)
+                            )
+                    },
+                    WebGlTextureSource::ImageBitmap(bmp) => {
+                        self.tex_image_2d_with_u32_and_u32_and_image_bitmap(
+                            bind_target,
+                            mip_level,
+                            internal_format,
+                            data_format,
+                            data_type,
+                            bmp
+                            )
+                    },
+                    WebGlTextureSource::ImageData(data) => {
+                        self.tex_image_2d_with_u32_and_u32_and_image_data(
+                            bind_target,
+                            mip_level,
+                            internal_format,
+                            data_format,
+                            data_type,
+                            data
+                            )
+                    },
+                    WebGlTextureSource::ImageElement(img) => {
+                        self.awsm_get_texture_from_image_target(bind_target, mip_level, internal_format, data_format, data_type, img)
+                    },
+                    WebGlTextureSource::CanvasElement(canvas) => {
+                        self.awsm_get_texture_from_canvas_target(bind_target, mip_level, internal_format, data_format, data_type, canvas)
+                    },
+                    WebGlTextureSource::VideoElement(video) => {
+                        self.awsm_get_texture_from_video_target(bind_target, mip_level, internal_format, data_format, data_type, video)
+                    },
+                }.map_err(|err| Error::from(err))
+            }
+
+            $($defs)*
+        })+
+    };
+}
+
+impl_context!{
+    WebGlRenderingContext{
+        fn awsm_get_texture_from_image_target(&self, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, image: &HtmlImageElement) -> Result<(), JsValue> {
+            self.tex_image_2d_with_u32_and_u32_and_image( bind_target, mip_level, internal_format, data_format, data_type, image)
         }
-        fn get_texture_from_canvas_target(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, canvas: &HtmlCanvasElement) -> Result<(), JsValue> {
-            gl.tex_image_2d_with_u32_and_u32_and_canvas( bind_target, mip_level, internal_format, data_format, data_type, canvas)
+        fn awsm_get_texture_from_canvas_target(&self, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, canvas: &HtmlCanvasElement) -> Result<(), JsValue> {
+            self.tex_image_2d_with_u32_and_u32_and_canvas( bind_target, mip_level, internal_format, data_format, data_type, canvas)
         }
-        fn get_texture_from_video_target(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, video: &HtmlVideoElement) -> Result<(), JsValue> {
-            gl.tex_image_2d_with_u32_and_u32_and_video( bind_target, mip_level, internal_format, data_format, data_type, video)
+        fn awsm_get_texture_from_video_target(&self, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, video: &HtmlVideoElement) -> Result<(), JsValue> {
+            self.tex_image_2d_with_u32_and_u32_and_video( bind_target, mip_level, internal_format, data_format, data_type, video)
         }
-    } else if #[cfg(feature = "webgl_2")] {
-        fn get_texture_from_image_target(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, image: &HtmlImageElement) -> Result<(), JsValue> {
-            gl.tex_image_2d_with_u32_and_u32_and_html_image_element( bind_target, mip_level, internal_format, data_format, data_type, image)
+
+        fn awsm_texture_sources_can_mipmap(&self, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
+            match srcs.iter().all(|&src| is_power_of_2(&src)) {
+                true => Ok(()),
+                false => Err(Error::from(NativeError::MipsPowerOf2))
+            }
         }
-        fn get_texture_from_canvas_target(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, canvas: &HtmlCanvasElement) -> Result<(), JsValue> {
-            gl.tex_image_2d_with_u32_and_u32_and_html_canvas_element( bind_target, mip_level, internal_format, data_format, data_type, canvas)
+    }
+
+    WebGl2RenderingContext{
+        fn awsm_get_texture_from_image_target(&self, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, image: &HtmlImageElement) -> Result<(), JsValue> {
+            self.tex_image_2d_with_u32_and_u32_and_html_image_element( bind_target, mip_level, internal_format, data_format, data_type, image)
         }
-        fn get_texture_from_video_target(gl:&WebGlContext, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, video: &HtmlVideoElement) -> Result<(), JsValue> {
-            gl.tex_image_2d_with_u32_and_u32_and_html_video_element( bind_target, mip_level, internal_format, data_format, data_type, video)
+        fn awsm_get_texture_from_canvas_target(&self, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, canvas: &HtmlCanvasElement) -> Result<(), JsValue> {
+            self.tex_image_2d_with_u32_and_u32_and_html_canvas_element( bind_target, mip_level, internal_format, data_format, data_type, canvas)
+        }
+        fn awsm_get_texture_from_video_target(&self, bind_target: u32, mip_level: i32, internal_format: i32, data_format: u32, data_type: u32, video: &HtmlVideoElement) -> Result<(), JsValue> {
+            self.tex_image_2d_with_u32_and_u32_and_html_video_element( bind_target, mip_level, internal_format, data_format, data_type, video)
+        }
+
+        fn awsm_texture_sources_can_mipmap(&self, _:&[&WebGlTextureSource]) -> Result<(), Error> {
+            Ok(()) 
         }
     }
 }
@@ -113,150 +292,6 @@ fn get_texture_options_from_simple(opts:&SimpleTextureOptions) -> TextureOptions
     }
 }
 
-
-//webgl2 allows mips for any texture, webgl1 is power of 2 only
-#[cfg(feature = "webgl_1")] 
-pub fn texture_sources_can_mipmap(srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
-    match srcs.iter().all(|&src| is_power_of_2(&src)) {
-        true => Ok(()),
-        false => Err(Error::from(NativeError::MipsPowerOf2))
-    }
-}
-#[cfg(feature = "webgl_2")] 
-pub fn texture_sources_can_mipmap(_:&[&WebGlTextureSource]) -> Result<(), Error> {
-    Ok(()) 
-}
-
-pub fn assign_simple_texture_target_direct(gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
-
-    let set_parameters = Some(|_:&WebGlContext| {
-        simple_parameters_target_direct(&gl, bind_target, &opts, false);
-    });
-
-    assign_texture_target_direct(&gl, bind_target, &get_texture_options_from_simple(&opts), set_parameters, &src, &dest)
-}
-
-pub fn assign_simple_texture_target_mips_direct(gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
-
-    texture_sources_can_mipmap(&srcs)?;
-    let set_parameters = Some(|_:&WebGlContext| {
-        simple_parameters_target_direct(&gl, bind_target, &opts, true);
-    });
-
-    assign_texture_target_mips_direct(&gl, bind_target, &get_texture_options_from_simple(&opts), set_parameters, &srcs, &dest)
-}
-
-pub fn simple_parameters_target_direct(gl:&WebGlContext, bind_target: TextureTarget, opts:&SimpleTextureOptions, use_mips: bool) {
-
-    let bind_target = bind_target as u32;
-
-    if opts.flip_y {
-        gl.pixel_storei(WebGlSpecific::UnpackFlipY as u32, 1);
-    } else {
-        gl.pixel_storei(WebGlSpecific::UnpackFlipY as u32, 0);
-    }
-
-    if use_mips {
-        gl.generate_mipmap(bind_target);
-    } else {
-        gl.tex_parameteri(bind_target, TextureParameterName::TextureWrapS as u32, opts.wrap_s as i32); 
-        gl.tex_parameteri(bind_target, TextureParameterName::TextureWrapT as u32, opts.wrap_t as i32); 
-        gl.tex_parameteri(bind_target, TextureParameterName::TextureMinFilter as u32, opts.filter_min as i32); 
-        gl.tex_parameteri(bind_target, TextureParameterName::TextureMagFilter as u32, opts.filter_mag as i32); 
-    }
-}
-
-pub fn assign_texture_target_direct(gl:&WebGlContext, bind_target: TextureTarget, opts:&TextureOptions,set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
-    assign_texture_target_mips_direct(&gl, bind_target, &opts, set_parameters, &[src], &dest)
-}
-
-pub fn assign_texture_target_mips_direct(gl:&WebGlContext, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error> {
-    let bind_target = bind_target as u32;
-
-    gl.bind_texture(bind_target, Some(dest));
-
-    set_parameters.map(|f| f(&gl));
-
-    for (mip_level, src) in srcs.iter().enumerate() {
-        _assign_texture_target(&gl, bind_target, mip_level as i32, &opts, &src)?;
-    }
-
-    Ok(())
-}
-
-pub fn activate_texture_for_sampler_target_index_direct(gl:&WebGlContext, bind_target: TextureTarget, sampler_index: u32, texture:&WebGlTexture) {
-    gl.active_texture((TextureUnit::Texture0 as u32) + sampler_index );
-
-    gl.bind_texture(bind_target as u32, Some(texture));
-}
-
-//internal use only
-fn _assign_texture_target (gl:&WebGlContext, bind_target: u32, mip_level: i32, opts:&TextureOptions, src:&WebGlTextureSource) -> Result<(), Error> {
-
-    let internal_format = opts.internal_format as i32;
-    let data_format = opts.data_format as u32;
-    let data_type = opts.data_type as u32;
-
-    match src {
-        WebGlTextureSource::ArrayBufferView(buffer_view, width, height) => {
-            gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
-                bind_target,
-                mip_level,
-                internal_format,
-                *width,
-                *height,
-                0,
-                data_format,
-                data_type,
-                Some(buffer_view)
-            )
-        },
-        WebGlTextureSource::ByteArray(buffer, width, height) => {
-            gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
-                bind_target,
-                mip_level,
-                internal_format,
-                *width,
-                *height,
-                0,
-                data_format,
-                data_type,
-                Some(*buffer)
-            )
-        },
-        WebGlTextureSource::ImageBitmap(bmp) => {
-            gl.tex_image_2d_with_u32_and_u32_and_image_bitmap(
-                bind_target,
-                mip_level,
-                internal_format,
-                data_format,
-                data_type,
-                bmp
-            )
-        },
-        WebGlTextureSource::ImageData(data) => {
-            gl.tex_image_2d_with_u32_and_u32_and_image_data(
-                bind_target,
-                mip_level,
-                internal_format,
-                data_format,
-                data_type,
-                data
-            )
-        },
-        WebGlTextureSource::ImageElement(img) => {
-            get_texture_from_image_target(gl, bind_target, mip_level, internal_format, data_format, data_type, img)
-        },
-        WebGlTextureSource::CanvasElement(canvas) => {
-            get_texture_from_canvas_target(gl, bind_target, mip_level, internal_format, data_format, data_type, canvas)
-        },
-        WebGlTextureSource::VideoElement(video) => {
-            get_texture_from_video_target(gl, bind_target, mip_level, internal_format, data_format, data_type, video)
-        },
-    }.map_err(|err| Error::from(err))
-}
-
-
 fn is_power_of_2_val (val:u32) -> bool {
     val & (val -1) == 0
 }
@@ -268,10 +303,10 @@ pub(super) struct TextureSamplerInfo {
     texture_id: Id,
 }
 
-impl WebGlRenderer {
+impl <T: WebGlCommon> WebGlRenderer<T> {
 
     pub fn create_texture(&mut self) -> Result<Id, Error> {
-        let texture = self.gl.create_texture().ok_or(Error::from(NativeError::NoCreateTexture))?;
+        let texture = self.gl.awsm_create_texture()?;
 
         let id = self.texture_lookup.insert(texture);
 
@@ -286,12 +321,13 @@ impl WebGlRenderer {
     pub fn assign_simple_texture_mips(&mut self, texture_id:Id, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
         self.assign_simple_texture_target_mips(texture_id, TextureTarget::Texture2D, &opts, &srcs)
     }
-    pub fn assign_texture(&mut self, texture_id: Id, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&WebGlTextureSource) -> Result<(), Error> {
+    pub fn assign_texture(&mut self, texture_id: Id, opts:&TextureOptions, set_parameters:Option<impl Fn(&T) -> ()>, src:&WebGlTextureSource) -> Result<(), Error> {
         self.assign_texture_target(texture_id, TextureTarget::Texture2D, &opts, set_parameters, &src)
     }
-    pub fn assign_texture_mips(&mut self, texture_id: Id, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
+    pub fn assign_texture_mips(&mut self, texture_id: Id, opts:&TextureOptions, set_parameters:Option<impl Fn(&T) -> ()>, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
         self.assign_texture_target_mips(texture_id, TextureTarget::Texture2D, &opts, set_parameters, &srcs)
     }
+
     pub fn activate_texture_for_sampler(&mut self, texture_id: Id, sampler_name: &str) -> Result<(), Error> {
         self.activate_texture_for_sampler_target(TextureTarget::Texture2D, texture_id, sampler_name)
     }
@@ -307,7 +343,7 @@ impl WebGlRenderer {
         self.current_texture_id = Some(texture_id);
         self.current_texture_slot = None;
 
-        assign_simple_texture_target_direct(&self.gl, bind_target, &opts, &src, &texture)
+        self.gl.awsm_assign_simple_texture_target(bind_target, &opts, &src, &texture)
 
     }
 
@@ -318,27 +354,27 @@ impl WebGlRenderer {
         self.current_texture_id = Some(texture_id);
         self.current_texture_slot = None;
 
-        assign_simple_texture_target_mips_direct(&self.gl, bind_target, &opts, &srcs, &texture)
+        self.gl.awsm_assign_simple_texture_target_mips(bind_target, &opts, &srcs, &texture)
     }
 
 
-    pub fn assign_texture_target(&mut self, texture_id: Id, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, src:&WebGlTextureSource) -> Result<(), Error> {
+    pub fn assign_texture_target(&mut self, texture_id: Id, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&T) -> ()>, src:&WebGlTextureSource) -> Result<(), Error> {
 
         let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
 
         self.current_texture_id = Some(texture_id);
         self.current_texture_slot = None;
 
-        assign_texture_target_direct(&self.gl, bind_target, &opts, set_parameters, &src, &texture)
+        self.gl.awsm_assign_texture_target(bind_target, &opts, set_parameters, &src, &texture)
     }
 
-    pub fn assign_texture_target_mips(&mut self, texture_id: Id, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&WebGlContext) -> ()>, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
+    pub fn assign_texture_target_mips(&mut self, texture_id: Id, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&T) -> ()>, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
 
         let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
         self.current_texture_id = Some(texture_id);
         self.current_texture_slot = None;
 
-        assign_texture_target_mips_direct(&self.gl, bind_target, &opts, set_parameters, &srcs, &texture)
+        self.gl.awsm_assign_texture_target_mips(bind_target, &opts, set_parameters, &srcs, &texture)
     }
 
     pub fn activate_texture_for_sampler_target(&mut self, bind_target:TextureTarget, texture_id: Id, sampler_name: &str) -> Result<(), Error> {
@@ -381,7 +417,7 @@ impl WebGlRenderer {
                 bind_target
             });
             let texture = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
-            activate_texture_for_sampler_target_index_direct(&self.gl, bind_target, sampler_index, &texture);
+            self.gl.awsm_activate_texture_for_sampler_target_index(bind_target, sampler_index, &texture);
         }
 
         Ok(())

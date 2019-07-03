@@ -1,8 +1,8 @@
 use crate::errors::{Error, NativeError};
-use super::{WebGlRenderer, Id, BufferData, BufferTarget, BufferUsage};
+use super::{WebGlCommon, WebGlRenderer, Id, BufferData, BufferTarget, BufferUsage};
+use web_sys::{WebGl2RenderingContext};
 
-
-impl WebGlRenderer {
+impl WebGlRenderer<WebGl2RenderingContext> {
 
     pub fn get_uniform_buffer_loc(&self, name:&str) -> Result<u32, Error> {
 

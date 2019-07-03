@@ -2,16 +2,83 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement};
 
-#[cfg(feature = "webgl_1")]
-use web_sys::{WebGlRenderingContext};
-#[cfg(feature = "webgl_2")]
-use web_sys::{WebGl2RenderingContext};
+use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
 
 use crate::errors::{Error, NativeError};
-use cfg_if::cfg_if;
 use log::{info};
+use super::enums::{WebGlVersion};
 use serde::{Serialize};
+use super::attributes::{PartialWebGlAttribute};
+use super::query::{PartialWebGlQueries};
+use super::buffers::{PartialWebGlBuffer};
+use super::drawing::{PartialWebGlDrawing};
+use super::extensions::{PartialWebGlExtensions};
+use super::funcs::{PartialWebGlFuncs};
+use super::misc::{PartialWebGlMisc};
+use super::shader::{PartialWebGlShaders};
+use super::textures::{PartialWebGlTextures};
+use super::toggles::{PartialWebGlToggle};
+use super::uniforms::{PartialWebGlUniforms};
+use super::viewport::{PartialWebGlViewport};
 
+pub trait PartialWebGlVersion {
+    fn awsm_get_version(&self) -> WebGlVersion;
+}
+impl PartialWebGlVersion for WebGlRenderingContext {
+    fn awsm_get_version(&self) -> WebGlVersion {
+        WebGlVersion::One
+    }
+}
+
+impl PartialWebGlVersion for WebGl2RenderingContext {
+    fn awsm_get_version(&self) -> WebGlVersion {
+        WebGlVersion::Two
+    }
+}
+
+pub trait PartialWebGlCanvas{
+    fn awsm_get_canvas(&self) -> Result<HtmlCanvasElement, Error>;
+}
+impl PartialWebGlCanvas for WebGlRenderingContext {
+    fn awsm_get_canvas(&self) -> Result<HtmlCanvasElement, Error> {
+        self.canvas()
+            .ok_or(Error::from(NativeError::WebGlCanvas))?
+            .dyn_into::<HtmlCanvasElement>()
+            .map_err(|err| Error::from(NativeError::WebGlCanvas))
+    }
+}
+
+impl PartialWebGlCanvas for WebGl2RenderingContext {
+    fn awsm_get_canvas(&self) -> Result<HtmlCanvasElement, Error> {
+        self.canvas()
+            .ok_or(Error::from(NativeError::WebGlCanvas))?
+            .dyn_into::<HtmlCanvasElement>()
+            .map_err(|err| Error::from(NativeError::WebGlCanvas))
+    }
+}
+pub trait WebGlCommon: 
+    PartialWebGlVersion
+    + PartialWebGlCanvas
+    + PartialWebGlAttribute 
+    + PartialWebGlQueries 
+    + PartialWebGlBuffer
+    + PartialWebGlDrawing
+    + PartialWebGlExtensions
+    + PartialWebGlFuncs
+    + PartialWebGlMisc
+    + PartialWebGlShaders
+    + PartialWebGlTextures
+    + PartialWebGlToggle
+    + PartialWebGlUniforms
+    + PartialWebGlViewport
+    {
+    }
+
+impl WebGlCommon for WebGlRenderingContext {}
+
+impl WebGlCommon for WebGl2RenderingContext {}
+
+/* Creators */
 pub struct WebGlContextOptions {
     pub alpha: bool,
     pub depth: bool,
@@ -44,7 +111,7 @@ impl Default for WebGlContextOptions{
             desynchronized: false,
         }
     }
-    
+
 }
 
 impl WebGlContextOptions {
@@ -85,50 +152,43 @@ struct _WebGlContextOptions {
     desynchronized: bool,
 }
 
-cfg_if! {
-    if #[cfg(feature = "webgl_1")] {
-        pub type WebGlContext = WebGlRenderingContext;
-        pub fn get_webgl_context(canvas:&HtmlCanvasElement, opts: Option<&WebGlContextOptions>) -> Result<WebGlContext, Error> {
-            info!("Webgl version 1");
+pub fn get_webgl_context_1(canvas:&HtmlCanvasElement, opts: Option<&WebGlContextOptions>) -> Result<WebGlRenderingContext, Error> {
+    info!("Webgl version 1");
 
-            let context = match opts {
-                Some(opts) =>  canvas.get_context_with_context_options("webgl", &opts.to_js_value()),
-                None => canvas.get_context("webgl")
-            };
+    let context = match opts {
+        Some(opts) =>  canvas.get_context_with_context_options("webgl", &opts.to_js_value()),
+        None => canvas.get_context("webgl")
+    };
 
-            context
-                .and_then(|obj| 
-                          match obj {
-                              None => Err(Error::Empty.into()),
-                              Some(ctx) => 
-                                  ctx.dyn_into::<web_sys::WebGlRenderingContext>()
-                                  .map_err(|err| err.into())
-                          }
-                )
-                .map_err(|_| Error::Native(NativeError::WebGlContext))
-        }
-    } else if #[cfg(feature = "webgl_2")] {
-        pub type WebGlContext = WebGl2RenderingContext;
-        pub fn get_webgl_context(canvas:&HtmlCanvasElement, opts: Option<&WebGlContextOptions>) -> Result<WebGlContext, Error> {
-            info!("Webgl version 2");
+    context
+        .and_then(|obj| 
+                  match obj {
+                      None => Err(Error::Empty.into()),
+                      Some(ctx) => 
+                          ctx.dyn_into::<web_sys::WebGlRenderingContext>()
+                          .map_err(|err| err.into())
+                  }
+                 )
+        .map_err(|_| Error::Native(NativeError::WebGlContext))
+}
+pub fn get_webgl_context_2(canvas:&HtmlCanvasElement, opts: Option<&WebGlContextOptions>) -> Result<WebGl2RenderingContext, Error> {
+    info!("Webgl version 2");
 
 
-            let context = match opts {
-                Some(opts) =>  canvas.get_context_with_context_options("webgl2", &opts.to_js_value()),
-                None => canvas.get_context("webgl2")
-            };
+    let context = match opts {
+        Some(opts) =>  canvas.get_context_with_context_options("webgl2", &opts.to_js_value()),
+        None => canvas.get_context("webgl2")
+    };
 
-            context
-                .and_then(|obj| 
-                          match obj {
-                              None => Err(Error::Empty.into()),
-                              Some(ctx) => 
-                                  ctx.dyn_into::<web_sys::WebGl2RenderingContext>()
-                                  .map_err(|err| err.into())
-                          }
-                )
-                .map_err(|_| Error::Native(NativeError::WebGlContext))
-        }
-    }
+    context
+        .and_then(|obj| 
+                  match obj {
+                      None => Err(Error::Empty.into()),
+                      Some(ctx) => 
+                          ctx.dyn_into::<web_sys::WebGl2RenderingContext>()
+                          .map_err(|err| err.into())
+                  }
+                 )
+        .map_err(|_| Error::Native(NativeError::WebGlContext))
 }
 

@@ -12,9 +12,11 @@ pub enum NativeError {
     Canvas2dContext,
     WebGlContext,
     WebGlProgram,
+    WebGlCanvas,
     Window,
     WindowWidth,
     WindowHeight,
+    WebGlBufferSourceOneNonZero,
     CanvasCreate,
     AttributeLocation(Option<String>),
     UniformLocation(Option<String>),
@@ -37,6 +39,8 @@ pub enum NativeError {
     UniformBufferTarget,
     VertexArrayMissing,
     VertexArrayCreate,
+    JsValueExpectedBool,
+    JsValueExpectedNumber,
     Internal
 }
 
@@ -60,12 +64,22 @@ impl fmt::Debug for Error {
     }
 }
 
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Error::Empty => write!(f, "empty error"),
+            _ => write!(f, "{}", self.to_js().as_string().unwrap_or("unknown error".to_string()))
+        }
+    }
+}
+
 impl NativeError {
     pub fn default_str (self:&Self) -> &'static str{
         match self {
             NativeError::Canvas2dContext=> "couldn't create 2d canvas context",
             NativeError::WebGlContext=> "couldn't create webgl context",
             NativeError::WebGlProgram => "couldn't create webgl program",
+            NativeError::WebGlCanvas => "couldn't get canvas from webgl context",
             NativeError::Window => "couldn't get window",
             NativeError::WindowWidth => "couldn't get window width",
             NativeError::WindowHeight=> "couldn't get window height",
@@ -91,6 +105,9 @@ impl NativeError {
             NativeError::UniformBufferMissing(_optional_name) => "uniform buffer is missing",
             NativeError::UniformBufferOffsetMissing(_optional_name) => "uniform buffer offset is missing",
             NativeError::UniformBufferTarget => "buffer target must be UniformBuffer for uniform buffers",
+            NativeError::WebGlBufferSourceOneNonZero => "webgl 1 only supports sub buffer uploads from 0",
+            NativeError::JsValueExpectedBool => "expected jsvalue to be a bool",
+            NativeError::JsValueExpectedNumber => "expected jsvalue to be a number",
             NativeError::Internal => "internal error",
         }
     }

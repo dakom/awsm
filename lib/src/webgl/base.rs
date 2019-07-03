@@ -5,9 +5,13 @@ use std::cell::Cell;
 use beach_map::{BeachMap, DefaultVersion};
 use wasm_bindgen::prelude::{JsValue};
 use web_sys::{WebGlVertexArrayObject, HtmlCanvasElement, WebGlTexture, WebGlBuffer};
-use super::{Id, TextureSamplerInfo, BufferTarget, ProgramInfo, WebGlContext, WebGlContextOptions, GlQuery, get_webgl_context};
+use super::{Id, TextureSamplerInfo, BufferTarget, ProgramInfo, WebGlCommon, WebGlContextOptions, GlQuery, get_webgl_context_1, get_webgl_context_2};
 use super::funcs::{FuncSettings};
 use super::toggles::{ToggleFlags};
+use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
+
+pub type WebGl1Renderer = WebGlRenderer<WebGlRenderingContext>;
+pub type WebGl2Renderer = WebGlRenderer<WebGl2RenderingContext>;
 
 /*
  * extension_lookup, attribute_lookup, and uniform_lookup are hashmaps
@@ -20,10 +24,9 @@ use super::toggles::{ToggleFlags};
  * however that might come in handy down the line
  */
 
-pub struct WebGlRenderer {
-    pub gl:WebGlContext,
-    pub canvas: HtmlCanvasElement,
-   
+pub struct WebGlRenderer <T: WebGlCommon> {
+    pub gl:T,
+    pub canvas:HtmlCanvasElement,
     //really just local to the module
     pub(super) last_width: u32,
     pub(super) last_height: u32,
@@ -43,7 +46,6 @@ pub struct WebGlRenderer {
 
     pub(super) extension_lookup: HashMap<String, js_sys::Object>,
 
-    #[cfg(feature="webgl_2")]
     pub(super) ubo_global_loc_lookup: Vec<String>,
 
     pub(super) current_vao_id: Cell<Option<Id>>,
@@ -57,18 +59,11 @@ pub struct WebGlRenderer {
 }
 
 
-impl WebGlRenderer {
-    pub fn new(canvas:HtmlCanvasElement, opts:Option<&WebGlContextOptions>) -> Result<Self, Error> {
-        let gl = get_webgl_context(&canvas, opts)?;
+impl <T: WebGlCommon> WebGlRenderer <T> {
+    pub fn new(gl:T) -> Result<Self, Error> {
+        let canvas = gl.awsm_get_canvas()?;
 
-
-        let max_texture_units:usize = gl.get_parameter(GlQuery::MaxTextureImageUnits as u32)
-            .and_then(|value| {
-                      value
-                        .as_f64()
-                        .map(|val| val as usize)
-                        .ok_or(JsValue::null())
-            })?;
+        let max_texture_units:usize = gl.awsm_get_parameter_usize(GlQuery::MaxTextureImageUnits)?;
 
         //Can't use the vec! macro since TextureSamplerInfo isn't Clone
         let mut texture_sampler_lookup = Vec::with_capacity(max_texture_units);
@@ -76,18 +71,14 @@ impl WebGlRenderer {
             texture_sampler_lookup.push(None);
         }
 
-
         //The webgl docs don't talk about a default value...
         //seems to be 0 for all - but just in case... it's... set by browser? _shrug_
-        let blend_color:Vec<f32> = gl.get_parameter(GlQuery::BlendColor as u32)
-                .map(|value| value.into()) //JsValue -> Float32Array
-                .map(|value| clone_to_vec_f32(&value))?; //Float32Array -> Vec<f32>
+        let blend_color:Vec<f32> = gl.awsm_get_parameter_vf32(GlQuery::BlendColor)?;
      
         Ok(
             Self {
                 gl,
                 canvas,
-
                 last_width: 0,
                 last_height: 0,
 
@@ -109,7 +100,6 @@ impl WebGlRenderer {
                 current_vao_id: Cell::new(None),
                 vao_lookup: BeachMap::default(),
 
-                #[cfg(feature="webgl_2")] 
                 ubo_global_loc_lookup: Vec::new(),
 
                 toggle_flags: ToggleFlags::default(),

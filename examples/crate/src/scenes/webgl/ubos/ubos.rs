@@ -1,5 +1,6 @@
-use awsm::webgl::{VertexArray, Id, GlToggle, BufferTarget, BufferUsage, BufferData, AttributeOptions, DataType, ClearBufferMask, WebGlRenderer, BeginMode};
+use awsm::webgl::{VertexArray, Id, GlToggle, BufferTarget, BufferUsage, BufferData, AttributeOptions, DataType, ClearBufferMask, BeginMode};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
+use crate::{WebGlRenderer};
 use awsm::errors::{Error};
 use std::rc::Rc; 
 use std::cell::RefCell;
