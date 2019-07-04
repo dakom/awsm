@@ -20,9 +20,23 @@ There's a few major areas under development, but lots of stuff is done :) Check 
 
 Commands are run via npm in the `examples/` folder
 
-Development: `npm start` (requires that [watchexec](https://github.com/watchexec/watchexec) be installed)
-Bundling: `npm run bundle` (requires that [wasm-opt](https://github.com/WebAssembly/binaryen) be installed. tip: just extract the zip and put it in the path somewhere)
-Deploying demo: `npm run deploy` (should fail for non-authorized users... requires that [netlify-cli](https://www.netlify.com/docs/cli/) be installed)
+**Development mode**
+
+`npm start`
+
+This will spin up the demo and open a browser with live reloading. Requires that [watchexec](https://github.com/watchexec/watchexec) be installed)
+
+**Bundling** 
+
+`npm run bundle` 
+
+Really just a preliminary step for deployment, but useful for seeing how the optimization settings kick in too. Requires that [wasm-opt](https://github.com/WebAssembly/binaryen) be installed. _tip: just extract the zip and put it in the path somewhere._
+
+**Deployment** 
+
+`npm run deploy` 
+
+Should fail for non-authorized users... Requires that [netlify-cli](https://www.netlify.com/docs/cli/) be installed)
 
 ## Live Coding 
 
