@@ -1,4 +1,4 @@
-use awsm::loaders::{image};
+use awsm::loaders::{image, fetch};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Window, Document, Element, HtmlElement};
@@ -22,12 +22,9 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
         let root_copy = root.clone();
         move |_e:&web_sys::Event| {
             let future = async move {
-                let href = get_static_href("smiley.svg");
-                info!("loading image! {}", href);
-                let img = image::fetch_image(&href).await?;
-                info!("loaded!!! {}", img.src());
-                root.append_child(&img)
-                    .map(|_| JsValue::null())
+                let href = get_static_href("lorem.txt");
+                let txt = fetch::text_url(&href).await?;
+                show_text(&txt, &document, &root)
             };
 
             //we don't handle errors here because they are exceptions
@@ -39,18 +36,26 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
         }
     };
 
+    //my_cb.clone()(&web_sys::Event::new("").unwrap());
+
     //for demo purposes - fine to forget
     EventListener::once(&button, "click",my_cb).forget();
 
     Ok(())
 }
 
+fn show_text(txt:&str, document:&Document, root:&Element) -> Result<JsValue, JsValue> {
+    let text_node:Element = document.create_element("div")?.into();
+    text_node.set_text_content(Some(&txt));
+    text_node.set_class_name("text-example");
+    root.append_child(&text_node).map(|_| JsValue::null())
+}
 
 fn create_button(document:&Document, root:&Element) -> Result<HtmlElement, JsValue> {
 
     let item: HtmlElement = document.create_element("div")?.dyn_into()?;
     item.set_class_name("button demo-button");
-    item.set_text_content(Some("load image"));
+    item.set_text_content(Some("load text"));
     root.append_child(&item)?;
     Ok(item)
 }

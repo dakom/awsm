@@ -30,6 +30,7 @@ log = "0.4"
 # wasm
 wasm-bindgen = "0.2.47"
 js-sys = "0.3.24"
+wasm-bindgen-futures= { version = "0.3.24", features = ["futures_0_3"] }
 serde-wasm-bindgen = "0.1.3"
 [dependencies.web-sys]
 version = "0.3.24"
@@ -49,6 +50,12 @@ features = [
     # images
     'ImageBitmap',
     'ImageData',
+
+    # fetch
+    "Request",
+    "RequestInit",
+    "Response",
+    "ResponseInit",
 
     # canvas
     'CanvasRenderingContext2d',

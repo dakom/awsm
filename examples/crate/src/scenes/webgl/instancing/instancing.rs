@@ -99,7 +99,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
         let href = get_static_href("smiley.svg");
         info!("loading image! {}", href);
-        let img = image::fetch_image(href).await?;
+        let img = image::fetch_image(&href).await?;
 
         let mut state_obj = state.borrow_mut();
         state_obj.area = Area{

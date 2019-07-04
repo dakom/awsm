@@ -119,7 +119,11 @@ impl Future for Image {
 }
 
 impl Image {
-    pub fn new(url: String) -> Self {
+    pub fn new(url: &str) -> Self {
+        //can't seem to avoid this
+        //but realistically, loading images is a slow and memory intensive operation
+        //and urls are going to be on the smaller side too... so, no biggie
+        let url = url.to_owned();
 
         Self {
             url,
@@ -130,7 +134,7 @@ impl Image {
     }
 }
 
-pub fn fetch_image(url:String) -> impl Future<Output= Result<HtmlImageElement, Error>> { 
+pub fn fetch_image(url:&str) -> impl Future<Output= Result<HtmlImageElement, Error>> { 
     Image::new(url)
 }
 

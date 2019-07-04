@@ -80,8 +80,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         let mut state_obj = state.borrow_mut();
 
         //let href2 = get_static_href("smiley.svg");
-        let img_1  = image::fetch_image(get_static_href("smiley.svg")).await?;
-        let img_2  = image::fetch_image(get_static_href("photo.jpg")).await?;
+        let img_1  = image::fetch_image(&get_static_href("smiley.svg")).await?;
+        let img_2  = image::fetch_image(&get_static_href("photo.jpg")).await?;
 
         //they're the same height
         state_obj.area = Area{

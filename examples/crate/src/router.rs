@@ -41,6 +41,9 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
         "loaders-image" => {
             loaders::image::start(window, document, body)
         },
+        "loaders-text" => {
+            loaders::text::start(window, document, body)
+        },
 
 
         "webgl-simple" => {

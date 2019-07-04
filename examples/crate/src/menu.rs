@@ -17,6 +17,7 @@ lazy_static! {
         m.insert("clock", Menu {label: "Clock", source: "clock/clock.rs"});
         //Loaders
         m.insert("loaders-image", Menu {label: "Image", source: "loaders/image.rs"});
+        m.insert("loaders-text", Menu {label: "Text", source: "loaders/text.rs"});
         //WebGl
         m.insert("webgl-simple", Menu {label: "Simple", source: "webgl/simple/simple.rs"});
         m.insert("webgl-texture", Menu {label: "Texture", source: "webgl/texture/texture.rs"});
@@ -52,6 +53,7 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
 
     append_menu(&container, &document, "Loaders", vec![
         "loaders-image",
+        "loaders-text",
     ])?;
 
     let mut webgl_menu = vec![
