@@ -9,3 +9,5 @@ pub mod elements;
 
 #[cfg(feature = "webgl_2")]
 pub mod ubos;
+#[cfg(feature = "webgl_2")]
+pub mod texture_3d;

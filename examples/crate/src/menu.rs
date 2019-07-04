@@ -26,6 +26,7 @@ lazy_static! {
         m.insert("webgl-instancing", Menu {label: "Instancing", source: "webgl/instancing/instancing.rs"});
         m.insert("webgl-vaos", Menu {label: "Vertex Arrays", source: "webgl/vaos/vaos.rs"});
         m.insert("webgl-ubos", Menu {label: "Uniform Buffers", source: "webgl/ubos/ubos.rs"});
+        m.insert("webgl-texture_3d", Menu {label: "Texture 3D", source: "webgl/texture_3d/texture_3d.rs"});
         m
     };
 }
@@ -66,6 +67,7 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
         if #[cfg(feature = "webgl_2")] {
             fn concat_more_menus(menus:&mut Vec<&str>) {
                 menus.push("webgl-ubos");
+                menus.push("webgl-texture_3d");
             }
         } else {
             fn concat_more_menus(menus:&mut Vec<&str>) {

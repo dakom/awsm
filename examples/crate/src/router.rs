@@ -72,6 +72,9 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
         "webgl-ubos" => {
             start_additional_menu(&pathname, window, document, body)
         },
+        "webgl-texture_3d" => {
+            start_additional_menu(&pathname, window, document, body)
+        },
         _ => {
             unknown_route(&pathname, window, document, body)
         }
@@ -84,6 +87,7 @@ cfg_if! {
         fn start_additional_menu(pathname:&str, window:web_sys::Window, document:web_sys::Document, body:web_sys::HtmlElement) -> Result<(), JsValue> {
             match pathname {
                 "webgl-ubos" => webgl::ubos::start(window, document, body),
+                "webgl-texture_3d" => webgl::texture_3d::start(window, document, body),
                 _ => unknown_route(&pathname, window, document, body)
             }
         }
