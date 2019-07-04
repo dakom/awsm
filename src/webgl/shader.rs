@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use web_sys::{WebGlProgram, WebGlShader, WebGlUniformLocation};
 use wasm_bindgen::prelude::JsValue;
@@ -9,27 +8,28 @@ use super::{WebGlCommon, WebGlRenderer, ShaderQuery, ProgramQuery, ShaderType, G
 use log::{info};
 use web_sys::{WebGlRenderingContext,WebGl2RenderingContext, WebGlActiveInfo};
 use crate::helpers::{clone_to_vec_f32};
+use rustc_hash::{FxHashMap};
 
 pub struct ProgramInfo {
     pub program: WebGlProgram,
-    pub attribute_lookup: HashMap<String, u32>,
-    pub uniform_lookup: HashMap<String, WebGlUniformLocation>,
-    pub texture_sampler_slot_lookup: HashMap<String, u32>,
+    pub attribute_lookup: FxHashMap<String, u32>,
+    pub uniform_lookup: FxHashMap<String, WebGlUniformLocation>,
+    pub texture_sampler_slot_lookup: FxHashMap<String, u32>,
 
     //only needed for webgl2
-    pub uniform_buffer_loc_lookup: HashMap<String, u32>,
-    pub uniform_buffer_offset_lookup: HashMap<String, HashMap<String, u32>>,
+    pub uniform_buffer_loc_lookup: FxHashMap<String, u32>,
+    pub uniform_buffer_offset_lookup: FxHashMap<String, FxHashMap<String, u32>>,
 }
 
 impl ProgramInfo {
     fn new(program:WebGlProgram) -> Self {
         Self {
             program,
-            attribute_lookup: HashMap::new(),
-            uniform_lookup: HashMap::new(),
-            texture_sampler_slot_lookup: HashMap::new(),
-            uniform_buffer_loc_lookup: HashMap::new(),
-            uniform_buffer_offset_lookup: HashMap::new(),
+            attribute_lookup: FxHashMap::default(),
+            uniform_lookup: FxHashMap::default(),
+            texture_sampler_slot_lookup: FxHashMap::default(),
+            uniform_buffer_loc_lookup: FxHashMap::default(),
+            uniform_buffer_offset_lookup: FxHashMap::default(),
         }
     }
 }
@@ -370,7 +370,7 @@ impl WebGlRenderer<WebGl2RenderingContext> {
                 //Also need to cache their offsets
                 let block_lookup = program_info.uniform_buffer_offset_lookup
                         .entry(name.to_string())
-                        .or_insert_with(|| HashMap::new());
+                        .or_insert_with(|| FxHashMap::default());
 
                 let offsets:Vec<u32> = unsafe {
                     let values = js_sys::Uint32Array::view(&active_uniforms);

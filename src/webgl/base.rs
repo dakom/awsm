@@ -1,6 +1,5 @@
 use crate::errors::{Error};
 use crate::helpers::{clone_to_vec_f32};
-use std::collections::HashMap;
 use std::cell::Cell;
 use beach_map::{BeachMap, DefaultVersion};
 use wasm_bindgen::prelude::{JsValue};
@@ -9,6 +8,7 @@ use super::{Id, TextureSamplerInfo, BufferTarget, ProgramInfo, WebGlCommon, WebG
 use super::funcs::{FuncSettings};
 use super::toggles::{ToggleFlags};
 use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
+use rustc_hash::{FxHashMap};
 
 pub type WebGl1Renderer = WebGlRenderer<WebGlRenderingContext>;
 pub type WebGl2Renderer = WebGlRenderer<WebGl2RenderingContext>;
@@ -44,7 +44,7 @@ pub struct WebGlRenderer <T: WebGlCommon> {
     pub(super) texture_lookup: BeachMap<DefaultVersion, WebGlTexture>,
     pub(super) texture_sampler_lookup: Vec<Option<TextureSamplerInfo>>,
 
-    pub(super) extension_lookup: HashMap<String, js_sys::Object>,
+    pub(super) extension_lookup: FxHashMap<String, js_sys::Object>,
 
     pub(super) ubo_global_loc_lookup: Vec<String>,
 
@@ -95,7 +95,7 @@ impl <T: WebGlCommon> WebGlRenderer <T> {
                 texture_lookup: BeachMap::default(),
                 texture_sampler_lookup,
 
-                extension_lookup: HashMap::new(),
+                extension_lookup: FxHashMap::default(), 
 
                 current_vao_id: Cell::new(None),
                 vao_lookup: BeachMap::default(),
