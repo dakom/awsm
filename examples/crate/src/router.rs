@@ -198,7 +198,7 @@ fn routes() {
     assert_eq!(get_root("/webgl2/foo"), "foo");
     assert_eq!(get_root("/webgl2/foo/bar/"), "foo/bar");
     assert_eq!(get_root("/webgl2/"), "");
-    assert_eq!(get_root("/static/file.jpg"), "static/file.jpg");
+    assert_eq!(get_root("/media/file.jpg"), "media/file.jpg");
     //get_static
-    assert_eq!(get_static_href("images/smiley.svg"), "/static/images/smiley.svg");
+    assert_eq!(get_static_href("images/smiley.svg"), "/media/images/smiley.svg");
 }
