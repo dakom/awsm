@@ -13,6 +13,7 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
     let pathname = get_root(pathname.as_str());
 
 
+
     if let Some(menu) = menu::MENU_LOOKUP.get(pathname) {
         let links: Element = document.create_element("div")?.into();
         links.set_class_name("demo-links");
@@ -151,7 +152,7 @@ fn get_root(input:&str) -> &str {
 }
 
 pub fn get_static_href(path:&str) -> String {
-    format!("/static/{}", path)
+    format!("/media/{}", path)
 }
 
 fn create_home_link(document:&Document) -> Result<HtmlElement, JsValue> {

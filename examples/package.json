@@ -8,38 +8,33 @@
         "clean:all": "rimraf ./deploy && npm run clean:build",
         "clean:build": "rimraf ./dist rimraf ./crate/pkg && rimraf ./crate/target && rimraf ../target",
         "//": "start does NOT automatically watch/re-compile rust sources. Start watch-dev.bat in a separate process for that. See README.md for more info",
-        "start": "npm run _rust:build:dev && cross-env NODE_ENV=development webpack-dev-server -d --progress --open --config webpack.dev.js",
-        "deploy": "npm run bundle && npm run deploy:netlify", 
+        "start": "npm run _rust:build:dev && npm run _dev:browsersync",
+        "deploy": "npm run bundle && npm run deploy:netlify",
         "deploy:netlify": "netlify deploy --prod --dir=deploy --site=c6d71941-94ea-494c-a5f6-429f4b8feb9e",
-
         "bundle": "npm run clean:all && npm run _bundle:webgl_1 && npm run _bundle:webgl_2 && npm run _bundle:copy:public",
+        "_dev:browsersync": "browser-sync start --server \"site\" --single --serveStatic \"crate\" --files \"site/**/*\" \"crate/pkg/**/*.wasm\"",
         "_bundle:webgl_1": "npm run _bundle:build:webgl_1 && npm run _bundle:copy:webgl_1",
         "_bundle:webgl_2": "npm run _bundle:build:webgl_2 && npm run _bundle:copy:webgl_2",
-        "_bundle:build:webgl_1": "npm run clean:build && npm run _rust:build:release:webgl_1 && cross-env NODE_ENV=production webpack --config webpack.release.js",
-        "_bundle:build:webgl_2": "npm run clean:build && npm run _rust:build:release:webgl_2 && cross-env NODE_ENV=production webpack --config webpack.release.js",
+        "_bundle:build:webgl_1": "npm run clean:build && npm run _rust:build:release:webgl_1 && webpack --config webpack.release.js",
+        "_bundle:build:webgl_2": "npm run clean:build && npm run _rust:build:release:webgl_2 && webpack --config webpack.release.js",
         "_bundle:copy:webgl_1": "cpy **/* ../deploy/webgl1 --cwd=dist --parents",
         "_bundle:copy:webgl_2": "cpy **/* ../deploy/webgl2 --cwd=dist --parents",
         "_bundle:copy:public": "cpy **/* ../deploy --cwd=public --parents",
-
+        "foo": "browser-sync --version",
         "_rust:build:release:webgl_1": "cargo +nightly build --target wasm32-unknown-unknown --features webgl_1 --release --manifest-path crate/Cargo.toml && npm run _rust:bindgen:release && npm run _rust:opt",
         "_rust:build:release:webgl_2": "cargo +nightly build --target wasm32-unknown-unknown --features webgl_2 --release --manifest-path crate/Cargo.toml && npm run _rust:bindgen:release && npm run _rust:opt",
         "_rust:bindgen:release": "wasm-bindgen crate/target/wasm32-unknown-unknown/release/awsm_examples.wasm --out-dir crate/pkg",
         "_rust:opt": "wasm-opt -Os -o ./crate/pkg/awsm_examples_bg.wasm ./crate/pkg/awsm_examples_bg.wasm",
         "_rust:build:dev:nowarnings": "cross-env RUSTFLAGS=\"-A warnings\" cargo +nightly build --features dev --target wasm32-unknown-unknown --manifest-path crate/Cargo.toml && npm run _rust:bindgen:dev",
         "_rust:build:dev": "cargo +nightly build --features dev --target wasm32-unknown-unknown --manifest-path crate/Cargo.toml && npm run _rust:bindgen:dev",
-        "_rust:bindgen:dev": "wasm-bindgen crate/target/wasm32-unknown-unknown/debug/awsm_examples.wasm --out-dir crate/pkg"
+        "_rust:bindgen:dev": "wasm-bindgen crate/target/wasm32-unknown-unknown/debug/awsm_examples.wasm --target web --out-dir crate/pkg"
     },
     "devDependencies": {
+        "browser-sync": "^2.26.7",
         "cpy": "^7.2.0",
         "cpy-cli": "^2.0.0",
         "cross-env": "^5.2.0",
-        "css-loader": "^2.1.1",
-        "html-webpack-plugin": "^3.2.0",
         "npm-run-all": "^4.1.5",
-        "rimraf": "^2.6.3",
-        "style-loader": "^0.23.1",
-        "webpack": "^4.31.0",
-        "webpack-cli": "^3.3.2",
-        "webpack-dev-server": "^3.3.1"
+        "rimraf": "^2.6.3"
     }
 }
