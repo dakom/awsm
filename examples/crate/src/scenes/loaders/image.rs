@@ -1,4 +1,4 @@
-use awsm::loaders::{image};
+use awsm::loaders::{fetch};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Window, Document, Element, HtmlElement};
@@ -24,7 +24,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
             let future = async move {
                 let href = get_static_href("smiley.svg");
                 info!("loading image! {}", href);
-                let img = image::fetch_image(&href).await?;
+                let img = fetch::image(&href).await?;
                 info!("loaded!!! {}", img.src());
                 root.append_child(&img)
                     .map(|_| JsValue::null())

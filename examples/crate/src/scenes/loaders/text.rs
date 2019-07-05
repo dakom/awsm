@@ -23,7 +23,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
         move |_e:&web_sys::Event| {
             let future = async move {
                 let href = get_static_href("lorem.txt");
-                let txt = fetch::text_url(&href).await?;
+                let txt = fetch::text(&href).await?;
                 show_text(&txt, &document, &root)
             };
 

@@ -134,9 +134,6 @@ impl Image {
     }
 }
 
-pub fn fetch_image(url:&str) -> impl Future<Output= Result<HtmlImageElement, Error>> { 
-    Image::new(url)
-}
 
 
 pub fn same_origin(url:&str) -> Result<bool, JsValue> {

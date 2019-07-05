@@ -3,11 +3,16 @@ use futures::{Future};
 use wasm_bindgen::{JsValue};
 use wasm_bindgen::JsCast;
 use js_sys::{Promise};
-use web_sys::{Request, Response};
+use web_sys::{Request, Response, HtmlImageElement};
 use crate::window::{get_window};
 use wasm_bindgen_futures::futures_0_3::{JsFuture};
+use super::image::{Image};
 
-pub fn text_url(url:&str) -> impl Future<Output= Result<String, Error>> { 
+pub fn image(url:&str) -> impl Future<Output= Result<HtmlImageElement, Error>> { 
+    Image::new(url)
+}
+
+pub fn text(url:&str) -> impl Future<Output= Result<String, Error>> { 
     let req = Request::new_with_str(url);
 
     async {

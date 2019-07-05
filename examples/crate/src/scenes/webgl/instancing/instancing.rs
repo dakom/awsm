@@ -1,6 +1,6 @@
 use awsm::webgl::{ClearBufferMask, BufferData, SimpleTextureOptions, WebGlTextureSource, PixelFormat, Id, BufferTarget, BufferUsage, AttributeOptions, DataType, BeginMode};
 use crate::{WebGlRenderer};
-use awsm::loaders::{image};
+use awsm::loaders::{fetch};
 use crate::router::{get_static_href};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
@@ -99,7 +99,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
         let href = get_static_href("smiley.svg");
         info!("loading image! {}", href);
-        let img = image::fetch_image(&href).await?;
+        let img = fetch::image(&href).await?;
 
         let mut state_obj = state.borrow_mut();
         state_obj.area = Area{
