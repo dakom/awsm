@@ -14,7 +14,9 @@ Overall, the approach with this library is similar in spirit to [gloo](https://g
 
 It's also just my personal stomping grounds to figure stuff out, and is therefore more free to err on the side of "is this good enough for now" vs. "is this the right api, is it modular enough, etc."
 
-There's a few major areas under development, but lots of stuff is done :) Check it out!
+The various features pretty much match what is testable on the [demo](https://awsm.netlify.com/) and each one has a link to that example's source.
+
+A few major areas under development, but lots of stuff is done :) Check it out!
 
 ## Building 
 
