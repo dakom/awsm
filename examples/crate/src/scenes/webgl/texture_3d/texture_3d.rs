@@ -1,37 +1,46 @@
-use awsm::webgl::{Id, ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, BeginMode};
+use awsm::webgl::{TextureWrapTarget, TextureWrapMode, TextureMinFilter, TextureMagFilter, Id, DataType, TextureTarget, ClearBufferMask, TextureOptions, SimpleTextureOptions, WebGlTextureSource, PixelFormat, BeginMode};
+use awsm::webgl::{PartialWebGlTextures};
 use crate::{WebGlRenderer};
 use awsm::loaders::fetch;
 use crate::router::{get_static_href};
+use gloo_events::{EventListener};
+use awsm::data::{TypedData};
 use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::futures_0_3::{future_to_promise};
-use web_sys::{Window, Document, HtmlElement};
+use web_sys::{Window, Document, HtmlElement, WebGl2RenderingContext};
 use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
 use crate::scenes::webgl::common::datatypes::*;
 use nalgebra::{Matrix4, Vector3, Point2};
 use log::{info};
+use lut_parser::{CubeLut};
+use wasm_bindgen::{JsCast};
 
 struct State {
     //mutable for each tick
+    pub lut_enabled: bool,
     pub pos: Point2<f64>,
     pub area: Area,
     pub camera_width: f64,
     pub camera_height: f64,
     pub program_id: Option<Id>,
-    pub texture_id: Option<Id>,
+    pub diffuse_texture_id: Option<Id>,
+    pub lut_texture_id: Option<Id>,
 }
 
 impl State {
     pub fn new() -> Self {
         Self {
+            lut_enabled: false,
             pos: Point2::new(500.0, 500.0),
             area: Area::new(300.0, 100.0),
             camera_width: 0.0,
             camera_height: 0.0,
             program_id: None,
-            texture_id: None,
+            diffuse_texture_id: None,
+            lut_texture_id: None,
         }
 
     }
@@ -54,7 +63,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     };
 
 
-    let webgl_renderer = start_webgl(window, document, body, on_resize)?;
+    let webgl_renderer = start_webgl(window, document.clone(), body.clone(), on_resize)?;
     let webgl_renderer_clone = Rc::clone(&webgl_renderer);
 
     let mut webgl_renderer = webgl_renderer.borrow_mut();
@@ -68,9 +77,11 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let _buffer_id = create_and_assign_unit_quad_buffer(&mut webgl_renderer)?;
 
-    let texture_id = webgl_renderer.create_texture()?;
+    let diffuse_texture_id = webgl_renderer.create_texture()?;
+    state.borrow_mut().diffuse_texture_id = Some(diffuse_texture_id);
 
-    state.borrow_mut().texture_id = Some(texture_id);
+    let lut_texture_id = webgl_renderer.create_texture()?;
+    state.borrow_mut().lut_texture_id = Some(lut_texture_id);
 
     let future = async move {
         let mut webgl_renderer = webgl_renderer_clone.borrow_mut();
@@ -79,7 +90,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         info!("loading image! {}", href);
         let img = fetch::image(&href).await?;
         let href = get_static_href("LUT.cube");
-        let lut = fetch::text(&href).await?;
+        let txt:String = fetch::text(&href).await?;
+        let lut = CubeLut::<f32>::from_str(&txt).map_err(|_| "couldn't parse cube file")?;
 
         let mut state_obj = state.borrow_mut();
         state_obj.area = Area{
@@ -91,8 +103,34 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
         reposition(&mut state_obj, width, height);
 
+        webgl_renderer.upload_uniform_fval("u_lut_size", lut.size as f32)?;
+        let data_obj:js_sys::Object = TypedData::new(&lut.flatten_data()).into();
+
+        webgl_renderer.assign_texture(
+            lut_texture_id,
+            TextureTarget::Texture3d,
+            &TextureOptions{
+                internal_format: PixelFormat::Rgb32f,
+                data_format: PixelFormat::Rgb,
+                data_type: DataType::Float,
+            },
+            Some(|gl:&WebGl2RenderingContext| {
+
+                let bind_target = TextureTarget::Texture3d;
+
+                gl.awsm_texture_set_wrap(bind_target, TextureWrapTarget::S, TextureWrapMode::Repeat);
+                gl.awsm_texture_set_wrap(bind_target, TextureWrapTarget::T, TextureWrapMode::Repeat);
+                gl.awsm_texture_set_wrap(bind_target, TextureWrapTarget::R, TextureWrapMode::Repeat);
+
+                gl.awsm_texture_set_min_filter(bind_target, TextureMinFilter::Nearest);
+                gl.awsm_texture_set_mag_filter(bind_target, TextureMagFilter::Nearest);
+            }),
+            &WebGlTextureSource::ArrayBufferView(&data_obj, 32, 32, 32)
+        )?;
+        
         webgl_renderer.assign_simple_texture(
-            texture_id, 
+            diffuse_texture_id, 
+            TextureTarget::Texture2d,
             &SimpleTextureOptions{
                 pixel_format: PixelFormat::Rgba,
                 ..SimpleTextureOptions::default()
@@ -109,6 +147,22 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                 render(&state, &mut webgl_renderer).unwrap();
             }
         })?;
+
+        let button = create_button(state_obj.lut_enabled, &document, &body)?;
+
+
+        let my_cb = {
+            let button = button.clone();
+            let state = Rc::clone(&state);
+            move |_:&_| {
+                let mut state = state.borrow_mut();
+                state.lut_enabled = !state.lut_enabled;
+                set_button_label(&button, state.lut_enabled);
+            }
+        };
+
+        EventListener::new(&button, "click",my_cb).forget();
+
         Ok(JsValue::null())
     };
 
@@ -129,12 +183,13 @@ fn reposition(state:&mut State, width: u32, height: u32) {
 
 
 fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let State {pos, area, camera_width, camera_height, program_id, texture_id} = state;
+    let State {pos, area, camera_width, camera_height, program_id, diffuse_texture_id, lut_texture_id, lut_enabled} = state;
 
     webgl_renderer.activate_program(program_id.unwrap())?;
 
     //enable texture
-    webgl_renderer.activate_texture_for_sampler(texture_id.unwrap(), "u_sampler")?;
+    webgl_renderer.activate_texture_for_sampler(diffuse_texture_id.unwrap(), "u_diffuse_sampler")?;
+    webgl_renderer.activate_texture_for_sampler(lut_texture_id.unwrap(), "u_lut_sampler")?;
 
     //Build our matrices (must cast to f32)
     let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(area.width as f32, area.height as f32, 0.0f32));
@@ -146,10 +201,31 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     webgl_renderer.upload_uniform_mat_4("u_size", &scaling_mat.as_slice())?;
     webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice())?;
 
+    //set uniform for toggle
+    webgl_renderer.upload_uniform_uval("u_lut_enabled", *lut_enabled as u32)?;
+
     //draw!
     webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
     webgl_renderer.draw_arrays(BeginMode::TriangleStrip, 0, 4);
 
 
     Ok(())
+}
+
+
+fn create_button(lut_enabled: bool, document:&Document, container:&HtmlElement) -> Result<HtmlElement, JsValue> {
+
+    let item: HtmlElement = document.create_element("div")?.dyn_into()?;
+    item.set_class_name("button demo-button");
+    set_button_label(&item, lut_enabled);
+    container.append_child(&item)?;
+    Ok(item)
+}
+
+fn set_button_label(button:&HtmlElement, lut_enabled: bool) {
+    if lut_enabled {
+        button.set_text_content(Some("DISABLE"));
+    } else {
+        button.set_text_content(Some("ENABLE"));
+    }
 }

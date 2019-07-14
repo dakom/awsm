@@ -2,12 +2,11 @@ use std::collections::hash_map::Entry;
 use web_sys::{WebGlProgram, WebGlShader, WebGlUniformLocation};
 use wasm_bindgen::prelude::JsValue;
 use crate::errors::{Error, NativeError};
-use crate::helpers::{clone_to_vec_u32};
+use crate::data::{clone_to_vec_u32, clone_to_vec_f32};
 use super::id::{Id};
 use super::{WebGlCommon, WebGlRenderer, ShaderQuery, ProgramQuery, ShaderType, GlQuery, UniformBlockQuery, UniformBlockActiveQuery};
 use log::{info};
 use web_sys::{WebGlRenderingContext,WebGl2RenderingContext, WebGlActiveInfo};
-use crate::helpers::{clone_to_vec_f32};
 use rustc_hash::{FxHashMap};
 
 pub struct ProgramInfo {

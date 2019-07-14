@@ -490,7 +490,7 @@ impl WebGlRenderer<WebGl2RenderingContext> {
         self.gl.awsm_uniform2ui(&loc, data.0, data.1);
         Ok(())
     }
-    pub fn upload_uniform_uvals(&self, target_name:&str, data:u32) -> Result<(), Error> {
+    pub fn upload_uniform_uval(&self, target_name:&str, data:u32) -> Result<(), Error> {
         let loc = self.get_uniform_location_value(&target_name)?;
         self.gl.awsm_uniform1ui(&loc, data);
         Ok(())

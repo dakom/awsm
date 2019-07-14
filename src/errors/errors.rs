@@ -41,6 +41,10 @@ pub enum NativeError {
     VertexArrayCreate,
     JsValueExpectedBool,
     JsValueExpectedNumber,
+    WebGl1TextureArray2d,
+    WebGl1Texture3d,
+    WebGl1TextureOffsetNonZero,
+    NoTextureTarget,
     Internal
 }
 
@@ -106,8 +110,12 @@ impl NativeError {
             NativeError::UniformBufferOffsetMissing(_optional_name) => "uniform buffer offset is missing",
             NativeError::UniformBufferTarget => "buffer target must be UniformBuffer for uniform buffers",
             NativeError::WebGlBufferSourceOneNonZero => "webgl 1 only supports sub buffer uploads from 0",
+            NativeError::WebGl1TextureOffsetNonZero => "webgl 1 only supports texture uploads from offset 0",
+            NativeError::WebGl1TextureArray2d => "webgl 1 doesn't support 2d texture arrays",
+            NativeError::WebGl1Texture3d => "webgl 1 doesn't support 3d textures",
             NativeError::JsValueExpectedBool => "expected jsvalue to be a bool",
             NativeError::JsValueExpectedNumber => "expected jsvalue to be a number",
+            NativeError::NoTextureTarget => "texture target must be known (call assign before activate)",
             NativeError::Internal => "internal error",
         }
     }

@@ -1,4 +1,4 @@
-use awsm::webgl::{Id, ClearBufferMask, SimpleTextureOptions, WebGlTextureSource, PixelFormat, BeginMode};
+use awsm::webgl::{Id, ClearBufferMask, TextureTarget, SimpleTextureOptions, WebGlTextureSource, PixelFormat, BeginMode};
 use crate::{WebGlRenderer};
 use awsm::loaders::{fetch};
 use crate::router::{get_static_href};
@@ -90,6 +90,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
         webgl_renderer.assign_simple_texture(
             texture_id, 
+            TextureTarget::Texture2d,
             &SimpleTextureOptions{
                 pixel_format: PixelFormat::Rgba,
                 ..SimpleTextureOptions::default()

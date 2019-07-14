@@ -47,12 +47,40 @@ pub enum BeginMode {
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
+//All of them - even though we have API's to use some separately too
+//For example awsm_texture_set_wrap(), awsm_texture_set_mag_filter() &
+//awsm_texture_set_min_filter()
 pub enum TextureParameterName {
-    TextureMagFilter = 0x2800,
-    TextureMinFilter = 0x2801,
-    TextureWrapS                 = 0x2802,
-    TextureWrapT                 = 0x2803,
+    MagFilter = 0x2800,
+    MinFilter = 0x2801,
+    WrapS = 0x2802,
+    WrapT = 0x2803,
+    WrapR = 0x8072,
+    MinLod = 0x813A,
+    MaxLod = 0x813B,
+    BaseLevel = 0x813C,
+    MaxLevel = 0x813D,
+    CompareMode = 0x884C,
+    CompareFunc = 0x884D,
 }
+
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum TextureWrapTarget {
+    S = 0x2802,
+    T = 0x2803,
+    R = 0x8072,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum TextureWrapMode {
+    Repeat= 0x2901,
+    ClampToEdge= 0x812F,
+    MirroredRepeat= 0x8370,
+}
+
 
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -77,18 +105,31 @@ pub enum TextureMinFilter {
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureTarget {
-    Texture2D                     = 0x0DE1,
+    Texture2d = 0x0DE1,
+    Texture3d = 0x806F,
+    Array2d= 0x8C1A,
+    CubeMap= 0x8513,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum TextureCubeFace {
+    PositiveX    = 0x8515,
+    NegativeX    = 0x8516,
+    PositiveY    = 0x8517,
+    NegativeY    = 0x8518,
+    PositiveZ    = 0x8519,
+    NegativeZ    = 0x851A,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(u32)]
+pub enum TextureQuery {
+    //Not actually totally sure that these are queries - but looks like it?
+    Array2d = 0x8C1D,
     Texture = 0x1702,
-
-    TextureCubeMap= 0x8513,
-    TextureBindingCubeMap= 0x8514,
-    TextureCubeMapPositiveX    = 0x8515,
-    TextureCubeMapNegativeX    = 0x8516,
-
-    TextureCubeMapPositiveY    = 0x8517,
-    TextureCubeMapNegativeY    = 0x8518,
-    TextureCubeMapPositiveZ    = 0x8519,
-    TextureCubeMapNegativeZ    = 0x851A,
+    Binding3d = 0x806A,
+    BindingCubeMap= 0x8514,
     MaxCubeTextureSize = 0x851C,
 }
 
@@ -130,23 +171,51 @@ pub enum TextureUnit {
     ActiveTexture                 = 0x84E0,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
-#[repr(u32)]
-pub enum TextureWrapMode {
-    Repeat= 0x2901,
-    ClampToEdge= 0x812F,
-    MirroredRepeat= 0x8370,
-}
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum PixelFormat {
-    DepthComponent = 0x1902,
+    //WebGL1 and 2
     Alpha = 0x1906,
     Rgb = 0x1907,
     Rgba = 0x1908,
     Luminance = 0x1909,
-    LuminanceAlpha = 0x190A
+    LuminanceAlpha = 0x190A,
+
+    //When using the WEBGL_depth_texture extension
+    DepthComponent = 0x1902,
+    DepthStencil = 0x84F9,
+
+    //When using the SRGB extension
+    //SrgbExt = 0x8C40, //- same as Srgb for webgl2
+    SrgbAlphaExt = 0x8C42,
+
+    //WebGL2 only
+    R8 = 0x8229,
+    Rg8 = 0x822B,
+    R16f = 0x822D,
+    R32f = 0x822E,
+    RG16f = 0x822F,
+    RG32f = 0x8230,
+    R8i = 0x8231,
+    R8ui = 0x8232,
+    R16i = 0x8233,
+    R16ui = 0x8234,
+    R32i = 0x8235,
+    R32ui = 0x8236,
+    RG8i = 0x8237,
+    RG8ui = 0x8238,
+    RG16i = 0x8239,
+    RG16ui = 0x823A,
+    RG32i = 0x823B,
+    RG32ui = 0x823C,
+    Srgb = 0x8C40,
+    Srgb8 = 0x8C41,
+    Srgb8Alpha8 = 0x8C43,
+    Rgba32f = 0x8814,
+    Rgb32f = 0x8815,
+    Rgba16f = 0x881A,
+    Rgb16f = 0x881B,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -299,6 +368,9 @@ pub enum UniformDataType {
     UnsignedIntSampler3d = 0x8DD3,
     UnsignedIntSamplerCube = 0x8DD4,
     UnsignedIntSampler2dArray= 0x8DD7,
+
+    //WEBGL_depth_texture extension
+    UnsignedInt_24_8 = 0x84FA,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]

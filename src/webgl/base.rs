@@ -1,10 +1,10 @@
 use crate::errors::{Error};
-use crate::helpers::{clone_to_vec_f32};
+use crate::data::{clone_to_vec_f32};
 use std::cell::Cell;
 use beach_map::{BeachMap, DefaultVersion};
 use wasm_bindgen::prelude::{JsValue};
 use web_sys::{WebGlVertexArrayObject, HtmlCanvasElement, WebGlTexture, WebGlBuffer};
-use super::{Id, TextureSamplerInfo, BufferTarget, ProgramInfo, WebGlCommon, WebGlContextOptions, GlQuery, get_webgl_context_1, get_webgl_context_2};
+use super::{Id, TextureTarget, TextureInfo, BufferTarget, ProgramInfo, WebGlCommon, WebGlContextOptions, GlQuery, get_webgl_context_1, get_webgl_context_2};
 use super::funcs::{FuncSettings};
 use super::toggles::{ToggleFlags};
 use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
@@ -40,9 +40,8 @@ pub struct WebGlRenderer <T: WebGlCommon> {
     pub(super) buffer_lookup: BeachMap<DefaultVersion, WebGlBuffer>, 
 
     pub(super) current_texture_id: Option<Id>,
-    pub(super) current_texture_slot: Option<u32>,
-    pub(super) texture_lookup: BeachMap<DefaultVersion, WebGlTexture>,
-    pub(super) texture_sampler_lookup: Vec<Option<TextureSamplerInfo>>,
+    pub(super) texture_lookup: BeachMap<DefaultVersion, TextureInfo>,
+    pub(super) texture_sampler_lookup: Vec<Option<Id>>,
 
     pub(super) extension_lookup: FxHashMap<String, js_sys::Object>,
 
@@ -91,7 +90,6 @@ impl <T: WebGlCommon> WebGlRenderer <T> {
                 buffer_lookup: BeachMap::default(),
 
                 current_texture_id: None, 
-                current_texture_slot: None,
                 texture_lookup: BeachMap::default(),
                 texture_sampler_lookup,
 

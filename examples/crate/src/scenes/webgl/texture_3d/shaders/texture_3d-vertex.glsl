@@ -1,8 +1,9 @@
+#version 300 es
 precision mediump float;
 
-attribute vec2 a_vertex;
+in vec2 a_vertex;
 
-varying vec2 v_uv;
+out vec2 v_uv;
 
 uniform mat4 u_modelViewProjection;
 uniform mat4 u_size;

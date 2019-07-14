@@ -107,7 +107,6 @@ impl Future for Image {
                 } else if let Some(_) = success_state {
                     Poll::Ready(Ok(self.img.as_ref().unwrap().clone()))
                 } else {
-                    info!("polling...");
                     if !is_cancelled {
                         //ctx.waker().wake_by_ref();
                     }

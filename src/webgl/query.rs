@@ -1,6 +1,6 @@
 use super::enums::{GlQuery};
 use crate::errors::{Error};
-use crate::helpers::{clone_to_vec_f32};
+use crate::data::{clone_to_vec_f32};
 use wasm_bindgen::prelude::{JsValue};
 use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
 

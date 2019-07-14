@@ -6,4 +6,4 @@ pub mod webgl;
 pub mod window;
 pub mod errors;
 pub mod canvas;
-pub mod helpers;
+pub mod data;

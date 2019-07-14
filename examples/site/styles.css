@@ -77,12 +77,17 @@ ul {
 }
 
 /* demo pages */
-.demo-links{
+.demo-controls, .demo-links{
     z-index: 1;
     display: flex;
     flex-direction: row;
     position: absolute;
     top: 0px;
+}
+.demo-controls {
+    left: 0px;
+}
+.demo-links {
     right: 0px;
 }
 .source, .home {
@@ -108,3 +113,4 @@ ul {
     left: calc(50vw - 100px);
     background-color: #BF5017;
 }
+

@@ -1,6 +1,8 @@
 # Copyright: (C) Copyright 2016 by IWLTBAP
 # Cannot be resold, shared or otherwise redistributed
 # Website: http://luts.iwltbap.com
+# Used here with explicit permission from the author
+
 TITLE "IWLTBAP Sedona (Rec.709)"
 
 LUT_3D_SIZE 32
