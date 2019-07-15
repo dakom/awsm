@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::JsValue;
 use js_sys::{Object};
 use crate::errors::{Error, NativeError};
 use crate::data::{TypedData};
-use super::{Id, TextureWrapTarget, TextureWrapMode, WebGlCommon, WebGlRenderer, TextureUnit, TextureParameterName, TextureMinFilter, TextureMagFilter, TextureTarget, PixelFormat, DataType, WebGlSpecific};
+use super::{Id, TextureCubeFace, TextureWrapTarget, TextureWrapMode, WebGlCommon, WebGlRenderer, TextureUnit, TextureParameterName, TextureMinFilter, TextureMagFilter, TextureTarget, PixelFormat, DataType, WebGlSpecific};
 use std::marker::PhantomData;
 use log::{info};
 
@@ -29,6 +29,7 @@ pub struct SimpleTextureOptions {
     pub filter_mag: Option<TextureMagFilter>,
     pub pixel_format: PixelFormat,
     pub data_type: DataType,
+    pub cube_face: Option<TextureCubeFace>,
 }
 
 impl Default for SimpleTextureOptions {
@@ -43,6 +44,7 @@ impl Default for SimpleTextureOptions {
             filter_mag: Some(TextureMagFilter::Linear),
             pixel_format: PixelFormat::Rgb,
             data_type: DataType::UnsignedByte,
+            cube_face: None,
         }
     }
 }
@@ -51,6 +53,7 @@ pub struct TextureOptions {
     pub internal_format: PixelFormat, 
     pub data_format: PixelFormat,
     pub data_type: DataType,
+    pub cube_face: Option<TextureCubeFace>,
 }
 
 pub trait PartialWebGlTextures {
@@ -90,9 +93,11 @@ macro_rules! impl_context {
             fn awsm_texture_set_min_filter(&self, bind_target: TextureTarget, filter: TextureMinFilter) {
                 self.tex_parameteri(bind_target as u32, TextureParameterName::MinFilter as u32, filter as i32); 
             }
+
             fn awsm_texture_set_mag_filter(&self, bind_target: TextureTarget, filter: TextureMagFilter) {
                 self.tex_parameteri(bind_target as u32, TextureParameterName::MagFilter as u32, filter as i32); 
             }
+
             fn awsm_assign_simple_texture(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
 
                 let set_parameters = Some(|_:&$type| {
@@ -202,6 +207,8 @@ impl_context!{
             let data_type = opts.data_type as u32;
 
             let bind_u32 = bind_target as u32;
+            let cube_face_u32 = get_cube_face_u32(bind_target, opts.cube_face)?;
+
             match src {
                 WebGlTextureSource::ArrayBufferView(buffer_view, width, height, depth) => {
                     match bind_target {
@@ -225,7 +232,17 @@ impl_context!{
                             Err(Error::from(NativeError::WebGl1TextureArray2d))
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                *width as i32,
+                                *height as i32,
+                                0,
+                                data_format,
+                                data_type,
+                                Some(buffer_view)
+                                ).map_err(|err| err.into())
                         }
                     }
                 },
@@ -248,7 +265,14 @@ impl_context!{
                             Err(Error::from(NativeError::WebGl1TextureArray2d))
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_u32_and_u32_and_image_bitmap(
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
+                                bmp
+                                ).map_err(|err| err.into())
                         }
                     }
                 },
@@ -271,14 +295,28 @@ impl_context!{
                             Err(Error::from(NativeError::WebGl1TextureArray2d))
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_u32_and_u32_and_image_data(
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
+                                data
+                                ).map_err(|err| err.into())
                         }
                     }
                 },
                 WebGlTextureSource::ImageElement(img) => {
                     match bind_target {
                         TextureTarget::Texture2d => {
-                            self.tex_image_2d_with_u32_and_u32_and_image(bind_u32, mip_level, internal_format, data_format, data_type, img).map_err(|err| err.into())
+                            self.tex_image_2d_with_u32_and_u32_and_image(
+                                bind_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                img
+                            ).map_err(|err| err.into())
                         },
                         TextureTarget::Texture3d => {
                             Err(Error::from(NativeError::WebGl1Texture3d))
@@ -287,14 +325,28 @@ impl_context!{
                             Err(Error::from(NativeError::WebGl1TextureArray2d))
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_u32_and_u32_and_image(
+                                cube_face_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                img
+                            ).map_err(|err| err.into())
                         }
                     }
                 },
                 WebGlTextureSource::CanvasElement(canvas) => {
                     match bind_target {
                         TextureTarget::Texture2d => {
-                            self.tex_image_2d_with_u32_and_u32_and_canvas(bind_u32, mip_level, internal_format, data_format, data_type, canvas).map_err(|err| err.into())
+                            self.tex_image_2d_with_u32_and_u32_and_canvas(
+                                bind_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                canvas
+                            ).map_err(|err| err.into())
                         },
                         TextureTarget::Texture3d => {
                             Err(Error::from(NativeError::WebGl1Texture3d))
@@ -303,14 +355,28 @@ impl_context!{
                             Err(Error::from(NativeError::WebGl1TextureArray2d))
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_u32_and_u32_and_canvas(
+                                cube_face_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                canvas
+                            ).map_err(|err| err.into())
                         }
                     }
                 },
                 WebGlTextureSource::VideoElement(video) => {
                     match bind_target {
                         TextureTarget::Texture2d => {
-                            self.tex_image_2d_with_u32_and_u32_and_video(bind_u32, mip_level, internal_format, data_format, data_type, video).map_err(|err| err.into())
+                            self.tex_image_2d_with_u32_and_u32_and_video(
+                                bind_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                video
+                            ).map_err(|err| err.into())
                         },
                         TextureTarget::Texture3d => {
                             Err(Error::from(NativeError::WebGl1Texture3d))
@@ -319,7 +385,14 @@ impl_context!{
                             Err(Error::from(NativeError::WebGl1TextureArray2d))
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_u32_and_u32_and_video(
+                                cube_face_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                video
+                            ).map_err(|err| err.into())
                         }
                     }
                 },
@@ -337,6 +410,8 @@ impl_context!{
             let data_type = opts.data_type as u32;
 
             let bind_u32 = bind_target as u32;
+            let cube_face_u32 = get_cube_face_u32(bind_target, opts.cube_face)?;
+
             match src {
                 WebGlTextureSource::ArrayBufferView(buffer_view, width, height, depth) => {
                     match bind_target {
@@ -371,7 +446,17 @@ impl_context!{
                             Err("TODO".into())
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                *width as i32,
+                                *height as i32,
+                                0,
+                                data_format,
+                                data_type,
+                                Some(buffer_view)
+                                ).map_err(|err| err.into())
                         }
                     }
                 },
@@ -394,7 +479,14 @@ impl_context!{
                             Err("TODO".into())
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_u32_and_u32_and_image_bitmap(
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
+                                bmp
+                                ).map_err(|err| err.into())
                         }
                     }
                 },
@@ -417,14 +509,28 @@ impl_context!{
                             Err("TODO".into())
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_u32_and_u32_and_image_data(
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
+                                data
+                                ).map_err(|err| err.into())
                         }
                     }
                 },
                 WebGlTextureSource::ImageElement(img) => {
                     match bind_target {
                         TextureTarget::Texture2d => {
-                            self.tex_image_2d_with_u32_and_u32_and_html_image_element(bind_u32, mip_level, internal_format, data_format, data_type, img).map_err(|err| err.into())
+                            self.tex_image_2d_with_u32_and_u32_and_html_image_element(
+                                bind_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                img
+                            ).map_err(|err| err.into())
                         },
                         TextureTarget::Texture3d => {
                             Err("TODO".into())
@@ -433,15 +539,28 @@ impl_context!{
                             Err("TODO".into())
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_u32_and_u32_and_html_image_element(
+                                cube_face_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                img
+                            ).map_err(|err| err.into())
                         }
                     }
                 },
                 WebGlTextureSource::CanvasElement(canvas) => {
                     match bind_target {
                         TextureTarget::Texture2d => {
-                            self.tex_image_2d_with_u32_and_u32_and_html_canvas_element(bind_u32, mip_level, internal_format, data_format, data_type, canvas).map_err(|err| err.into())
-
+                            self.tex_image_2d_with_u32_and_u32_and_html_canvas_element(
+                                bind_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                canvas
+                            ).map_err(|err| err.into())
                         },
                         TextureTarget::Texture3d => {
                             Err("TODO".into())
@@ -450,14 +569,28 @@ impl_context!{
                             Err("TODO".into())
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_u32_and_u32_and_html_canvas_element(
+                                cube_face_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                canvas
+                            ).map_err(|err| err.into())
                         }
                     }
                 },
                 WebGlTextureSource::VideoElement(video) => {
                     match bind_target {
                         TextureTarget::Texture2d => {
-                            self.tex_image_2d_with_u32_and_u32_and_html_video_element(bind_u32, mip_level, internal_format, data_format, data_type, video).map_err(|err| err.into())
+                            self.tex_image_2d_with_u32_and_u32_and_html_video_element(
+                                bind_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                video
+                            ).map_err(|err| err.into())
 
                         },
                         TextureTarget::Texture3d => {
@@ -467,7 +600,14 @@ impl_context!{
                             Err("TODO".into())
                         },
                         TextureTarget::CubeMap => {
-                            Err("TODO".into())
+                            self.tex_image_2d_with_u32_and_u32_and_html_video_element(
+                                cube_face_u32, 
+                                mip_level, 
+                                internal_format, 
+                                data_format, 
+                                data_type, 
+                                video
+                            ).map_err(|err| err.into())
                         }
                     }
                 },
@@ -514,6 +654,7 @@ fn get_texture_options_from_simple(opts:&SimpleTextureOptions) -> TextureOptions
         internal_format: opts.pixel_format,
         data_format: opts.pixel_format,
         data_type: opts.data_type,
+        cube_face: opts.cube_face,
     }
 }
 
@@ -622,5 +763,24 @@ impl <G: WebGlCommon> WebGlRenderer<G> {
         }
 
         Ok(())
+    }
+}
+
+fn get_cube_face_u32(bind_target:TextureTarget, cube_face:Option<TextureCubeFace>) -> Result<u32, Error> {
+    match cube_face {
+        Some(cube_face) => {
+            if bind_target != TextureTarget::CubeMap {
+                Err(Error::from(NativeError::TextureCubeFaceNotCube))
+            } else {
+                Ok(cube_face as u32)
+            }
+        },
+        None => {
+            if bind_target == TextureTarget::CubeMap {
+                Err(Error::from(NativeError::TextureMissingCubeFace))
+            } else {
+                Ok(0u32)
+            }
+        }
     }
 }

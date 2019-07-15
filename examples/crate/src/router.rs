@@ -73,6 +73,9 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
         "webgl-vaos" => {
             webgl::vaos::start(window, document, body)
         },
+        "webgl-texture_cube" => {
+            webgl::texture_cube::start(window, document, body)
+        },
         "webgl-ubos" => {
             start_additional_menu(&pathname, window, document, body)
         },

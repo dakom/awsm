@@ -113,6 +113,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                 internal_format: PixelFormat::Rgb32f,
                 data_format: PixelFormat::Rgb,
                 data_type: DataType::Float,
+                cube_face: None,
             },
             Some(|gl:&WebGl2RenderingContext| {
 

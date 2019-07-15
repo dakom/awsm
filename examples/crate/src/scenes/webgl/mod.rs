@@ -6,6 +6,7 @@ pub mod blending;
 pub mod instancing;
 pub mod vaos;
 pub mod elements;
+pub mod texture_cube;
 
 #[cfg(feature = "webgl_2")]
 pub mod ubos;

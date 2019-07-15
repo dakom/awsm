@@ -44,6 +44,8 @@ pub enum NativeError {
     WebGl1TextureArray2d,
     WebGl1Texture3d,
     WebGl1TextureOffsetNonZero,
+    TextureCubeFaceNotCube,
+    TextureMissingCubeFace,
     NoTextureTarget,
     Internal
 }
@@ -116,6 +118,8 @@ impl NativeError {
             NativeError::JsValueExpectedBool => "expected jsvalue to be a bool",
             NativeError::JsValueExpectedNumber => "expected jsvalue to be a number",
             NativeError::NoTextureTarget => "texture target must be known (call assign before activate)",
+            NativeError::TextureCubeFaceNotCube => "texture cube face is set but not cube target",
+            NativeError::TextureMissingCubeFace => "texture cube face missing for cube target",
             NativeError::Internal => "internal error",
         }
     }
