@@ -38,6 +38,17 @@ impl State {
     }
 
 }
+
+#[cfg(feature = "webgl_1")]
+fn register_extensions(webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
+    webgl_renderer.register_extension_vertex_array()
+        .map_err(|err| err.into())
+        .map(|_| ())
+}
+#[cfg(feature = "webgl_2")]
+fn register_extensions(_webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
+    Ok(())
+}
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
 
     let state = Rc::new(RefCell::new(State::new()));
@@ -56,6 +67,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     let webgl_renderer_clone = Rc::clone(&webgl_renderer);
 
     let mut webgl_renderer = webgl_renderer.borrow_mut();
+
+    register_extensions(&mut webgl_renderer)?;
 
     let program_id = webgl_renderer.compile_program(
         include_str!("shaders/texture_cube-vertex.glsl"),
