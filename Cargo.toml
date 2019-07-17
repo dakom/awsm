@@ -42,6 +42,7 @@ features = [
     'Element',
     'Window',
     'EventTarget',
+    'MouseEvent',
     'Location',
     'Url',
 
