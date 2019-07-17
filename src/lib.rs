@@ -7,3 +7,4 @@ pub mod window;
 pub mod errors;
 pub mod canvas;
 pub mod data;
+pub mod input;
