@@ -14,7 +14,8 @@ lazy_static! {
     pub static ref MENU_LOOKUP: HashMap<&'static str, Menu<'static>> = {
         let mut m = HashMap::new();
         //Tick
-        m.insert("clock", Menu {label: "Clock", source: "clock/clock.rs"});
+        m.insert("tick-raf", Menu {label: "rAF", source: "tick/raf.rs"});
+        m.insert("tick-mainloop", Menu {label: "Main Loop", source: "tick/mainloop.rs"});
         //Loaders
         m.insert("loaders-image", Menu {label: "Image", source: "loaders/image.rs"});
         m.insert("loaders-text", Menu {label: "Text", source: "loaders/text.rs"});
@@ -50,8 +51,9 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
 
     append_home_button(&container, &document)?;
 
-    append_menu(&container, &document, "Ticker", vec![
-      "clock" 
+    append_menu(&container, &document, "Tick Loop", vec![
+      "tick-raf",
+      "tick-mainloop" 
     ])?;
 
     append_menu(&container, &document, "Loaders", vec![

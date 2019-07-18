@@ -1,12 +1,10 @@
 use awsm::tick;
-use awsm::tick::{Timestamp};
+use awsm::tick::{MainLoop};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Window, Element, Document, HtmlElement};
 use std::rc::Rc;
 use std::cell::RefCell;
-
-const MAX:u64 = 10;
 
 pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
 
@@ -21,12 +19,23 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
     let info: web_sys::HtmlElement = document.create_element("div")?.dyn_into()?;
     root.append_child(&info)?;
 
-    //Closure needs to take ownership since it occurs past the JS boundry and is 'static
-    //but we need to assign the value of cancel from outside the closure
-    let cancel:Rc<RefCell<Option<Box<dyn FnOnce() -> ()>>>> = Rc::new(RefCell::new(None));
 
-    let cancel_fn = tick::start_raf_ticker_timestamp({
-        let cancel = Rc::clone(&cancel);
+    let begin = move |time, delta| {
+    };
+
+    let update = move |delta| {
+    };
+
+    let draw = move |interpolation| {
+    };
+    let end = move |fps, abort| {
+    };
+    let mut main_loop = MainLoop::new(begin, update, draw, end);
+
+
+    main_loop.start();
+    /*
+    let cancel_fn = tick::start_main_loop({
         move |time_stamp| {
             let Timestamp {time, delta, elapsed} = time_stamp;
 
@@ -45,16 +54,10 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
             }
         }
     })?;
-   
-    *cancel.borrow_mut() = Some(Box::new(cancel_fn));
+  
+    std::mem::forget(Box::new(cancel_fn));
+    */
+
 
     Ok(())
-}
-
-fn get_remaining(elapsed:u64) -> u64 {
-    if MAX > elapsed {
-        MAX - elapsed
-    } else {
-        0
-    }
 }

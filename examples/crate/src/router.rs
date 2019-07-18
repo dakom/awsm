@@ -34,8 +34,11 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
             Ok(())
         },
 
-        "clock" => {
-            clock::start(window, document, body)
+        "tick-raf" => {
+            tick::raf::start(window, document, body)
+        },
+        "tick-mainloop" => {
+            tick::mainloop::start(window, document, body)
         },
 
         "loaders-image" => {

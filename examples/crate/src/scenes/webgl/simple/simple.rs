@@ -1,6 +1,6 @@
 use awsm::webgl::{Id, ClearBufferMask, BeginMode};
 use crate::{WebGlRenderer};
-use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
+use awsm::tick::{Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
@@ -60,7 +60,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     state.borrow_mut().program_id = Some(program_id);
     let _buffer_id = create_and_assign_unit_quad_buffer(&mut webgl_renderer)?;
 
-    let _ = start_raf_ticker_timestamp({
+    let _ = Timestamp::start_raf_loop({
         let state = Rc::clone(&state);
         move |timestamp:Timestamp| {
             let mut state = state.borrow_mut();

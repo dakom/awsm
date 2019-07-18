@@ -11,45 +11,51 @@ use log::{info};
 use crate::errors::{Error};
 use crate::window::{get_window};
 
+///Simple struct for time, deltatime, and elapsed time
 #[derive(Copy, Clone, Debug)]
 pub struct Timestamp {
+    /// the current time
     pub time: f64,
+    /// change in time since last tick
     pub delta: f64,
+    /// total elapsed time since loop started
     pub elapsed: f64,
 }
 
-/// similar to start_ticker but instead of a callback with the current time
-/// it uses a Timestamp struct which contains commonly useful info
-pub fn start_raf_ticker_timestamp<F>(mut on_tick:F) -> Result<impl (FnOnce() -> ()), Error> 
-where F: (FnMut(Timestamp) -> ()) + 'static
-{
-    let mut last_time:Option<f64> = None;
-    let mut first_time = 0f64;
+impl Timestamp {
+    /// similar to the top-level start_raf_loop() but instead of a callback with the current time
+    /// it provides a Timestamp struct which contains commonly useful info
+    pub fn start_raf_loop<F>(mut on_tick:F) -> Result<impl (FnOnce() -> ()), Error> 
+        where F: (FnMut(Timestamp) -> ()) + 'static
+        {
+        let mut last_time:Option<f64> = None;
+        let mut first_time = 0f64;
 
-    start_raf_ticker(move |time| {
-            match last_time {
-                Some(last_time) => {
-                    on_tick(Timestamp{
-                        time,
-                        delta: time - last_time,
-                        elapsed: time - first_time
-                    });
+        start_raf_loop(move |time| {
+                match last_time {
+                    Some(last_time) => {
+                        on_tick(Timestamp{
+                            time,
+                            delta: time - last_time,
+                            elapsed: time - first_time
+                        });
+                    }
+                    None => {
+                        on_tick(Timestamp{
+                            time,
+                            delta: 0.0, 
+                            elapsed: 0.0, 
+                        });
+                        first_time = time;
+                    }
                 }
-                None => {
-                    on_tick(Timestamp{
-                        time,
-                        delta: 0.0, 
-                        elapsed: 0.0, 
-                    });
-                    first_time = time;
-                }
-            }
-            last_time = Some(time);
-    })
+                last_time = Some(time);
+        })
+    }
 }
 
 /// Kick off a rAF loop. The returned function can be called to cancel it
-pub fn start_raf_ticker<F>(mut on_tick:F) -> Result<impl (FnOnce() -> ()), Error> 
+pub fn start_raf_loop<F>(mut on_tick:F) -> Result<impl (FnOnce() -> ()), Error> 
 where F: (FnMut(f64) -> ()) + 'static
 {
 
@@ -92,6 +98,6 @@ where F: (FnMut(f64) -> ()) + 'static
     Ok(cancel)
 }
 
-fn request_animation_frame(window:&Window, f: &Closure<dyn FnMut(f64) -> ()>) -> Result<i32, Error> {
+pub fn request_animation_frame(window:&Window, f: &Closure<dyn FnMut(f64) -> ()>) -> Result<i32, Error> {
     window.request_animation_frame(f.as_ref().unchecked_ref()).map_err(|e| e.into())
 }

@@ -5,7 +5,7 @@ use web_sys::{HtmlImageElement};
 use awsm::loaders::{fetch};
 use futures::future::{Future, join_all, try_join_all};
 use crate::router::{get_static_href};
-use awsm::tick::{start_raf_ticker_timestamp, Timestamp};
+use awsm::tick::{Timestamp};
 use std::rc::Rc; 
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
@@ -139,7 +139,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         )?;
         state.borrow_mut().vao_id = Some(vao_id);
 
-        let _cancel = start_raf_ticker_timestamp({
+        let _cancel = Timestamp::start_raf_loop({
             let state = Rc::clone(&state);
             let webgl_renderer_raf = Rc::clone(&webgl_renderer_clone);
             move |_timestamp:Timestamp| {
