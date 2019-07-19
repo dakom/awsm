@@ -1,5 +1,5 @@
 use awsm::webgl::{VertexArray, Id, GlToggle, BufferTarget, BufferUsage, BufferData, AttributeOptions, DataType, ClearBufferMask, BeginMode};
-use awsm::tick::{Timestamp};
+use awsm::tick::{Timestamp, start_timestamp_loop};
 use crate::{WebGlRenderer};
 use awsm::errors::{Error};
 use std::rc::Rc; 
@@ -123,7 +123,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     state_obj.vao_id = Some(vao_id);
 
-    let _ = Timestamp::start_raf_loop({
+    let _ = start_timestamp_loop({
         let state = Rc::clone(&state);
         move |_timestamp:Timestamp| {
             let state = state.borrow();

@@ -2,7 +2,7 @@ use awsm::webgl::{Id, ClearBufferMask, TextureTarget, SimpleTextureOptions, WebG
 use crate::{WebGlRenderer};
 use awsm::loaders::{fetch};
 use crate::router::{get_static_href};
-use awsm::tick::{Timestamp};
+use awsm::tick::{Timestamp, start_timestamp_loop};
 use std::rc::Rc; 
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
@@ -116,7 +116,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
             &WebGlTextureSource::ImageElement(&img_2)
         )?;
 
-        let _cancel = Timestamp::start_raf_loop({
+        let _cancel = start_timestamp_loop({
             let state = Rc::clone(&state);
             let webgl_renderer_raf = Rc::clone(&webgl_renderer_clone);
             move |_timestamp:Timestamp| {

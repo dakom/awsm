@@ -22,36 +22,35 @@ pub struct Timestamp {
     pub elapsed: f64,
 }
 
-impl Timestamp {
-    /// similar to the top-level start_raf_loop() but instead of a callback with the current time
-    /// it provides a Timestamp struct which contains commonly useful info
-    pub fn start_raf_loop<F>(mut on_tick:F) -> Result<impl (FnOnce() -> ()), Error> 
-        where F: (FnMut(Timestamp) -> ()) + 'static
-        {
-        let mut last_time:Option<f64> = None;
-        let mut first_time = 0f64;
 
-        start_raf_loop(move |time| {
-                match last_time {
-                    Some(last_time) => {
-                        on_tick(Timestamp{
-                            time,
-                            delta: time - last_time,
-                            elapsed: time - first_time
-                        });
-                    }
-                    None => {
-                        on_tick(Timestamp{
-                            time,
-                            delta: 0.0, 
-                            elapsed: 0.0, 
-                        });
-                        first_time = time;
-                    }
+/// similar to the top-level start_raf_loop() but instead of a callback with the current time
+/// it provides a Timestamp struct which contains commonly useful info
+pub fn start_timestamp_loop<F>(mut on_tick:F) -> Result<impl (FnOnce() -> ()), Error> 
+    where F: (FnMut(Timestamp) -> ()) + 'static
+    {
+    let mut last_time:Option<f64> = None;
+    let mut first_time = 0f64;
+
+    start_raf_loop(move |time| {
+            match last_time {
+                Some(last_time) => {
+                    on_tick(Timestamp{
+                        time,
+                        delta: time - last_time,
+                        elapsed: time - first_time
+                    });
                 }
-                last_time = Some(time);
-        })
-    }
+                None => {
+                    on_tick(Timestamp{
+                        time,
+                        delta: 0.0, 
+                        elapsed: 0.0, 
+                    });
+                    first_time = time;
+                }
+            }
+            last_time = Some(time);
+    })
 }
 
 /// Kick off a rAF loop. The returned function can be called to cancel it
@@ -83,21 +82,21 @@ where F: (FnMut(f64) -> ()) + 'static
                 //stopping tick loop
                 f.borrow_mut().take();
             } else {
-                on_tick(time);
                 raf_id = request_animation_frame(&window, f.borrow().as_ref().unwrap()).ok();
+                on_tick(time);
             }
         }) as Box<dyn FnMut(f64)-> ()>));
     }
 
     //this is just used to create the first invocation
     let window = get_window()?; 
-    request_animation_frame(&window, g.borrow().as_ref().unwrap())?;
+    raf_id = request_animation_frame(&window, g.borrow().as_ref().unwrap()).ok();
    
     let cancel = move || keep_alive.set(false);
 
     Ok(cancel)
 }
 
-pub fn request_animation_frame(window:&Window, f: &Closure<dyn FnMut(f64) -> ()>) -> Result<i32, Error> {
+fn request_animation_frame(window:&Window, f: &Closure<dyn FnMut(f64) -> ()>) -> Result<i32, Error> {
     window.request_animation_frame(f.as_ref().unchecked_ref()).map_err(|e| e.into())
 }

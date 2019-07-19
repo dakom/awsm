@@ -1,5 +1,5 @@
 use awsm::tick;
-use awsm::tick::{Timestamp};
+use awsm::tick::{Timestamp, start_timestamp_loop};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Window, Element, Document, HtmlElement};
@@ -25,7 +25,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
     //but we need to assign the value of cancel from outside the closure
     let cancel:Rc<RefCell<Option<Box<dyn FnOnce() -> ()>>>> = Rc::new(RefCell::new(None));
 
-    let cancel_fn = tick::Timestamp::start_raf_loop({
+    let cancel_fn = tick::start_timestamp_loop({
         let cancel = Rc::clone(&cancel);
         move |time_stamp| {
             let Timestamp {time, delta, elapsed} = time_stamp;
