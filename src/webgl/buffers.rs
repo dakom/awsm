@@ -129,7 +129,6 @@ impl<T: AsRef<[U]>, U> BufferData<T, U> {
 
 pub trait BufferDataImpl {
     fn upload_buffer<G: PartialWebGlBuffer>(&self, gl:&G);
-    fn upload_buffer_sub<G: PartialWebGlBuffer>(&self, gl:&G, dest_byte_offset:u32, src_offset:u32, length: u32) -> Result<(), Error>;
     fn get_target(&self) -> BufferTarget;
     fn get_usage(&self) -> BufferUsage;
 }
@@ -140,9 +139,6 @@ impl <T: AsRef<[f32]>> BufferDataImpl for BufferData<T, f32> {
         gl.awsm_upload_buffer_vf32(self.target, self.usage, &self.values)
     }
 
-    fn upload_buffer_sub<G: PartialWebGlBuffer>(&self, gl:&G, dest_byte_offset:u32, src_offset:u32, length:u32) -> Result<(), Error> {
-        gl.awsm_upload_buffer_vf32_sub(self.target, dest_byte_offset, src_offset, length, &self.values)
-    }
     fn get_target(&self) -> BufferTarget {
         self.target
     }
@@ -158,15 +154,67 @@ impl <T: AsRef<[u8]>> BufferDataImpl for BufferData<T, u8> {
         gl.awsm_upload_buffer_vu8(self.target, self.usage, &self.values)
     }
 
-    fn upload_buffer_sub<G: PartialWebGlBuffer>(&self, gl:&G, dest_byte_offset:u32, src_offset:u32, length:u32) -> Result<(), Error> {
-        gl.awsm_upload_buffer_vu8_sub(self.target, dest_byte_offset, src_offset, length, &self.values)
-    }
-
     fn get_target(&self) -> BufferTarget {
         self.target
     }
     fn get_usage(&self) -> BufferUsage {
         self.usage
+    }
+}
+
+///Buffer Sub Data
+///
+///offset and length are element amounts in the source data
+///
+///rust slices are just cheap pointers - no real benefit to specifying offset and length
+///so the default is 0 for offset and length is calculated from the slice
+///WebGl1 only supports a src_offset of 0
+pub struct BufferSubData<T, U>{
+    values: T, 
+    target: BufferTarget,
+    offset: u32,
+    length: u32,
+    phantom: PhantomData<U>
+}
+
+impl<T: AsRef<[U]>, U> BufferSubData<T, U> {
+    pub fn new(values: T, target:BufferTarget) -> Self {
+        let length = values.as_ref().len() as u32;
+
+        Self {
+            values, 
+            target,
+            offset: 0,
+            length,
+            phantom: PhantomData
+        }
+    }
+}
+
+pub trait BufferSubDataImpl {
+    ///dest_byte_offset is the byte offset (e.g. 4 for floats)
+    fn upload_buffer<G: PartialWebGlBuffer>(&self, gl:&G, dest_byte_offset:u32) -> Result<(), Error>;
+    fn get_target(&self) -> BufferTarget;
+}
+
+//see example: https://github.com/rustwasm/wasm-bindgen/blob/master/examples/webgl/src/lib.rs#L42
+impl <T: AsRef<[f32]>> BufferSubDataImpl for BufferSubData<T, f32> {
+    fn upload_buffer<G: PartialWebGlBuffer>(&self, gl:&G, dest_byte_offset:u32) -> Result<(), Error> {
+        gl.awsm_upload_buffer_vf32_sub(self.target, dest_byte_offset, self.offset, self.length, &self.values)
+    }
+    fn get_target(&self) -> BufferTarget {
+        self.target
+    }
+}
+
+
+impl <T: AsRef<[u8]>> BufferSubDataImpl for BufferSubData<T, u8> {
+    fn upload_buffer<G: PartialWebGlBuffer>(&self, gl:&G, dest_byte_offset:u32) -> Result<(), Error> {
+        gl.awsm_upload_buffer_vu8_sub(self.target, dest_byte_offset, self.offset, self.length, &self.values)
+    }
+
+    fn get_target(&self) -> BufferTarget {
+        self.target
     }
 }
 
@@ -218,17 +266,9 @@ impl <T: WebGlCommon> WebGlRenderer<T> {
         Ok(())
     }
 
-    
-    //note - dest_byte_offset are the BYTE offset (e.g. 4 for floats)
-    //src_offset and length are element amounts
-    //example: 4,1,1 will update the second float in the buffer (i.e. 4 bytes in)
-    //from the second float in the source (i.e. 1 element in) and just be one float (i.e. 1
-    //element)
-    //
-    //WebGl1 only supports a src_offset of 0
-    pub fn upload_buffer_sub<B: BufferDataImpl>(&self, id:Id, dest_byte_offset:u32, src_offset:u32, length:u32, data:B) -> Result<(), Error> {
+    pub fn upload_buffer_sub<B: BufferSubDataImpl>(&self, id:Id, dest_byte_offset:u32, data:B) -> Result<(), Error> {
         self.bind_buffer(id, data.get_target())?;
-        data.upload_buffer_sub(&self.gl, dest_byte_offset, src_offset, length)
+        data.upload_buffer(&self.gl, dest_byte_offset)
     }
 }
 

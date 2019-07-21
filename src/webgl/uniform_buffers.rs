@@ -1,5 +1,5 @@
 use crate::errors::{Error, NativeError};
-use super::{WebGlCommon, WebGlRenderer, Id, BufferData, BufferTarget, BufferUsage};
+use super::{WebGlCommon, WebGlRenderer, Id, BufferData, BufferDataImpl, BufferSubDataImpl, BufferSubData, BufferTarget, BufferUsage};
 use web_sys::{WebGl2RenderingContext};
 
 impl WebGlRenderer<WebGl2RenderingContext> {
@@ -46,37 +46,46 @@ impl WebGlRenderer<WebGl2RenderingContext> {
         let loc = self.get_uniform_buffer_loc(&name)?;
         self.bind_buffer_base(id, loc, BufferTarget::UniformBuffer)
     }
-    pub fn upload_buffer_to_uniform_buffer_f32(&self, name:&str, id:Id, values:&[f32], buffer_usage:BufferUsage) -> Result<(), Error> {
 
-        let buffer_data = BufferData::new(values, BufferTarget::UniformBuffer, buffer_usage);
-        self.upload_buffer(id, buffer_data)?;
-        self.activate_uniform_buffer(id, name)
+    ///upload buffer data and set to uniform buffer
+    pub fn upload_buffer_to_uniform_buffer<B: BufferDataImpl>(&self, name:&str, id:Id, buffer_data:B) -> Result<(), Error> {
+        match buffer_data.get_target() {
+            BufferTarget::UniformBuffer => {
+                self.upload_buffer(id, buffer_data)?;
+                self.activate_uniform_buffer(id, name)
+            },
+            _ => Err(Error::from(NativeError::UniformBufferTarget))
+        }
+    }
+
+    ///upload buffer data from sub slice and set to uniform buffer
+    pub fn upload_buffer_sub_to_uniform_buffer<B: BufferSubDataImpl>(&self, uniform_name:&str, block_name:&str, id:Id, buffer_data:B) -> Result<(), Error> {
+        match buffer_data.get_target() {
+            BufferTarget::UniformBuffer => {
+                let dest_byte_offset = self.get_uniform_block_offset(uniform_name, block_name)?;
+                self.upload_buffer_sub(id, dest_byte_offset, buffer_data)?;
+                self.activate_uniform_buffer(id, block_name)
+            },
+            _ => Err(Error::from(NativeError::UniformBufferTarget))
+        }
+    }
+    ///convenience function
+    pub fn upload_buffer_to_uniform_buffer_f32(&self, name:&str, id:Id, values:&[f32], buffer_usage:BufferUsage) -> Result<(), Error> {
+        self.upload_buffer_to_uniform_buffer(name, id, BufferData::new(values, BufferTarget::UniformBuffer, buffer_usage))
     }
     
+    ///convenience function
     pub fn upload_buffer_to_uniform_buffer_u8(&self, name:&str, id:Id, values:&[u8], buffer_usage:BufferUsage) -> Result<(), Error> {
-
-        let buffer_data = BufferData::new(values, BufferTarget::UniformBuffer, buffer_usage);
-        self.upload_buffer(id, buffer_data)?;
-        self.activate_uniform_buffer(id, name)
+        self.upload_buffer_to_uniform_buffer(name, id, BufferData::new(values, BufferTarget::UniformBuffer, buffer_usage))
     }
 
 
-    pub fn upload_sub_buffer_to_uniform_buffer_f32(&self, uniform_name:&str, block_name:&str, id:Id, values:&[f32], buffer_usage:BufferUsage) -> Result<(), Error> {
+    pub fn upload_buffer_sub_to_uniform_buffer_f32(&self, uniform_name:&str, block_name:&str, id:Id, values:&[f32]) -> Result<(), Error> {
+        self.upload_buffer_sub_to_uniform_buffer(uniform_name, block_name, id, BufferSubData::new(values, BufferTarget::UniformBuffer))
+    }
 
-        let buffer_data = BufferData::new(values, BufferTarget::UniformBuffer, buffer_usage);
-
-        let dest_byte_offset = self.get_uniform_block_offset(uniform_name, block_name)?;
-
-        //rust slices are just cheap pointers - no benefit really to making the caller specify
-        //where it's coming from since they can re-slice
-        //if for whatever reason the user wants to do that
-        //they can call get_uniform_block_offset(), upload_buffer_sub(), activate_uniform_buffer()
-        //directly
-        let src_offset = 0;
-        let length = values.len() as u32;
-
-        self.upload_buffer_sub(id, dest_byte_offset, src_offset, length, buffer_data)?;
-        self.activate_uniform_buffer(id, block_name)
+    pub fn upload_buffer_sub_to_uniform_buffer_u8(&self, uniform_name:&str, block_name:&str, id:Id, values:&[u8]) -> Result<(), Error> {
+        self.upload_buffer_sub_to_uniform_buffer(uniform_name, block_name, id, BufferSubData::new(values, BufferTarget::UniformBuffer))
     }
 }
 

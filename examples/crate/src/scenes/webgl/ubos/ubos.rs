@@ -150,26 +150,13 @@ fn set_initial_scale_buffer(scale_buffer_id:Id, webgl_renderer:&WebGlRenderer) -
 fn update_scale_buffer(state:&State, webgl_renderer:&WebGlRenderer) -> Result<(), Error> {
     let mut scale_y:[f32;3] = [0.0, 3.0, 0.0]; 
 
-    webgl_renderer.upload_sub_buffer_to_uniform_buffer_f32(
+    webgl_renderer.upload_buffer_sub_to_uniform_buffer_f32(
         "u_scale_y",
         "scale",
         state.scale_buffer_id.unwrap(),
         &scale_y[1..2], 
-        BufferUsage::DynamicDraw,
     )
 
-    /*Note - setting a _range_ of uniforms in a block just needs to target the first offset
-      for example:
-            let mut scale_y:[f32;3] = [0.0, 3.0, 10.0]; 
-
-            webgl_renderer.upload_sub_buffer_to_uniform_buffer_f32(
-                "u_scale_y",
-                "scale",
-                state.scale_buffer_id.unwrap(),
-                &scale_y[1..3], 
-                BufferUsage::DynamicDraw,
-            )
-    */
 }
 
 fn set_model_buffer(state:&State, webgl_renderer:&WebGlRenderer) -> Result<(), Error> {
