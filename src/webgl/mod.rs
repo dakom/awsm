@@ -1,33 +1,33 @@
-mod enums;
-mod buffers;
 mod attributes;
-mod uniforms;
-mod textures;
-mod context;
-mod shader;
-mod id;
-mod viewport;
-mod toggles;
-mod funcs;
-mod extensions;
-mod instancing;
 mod base;
-mod vertex_arrays;
-mod misc;
+mod buffers;
+mod context;
 mod drawing;
+mod enums;
+mod extensions;
+mod funcs;
+mod id;
+mod instancing;
+mod misc;
 mod query;
+mod shader;
+mod textures;
+mod toggles;
 mod uniform_buffers;
+mod uniforms;
+mod vertex_arrays;
+mod viewport;
 /*
- * (RE)EXPORTS 
+ * (RE)EXPORTS
  */
-pub use self::id::*;
-pub use self::enums::*;
-pub use self::buffers::*;
 pub use self::attributes::*;
-pub use self::uniforms::*;
-pub use self::textures::*;
-pub use self::shader::*;
-pub use self::context::*;
-pub use self::vertex_arrays::*;
 pub use self::base::*;
+pub use self::buffers::*;
+pub use self::context::*;
+pub use self::enums::*;
+pub use self::id::*;
+pub use self::shader::*;
+pub use self::textures::*;
 pub use self::uniform_buffers::*;
+pub use self::uniforms::*;
+pub use self::vertex_arrays::*;

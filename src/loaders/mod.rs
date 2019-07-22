@@ -1,3 +1,3 @@
-pub mod image;
-pub mod fetch;
 pub mod audio;
+pub mod fetch;
+pub mod image;

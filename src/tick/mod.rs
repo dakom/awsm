@@ -1,6 +1,5 @@
-mod raf;
 mod mainloop;
+mod raf;
 
-pub use self::raf::*;
 pub use self::mainloop::*;
-
+pub use self::raf::*;

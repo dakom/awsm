@@ -1,24 +1,24 @@
+use super::image::Image;
 use crate::errors::{Error, NativeError};
-use futures::{Future};
-use wasm_bindgen::{JsValue};
+use crate::window::get_window;
+use futures::Future;
+use js_sys::{ArrayBuffer, Promise};
 use wasm_bindgen::JsCast;
-use js_sys::{Promise, ArrayBuffer};
-use web_sys::{Request, Response, HtmlImageElement, AudioContext, AudioBuffer};
-use crate::window::{get_window};
-use wasm_bindgen_futures::futures_0_3::{JsFuture};
-use super::image::{Image};
+use wasm_bindgen::JsValue;
+use wasm_bindgen_futures::futures_0_3::JsFuture;
+use web_sys::{AudioBuffer, AudioContext, HtmlImageElement, Request, Response};
 
-pub fn image(url:&str) -> impl Future<Output= Result<HtmlImageElement, Error>> { 
+pub fn image(url: &str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
     Image::new(url)
 }
 
-pub fn text(url:&str) -> impl Future<Output= Result<String, Error>> { 
+pub fn text(url: &str) -> impl Future<Output = Result<String, Error>> {
     let req = Request::new_with_str(url);
 
     async {
         let req = req?;
 
-        let resp:Response = request(&req).await?;
+        let resp: Response = request(&req).await?;
 
         let promise = resp.text()?;
 
@@ -30,13 +30,13 @@ pub fn text(url:&str) -> impl Future<Output= Result<String, Error>> {
     }
 }
 
-pub fn array_buffer(url:&str) -> impl Future<Output= Result<ArrayBuffer, Error>> { 
+pub fn array_buffer(url: &str) -> impl Future<Output = Result<ArrayBuffer, Error>> {
     let req = Request::new_with_str(url);
 
     async {
         let req = req?;
 
-        let resp:Response = request(&req).await?;
+        let resp: Response = request(&req).await?;
 
         let promise = resp.array_buffer()?;
 
@@ -46,9 +46,10 @@ pub fn array_buffer(url:&str) -> impl Future<Output= Result<ArrayBuffer, Error>>
     }
 }
 
-
-pub fn audio_buffer<'a>(url:&str, ctx:&'a AudioContext) -> impl Future<Output= Result<AudioBuffer, Error>> + 'a { 
-
+pub fn audio_buffer<'a>(
+    url: &str,
+    ctx: &'a AudioContext,
+) -> impl Future<Output = Result<AudioBuffer, Error>> + 'a {
     let url = url.to_owned();
 
     async move {
@@ -57,20 +58,20 @@ pub fn audio_buffer<'a>(url:&str, ctx:&'a AudioContext) -> impl Future<Output= R
         let promise = ctx.decode_audio_data(&audio_data)?;
 
         let data = JsFuture::from(promise).await?;
-        
+
         Ok(data.into())
     }
 }
 
-pub fn request(req:&Request) -> impl Future<Output= Result<Response, Error>> { 
-    let promise:Result<Promise, Error> = 
+pub fn request(req: &Request) -> impl Future<Output = Result<Response, Error>> {
+    let promise: Result<Promise, Error> =
         get_window().map(|window| window.fetch_with_request(&req));
 
     async {
         let promise = promise?;
 
         let resp_value = JsFuture::from(promise).await?;
-        let resp:Response = resp_value.dyn_into()?;
+        let resp: Response = resp_value.dyn_into()?;
 
         Ok(resp)
     }

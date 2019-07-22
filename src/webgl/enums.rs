@@ -1,6 +1,6 @@
 pub enum WebGlVersion {
     One,
-    Two
+    Two,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -23,7 +23,6 @@ pub enum BufferTarget {
     //webgl 2 only
     UniformBuffer = 0x8A11,
 }
-
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
@@ -64,7 +63,6 @@ pub enum TextureParameterName {
     CompareFunc = 0x884D,
 }
 
-
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureWrapTarget {
@@ -76,12 +74,10 @@ pub enum TextureWrapTarget {
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureWrapMode {
-    Repeat= 0x2901,
-    ClampToEdge= 0x812F,
-    MirroredRepeat= 0x8370,
+    Repeat = 0x2901,
+    ClampToEdge = 0x812F,
+    MirroredRepeat = 0x8370,
 }
-
-
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
@@ -101,25 +97,24 @@ pub enum TextureMinFilter {
     LinearMipMapLinear = 0x2703,
 }
 
-
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureTarget {
     Texture2d = 0x0DE1,
     Texture3d = 0x806F,
-    Array2d= 0x8C1A,
-    CubeMap= 0x8513,
+    Array2d = 0x8C1A,
+    CubeMap = 0x8513,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureCubeFace {
-    PositiveX    = 0x8515,
-    NegativeX    = 0x8516,
-    PositiveY    = 0x8517,
-    NegativeY    = 0x8518,
-    PositiveZ    = 0x8519,
-    NegativeZ    = 0x851A,
+    PositiveX = 0x8515,
+    NegativeX = 0x8516,
+    PositiveY = 0x8517,
+    NegativeY = 0x8518,
+    PositiveZ = 0x8519,
+    NegativeZ = 0x851A,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -129,48 +124,47 @@ pub enum TextureQuery {
     Array2d = 0x8C1D,
     Texture = 0x1702,
     Binding3d = 0x806A,
-    BindingCubeMap= 0x8514,
+    BindingCubeMap = 0x8514,
     MaxCubeTextureSize = 0x851C,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureUnit {
-    Texture0                       = 0x84C0,
-    Texture1                       = 0x84C1,
-    Texture2                       = 0x84C2,
-    Texture3                       = 0x84C3,
-    Texture4                       = 0x84C4,
-    Texture5                       = 0x84C5,
-    Texture6                       = 0x84C6,
-    Texture7                       = 0x84C7,
-    Texture8                       = 0x84C8,
-    Texture9                       = 0x84C9,
-    Texture10                      = 0x84CA,
-    Texture11                      = 0x84CB,
-    Texture12                      = 0x84CC,
-    Texture13                      = 0x84CD,
-    Texture14                      = 0x84CE,
-    Texture15                      = 0x84CF,
-    Texture16                      = 0x84D0,
-    Texture17                      = 0x84D1,
-    Texture18                      = 0x84D2,
-    Texture19                      = 0x84D3,
-    Texture20                      = 0x84D4,
-    Texture21                      = 0x84D5,
-    Texture22                      = 0x84D6,
-    Texture23                      = 0x84D7,
-    Texture24                      = 0x84D8,
-    Texture25                      = 0x84D9,
-    Texture26                      = 0x84DA,
-    Texture27                      = 0x84DB,
-    Texture28                      = 0x84DC,
-    Texture29                      = 0x84DD,
-    Texture30                      = 0x84DE,
-    Texture31                      = 0x84DF,
-    ActiveTexture                 = 0x84E0,
+    Texture0 = 0x84C0,
+    Texture1 = 0x84C1,
+    Texture2 = 0x84C2,
+    Texture3 = 0x84C3,
+    Texture4 = 0x84C4,
+    Texture5 = 0x84C5,
+    Texture6 = 0x84C6,
+    Texture7 = 0x84C7,
+    Texture8 = 0x84C8,
+    Texture9 = 0x84C9,
+    Texture10 = 0x84CA,
+    Texture11 = 0x84CB,
+    Texture12 = 0x84CC,
+    Texture13 = 0x84CD,
+    Texture14 = 0x84CE,
+    Texture15 = 0x84CF,
+    Texture16 = 0x84D0,
+    Texture17 = 0x84D1,
+    Texture18 = 0x84D2,
+    Texture19 = 0x84D3,
+    Texture20 = 0x84D4,
+    Texture21 = 0x84D5,
+    Texture22 = 0x84D6,
+    Texture23 = 0x84D7,
+    Texture24 = 0x84D8,
+    Texture25 = 0x84D9,
+    Texture26 = 0x84DA,
+    Texture27 = 0x84DB,
+    Texture28 = 0x84DC,
+    Texture29 = 0x84DD,
+    Texture30 = 0x84DE,
+    Texture31 = 0x84DF,
+    ActiveTexture = 0x84E0,
 }
-
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
@@ -223,7 +217,7 @@ pub enum PixelFormat {
 pub enum ClearBufferMask {
     DepthBufferBit = 0x00000100,
     StencilBufferBit = 0x00000400,
-    ColorBufferBit = 0x00004000
+    ColorBufferBit = 0x00004000,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -237,8 +231,8 @@ pub enum GlToggle {
     SampleAlphaToCoverage = 0x809E,
     SampleCoverage = 0x80A0,
     ScissorTest = 0x0C11,
-    StencilTest= 0x0B90,
-    RasterizerDiscard =0x8C89,
+    StencilTest = 0x0B90,
+    RasterizerDiscard = 0x8C89,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -258,7 +252,6 @@ pub enum GlQuery {
     BlendColor = 0x8005,
 }
 
-
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum CmpFunction {
@@ -268,7 +261,7 @@ pub enum CmpFunction {
     Lequal = 0x0203,
     Greater = 0x0204,
     NotEqual = 0x0205,
-    Gequal = 0x0206, 
+    Gequal = 0x0206,
     Always = 0x0207,
 }
 
@@ -277,7 +270,7 @@ pub enum CmpFunction {
 pub enum BlendEquation {
     Add = 0x8006,
     Subtract = 0x800A,
-    ReverseSubtract= 0x800B,
+    ReverseSubtract = 0x800B,
     Min = 0x8007,
     Max = 0x8008,
 }
@@ -290,7 +283,7 @@ pub enum BlendFactor {
     SrcColor = 0x0300,
     OneMinusSrcColor = 0x0301,
     DstColor = 0x0306,
-    OneMinusDstColor= 0x0307,
+    OneMinusDstColor = 0x0307,
     SrcAlpha = 0x0302,
     OneMinusSrcAlpha = 0x0303,
     DstAlpha = 0x0304,
@@ -298,18 +291,18 @@ pub enum BlendFactor {
     ConstantColor = 0x8001,
     OneMinusConstantColor = 0x8002,
     ConstantAlpha = 0x8003,
-    OneMinusConstantAlpha = 0x8004
+    OneMinusConstantAlpha = 0x8004,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum UniformBlockQuery {
-  BindingPoint = 0x8A3F,
-  DataSize = 0x8A40,
-  ActiveUniforms = 0x8A42,
-  ActiveUniformIndices = 0x8A43,
-  ReferencedByVertexShader = 0x8A44,
-  ReferencedByFragmentShader = 0x8A46,
+    BindingPoint = 0x8A3F,
+    DataSize = 0x8A40,
+    ActiveUniforms = 0x8A42,
+    ActiveUniformIndices = 0x8A43,
+    ReferencedByVertexShader = 0x8A44,
+    ReferencedByFragmentShader = 0x8A46,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -327,13 +320,12 @@ pub enum UniformBlockActiveQuery {
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum WebGlSpecific {
-    UnpackFlipY = 0x9240, 
+    UnpackFlipY = 0x9240,
     UnpackPremultiplyAlpha = 0x9241,
     ContextLost = 0x9242,
-    UnpackColorspaceConversion= 0x9243,
+    UnpackColorspaceConversion = 0x9243,
     BrowserDefault = 0x9244,
 }
-
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
@@ -367,7 +359,7 @@ pub enum UniformDataType {
     UnsignedIntSampler2d = 0x8DD2,
     UnsignedIntSampler3d = 0x8DD3,
     UnsignedIntSamplerCube = 0x8DD4,
-    UnsignedIntSampler2dArray= 0x8DD7,
+    UnsignedIntSampler2dArray = 0x8DD7,
 
     //WEBGL_depth_texture extension
     UnsignedInt_24_8 = 0x84FA,
@@ -407,14 +399,14 @@ pub enum ProgramQuery {
  * Ideally we'd convert all these over...
  */
 /* more buffer objects?
-    ARRAY_BUFFER_BINDING           = 0x8894,
-    ELEMENT_ARRAY_BUFFER_BINDING   = 0x8895,
-    
-    const GLenum BUFFER_SIZE                    = 0x8764;
-    const GLenum BUFFER_USAGE                   = 0x8765;
+ARRAY_BUFFER_BINDING           = 0x8894,
+ELEMENT_ARRAY_BUFFER_BINDING   = 0x8895,
 
-    const GLenum CURRENT_VERTEX_ATTRIB          = 0x8626;
-    */
+const GLenum BUFFER_SIZE                    = 0x8764;
+const GLenum BUFFER_USAGE                   = 0x8765;
+
+const GLenum CURRENT_VERTEX_ATTRIB          = 0x8626;
+*/
 /*
  *
  * TODO - convert all these??

@@ -1,8 +1,8 @@
 use super::{WebGlCommon, WebGlRenderer};
-use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
+use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
 
-pub trait PartialWebGlMisc{
-    fn awsm_depth_mask(&self, flag:bool);
+pub trait PartialWebGlMisc {
+    fn awsm_depth_mask(&self, flag: bool);
 }
 
 macro_rules! impl_context {
@@ -16,13 +16,13 @@ macro_rules! impl_context {
     };
 }
 
-impl_context!{
+impl_context! {
     WebGlRenderingContext{}
     WebGl2RenderingContext{}
 }
 
-impl <T: WebGlCommon> WebGlRenderer<T> {
-    pub fn set_depth_mask(&mut self, flag:bool) {
+impl<T: WebGlCommon> WebGlRenderer<T> {
+    pub fn set_depth_mask(&mut self, flag: bool) {
         if self.depth_mask != flag {
             self.gl.awsm_depth_mask(flag);
             self.depth_mask = flag;
