@@ -8,3 +8,4 @@ pub mod errors;
 pub mod canvas;
 pub mod data;
 pub mod input;
+pub mod audio;

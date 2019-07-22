@@ -2,6 +2,7 @@ use js_sys::{ArrayBuffer, Float32Array, Float64Array, Uint32Array, Object};
 use wasm_bindgen::{JsValue};
 use std::marker::PhantomData;
 
+
 pub fn clone_to_vec_f32(src:&Float32Array) -> Vec<f32> {
     let mut dest:Vec<f32> = vec![0.0; src.length() as usize];
     src.copy_to(&mut dest);

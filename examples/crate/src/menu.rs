@@ -32,7 +32,10 @@ lazy_static! {
         m.insert("webgl-ubos", Menu {label: "Uniform Buffers", source: "webgl/ubos/ubos.rs"});
         m.insert("webgl-texture_3d", Menu {label: "Texture 3D", source: "webgl/texture_3d/texture_3d.rs"});
         m.insert("webgl-texture_cube", Menu {label: "Texture Cubemap", source: "webgl/texture_cube/texture_cube.rs"});
+        //Audio
+        m.insert("audio-player", Menu {label: "Player", source: "audio/player.rs"});
 
+        //return
         m
     };
 }
@@ -91,6 +94,10 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
     concat_more_menus(&mut webgl_menu);
 
     append_menu(&container, &document, get_webgl_title(), webgl_menu)?;
+
+    append_menu(&container, &document, "Audio", vec![
+        "audio-player",
+    ])?;
 
     Ok(container)
 }

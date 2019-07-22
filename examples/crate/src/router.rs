@@ -88,6 +88,9 @@ pub fn start_router(window:web_sys::Window, document:web_sys::Document) -> Resul
         "webgl-texture_3d" => {
             start_additional_menu(&pathname, window, document, body)
         },
+        "audio-player" => {
+            audio::player::start(window, document, body)
+        },
         _ => {
             unknown_route(&pathname, window, document, body)
         }

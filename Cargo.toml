@@ -61,6 +61,16 @@ features = [
     "Response",
     "ResponseInit",
 
+    # audio
+    "AudioContext",
+    "AudioBuffer",
+    "AudioNode",
+    "AudioContextOptions",
+    "AudioBufferSourceNode",
+    "AudioBufferSourceOptions",
+    "AudioDestinationNode",
+    "AudioBufferOptions",
+
     # canvas
     'CanvasRenderingContext2d',
 

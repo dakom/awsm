@@ -143,3 +143,23 @@ ul {
     display: inline-block;
     pointer-events: none;
 }
+
+/* loading */
+.audio-player {
+    position: absolute;
+    top: calc(20vh);
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.audio-player-loading {
+    text-align: center;
+    width: 100%;
+    font-size: xx-large; 
+}
+
+.audio-player-button {
+    display: inline-block;
+    width: 200px;
+    background-color: #BF5017;
+}
