@@ -1,13 +1,16 @@
-use std::collections::hash_map::Entry;
-use web_sys::{WebGlProgram, WebGlShader, WebGlUniformLocation};
-use wasm_bindgen::prelude::JsValue;
+use super::id::Id;
+use super::{
+    GlQuery, ProgramQuery, ShaderQuery, ShaderType, UniformBlockActiveQuery, UniformBlockQuery,
+    WebGlCommon, WebGlRenderer,
+};
+use crate::data::{clone_to_vec_f32, clone_to_vec_u32};
 use crate::errors::{Error, NativeError};
-use crate::data::{clone_to_vec_u32, clone_to_vec_f32};
-use super::id::{Id};
-use super::{WebGlCommon, WebGlRenderer, ShaderQuery, ProgramQuery, ShaderType, GlQuery, UniformBlockQuery, UniformBlockActiveQuery};
-use log::{info};
-use web_sys::{WebGlRenderingContext,WebGl2RenderingContext, WebGlActiveInfo};
-use rustc_hash::{FxHashMap};
+use log::info;
+use rustc_hash::FxHashMap;
+use std::collections::hash_map::Entry;
+use wasm_bindgen::prelude::JsValue;
+use web_sys::{WebGl2RenderingContext, WebGlActiveInfo, WebGlRenderingContext};
+use web_sys::{WebGlProgram, WebGlShader, WebGlUniformLocation};
 
 pub struct ProgramInfo {
     pub program: WebGlProgram,
@@ -21,7 +24,7 @@ pub struct ProgramInfo {
 }
 
 impl ProgramInfo {
-    fn new(program:WebGlProgram) -> Self {
+    fn new(program: WebGlProgram) -> Self {
         Self {
             program,
             attribute_lookup: FxHashMap::default(),
@@ -43,14 +46,34 @@ pub trait PartialWebGlShaders {
     fn awsm_shader_source(&self, shader: &WebGlShader, source: &str);
     fn awsm_compile_shader(&self, shader: &WebGlShader);
     fn awsm_link_program(&self, program: &WebGlProgram);
-    fn awsm_get_shader_parameter_bool(&self, shader: &WebGlShader, query: ShaderQuery) -> Result<bool, Error>;
-    fn awsm_get_program_parameter_bool(&self, program: &WebGlProgram, query: ProgramQuery) -> Result<bool, Error>;
-    fn awsm_get_program_parameter_u32(&self, program:&WebGlProgram, query:ProgramQuery) -> Result<u32, Error>;
+    fn awsm_get_shader_parameter_bool(
+        &self,
+        shader: &WebGlShader,
+        query: ShaderQuery,
+    ) -> Result<bool, Error>;
+    fn awsm_get_program_parameter_bool(
+        &self,
+        program: &WebGlProgram,
+        query: ProgramQuery,
+    ) -> Result<bool, Error>;
+    fn awsm_get_program_parameter_u32(
+        &self,
+        program: &WebGlProgram,
+        query: ProgramQuery,
+    ) -> Result<u32, Error>;
     fn awsm_get_shader_info_log(&self, shader: &WebGlShader) -> Option<String>;
     fn awsm_get_program_info_log(&self, program: &WebGlProgram) -> Option<String>;
     fn awsm_use_program(&self, program: &WebGlProgram);
-    fn awsm_get_active_uniform( &self, program: &WebGlProgram, index: u32) -> Result<WebGlActiveInfo, Error>;
-    fn awsm_get_active_attrib(&self, program: &WebGlProgram, index: u32) -> Result<WebGlActiveInfo, Error>;
+    fn awsm_get_active_uniform(
+        &self,
+        program: &WebGlProgram,
+        index: u32,
+    ) -> Result<WebGlActiveInfo, Error>;
+    fn awsm_get_active_attrib(
+        &self,
+        program: &WebGlProgram,
+        index: u32,
+    ) -> Result<WebGlActiveInfo, Error>;
 }
 
 macro_rules! impl_context {
@@ -77,15 +100,15 @@ macro_rules! impl_context {
             fn awsm_delete_shader(&self, shader: &WebGlShader) {
                 self.delete_shader(Some(shader));
             }
-    
+
             fn awsm_delete_program(&self, program: &WebGlProgram) {
                 self.delete_program(Some(program));
             }
-    
+
             fn awsm_shader_source(&self, shader: &WebGlShader, source: &str) {
                 self.shader_source(shader, source);
             }
-            
+
             fn awsm_compile_shader(&self, shader:&WebGlShader) {
                 self.compile_shader(shader);
             }
@@ -93,13 +116,13 @@ macro_rules! impl_context {
             fn awsm_link_program(&self, program: &WebGlProgram) {
                 self.link_program(program);
             }
-    
+
             fn awsm_get_shader_parameter_bool(&self, shader: &WebGlShader, query: ShaderQuery) -> Result<bool, Error> {
                 self.get_shader_parameter(shader, query as u32)
                     .as_bool()
                     .ok_or(Error::from(NativeError::JsValueExpectedBool))
             }
-            
+
             fn awsm_get_program_parameter_bool(&self, program: &WebGlProgram, query: ProgramQuery) -> Result<bool, Error> {
                 self.get_program_parameter(program, query as u32)
                     .as_bool()
@@ -108,12 +131,12 @@ macro_rules! impl_context {
 
             fn awsm_get_program_parameter_u32(&self, program:&WebGlProgram, query:ProgramQuery) -> Result<u32, Error> {
                 let number = self.get_program_parameter(program, query as u32)
-                    .as_f64() 
+                    .as_f64()
                     .ok_or(Error::from(NativeError::JsValueExpectedNumber))?;
 
                 Ok(number as u32)
             }
-    
+
             fn awsm_get_shader_info_log(&self, shader: &WebGlShader) -> Option<String> {
                 self.get_shader_info_log(shader)
             }
@@ -121,11 +144,11 @@ macro_rules! impl_context {
             fn awsm_get_program_info_log(&self, program: &WebGlProgram) -> Option<String> {
                 self.get_program_info_log(program)
             }
-            
+
             fn awsm_use_program(&self, program: &WebGlProgram) {
                 self.use_program(Some(program))
             }
-    
+
             fn awsm_get_active_uniform( &self, program: &WebGlProgram, index: u32) -> Result<WebGlActiveInfo, Error> {
                 self.get_active_uniform(program, index)
                     .ok_or(Error::from(NativeError::UniformLocation(None)))
@@ -141,18 +164,19 @@ macro_rules! impl_context {
     };
 }
 
-impl_context!{
+impl_context! {
     WebGlRenderingContext{}
     WebGl2RenderingContext{}
 }
 
-
-impl <T: WebGlCommon> WebGlRenderer<T> {
-
+impl<T: WebGlCommon> WebGlRenderer<T> {
     pub fn activate_program(&mut self, program_id: Id) -> Result<(), Error> {
         if Some(program_id) != self.current_program_id {
             self.current_program_id = Some(program_id);
-            let program_info = self.program_lookup.get(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+            let program_info = self
+                .program_lookup
+                .get(program_id)
+                .ok_or(Error::from(NativeError::MissingShaderProgram))?;
             self.gl.awsm_use_program(&program_info.program);
             Ok(())
         } else {
@@ -160,117 +184,132 @@ impl <T: WebGlCommon> WebGlRenderer<T> {
         }
     }
 
-    fn cache_uniform_ids(&mut self, uniforms_in_blocks:&[u32]) -> Result<Vec<String>, Error> {
-        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
-        let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+    fn cache_uniform_ids(&mut self, uniforms_in_blocks: &[u32]) -> Result<Vec<String>, Error> {
+        let program_id = self
+            .current_program_id
+            .ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_info = self
+            .program_lookup
+            .get_mut(program_id)
+            .ok_or(Error::from(NativeError::MissingShaderProgram))?;
 
-        let mut texture_samplers:Vec<String> = Vec::new();
-        let max:u32 = self.gl.awsm_get_program_parameter_u32(&program_info.program, ProgramQuery::ActiveUniforms).unwrap_or(0);
+        let mut texture_samplers: Vec<String> = Vec::new();
+        let max: u32 = self
+            .gl
+            .awsm_get_program_parameter_u32(&program_info.program, ProgramQuery::ActiveUniforms)
+            .unwrap_or(0);
 
         if max <= 0 {
             return Ok(texture_samplers);
         }
 
-
         for i in (0..max).filter(|n| !uniforms_in_blocks.contains(n)) {
             info!("getting uniform cache info for uniform #{} ", i);
-            let (name, type_) = self.gl.awsm_get_active_uniform(&program_info.program, i)
+            let (name, type_) = self
+                .gl
+                .awsm_get_active_uniform(&program_info.program, i)
                 .map(|info| (info.name(), info.type_()))?;
 
             let entry = program_info.uniform_lookup.entry(name.to_string());
 
             match entry {
-                Entry::Occupied(_) => { 
+                Entry::Occupied(_) => {
                     info!("skipping uniform cache for [{}] (already exists)", &name);
-                },
+                }
                 Entry::Vacant(entry) => {
-                    let loc = self.gl.awsm_get_uniform_location(&program_info.program, &name)?;
+                    let loc = self
+                        .gl
+                        .awsm_get_uniform_location(&program_info.program, &name)?;
                     entry.insert(loc);
                     info!("caching uniform [{}]", &name);
                     match type_ {
                         //Just the sampler types from UniformDataType
-                        //matching on enums with casting seems to be a pain point 
+                        //matching on enums with casting seems to be a pain point
                         //(or I missed something in Rust)
-                        0x8B5E 
-                        | 0x8B60 
-                        | 0x8B5F 
-                        | 0x8B62 
-                        | 0x8DC5 
-                        | 0x8DC1 
-                        | 0x8DC4 
-                        | 0x8DCA 
-                        | 0x8DCB 
-                        | 0x8DCC 
-                        | 0x8DCF 
-                        | 0x8DD2 
-                        | 0x8DD3 
-                        | 0x8DD4 
-                        | 0x8DD7 => {
+                        0x8B5E | 0x8B60 | 0x8B5F | 0x8B62 | 0x8DC5 | 0x8DC1 | 0x8DC4 | 0x8DCA
+                        | 0x8DCB | 0x8DCC | 0x8DCF | 0x8DD2 | 0x8DD3 | 0x8DD4 | 0x8DD7 => {
                             texture_samplers.push(name)
                         }
                         _ => {}
                     };
                 }
             }
-        };
+        }
 
         Ok(texture_samplers)
     }
-    fn bind_texture_uniforms(&mut self, texture_uniforms:&[String]) -> Result<(), Error> {
-        for (idx, name) in texture_uniforms.iter().enumerate() { 
+    fn bind_texture_uniforms(&mut self, texture_uniforms: &[String]) -> Result<(), Error> {
+        for (idx, name) in texture_uniforms.iter().enumerate() {
             self.upload_uniform_ival(&name, idx as i32)?;
         }
 
-        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
-        let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_id = self
+            .current_program_id
+            .ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_info = self
+            .program_lookup
+            .get_mut(program_id)
+            .ok_or(Error::from(NativeError::MissingShaderProgram))?;
 
-        for (idx, name) in texture_uniforms.iter().enumerate() { 
-            program_info.texture_sampler_slot_lookup.insert(name.to_string(), idx as u32);
+        for (idx, name) in texture_uniforms.iter().enumerate() {
+            program_info
+                .texture_sampler_slot_lookup
+                .insert(name.to_string(), idx as u32);
         }
         Ok(())
     }
     fn cache_attribute_ids(&mut self) -> Result<(), Error> {
-        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
-        let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_id = self
+            .current_program_id
+            .ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_info = self
+            .program_lookup
+            .get_mut(program_id)
+            .ok_or(Error::from(NativeError::MissingShaderProgram))?;
 
-        let max:u32 = self.gl.awsm_get_program_parameter_u32(&program_info.program, ProgramQuery::ActiveAttributes).unwrap_or(0);
+        let max: u32 = self
+            .gl
+            .awsm_get_program_parameter_u32(&program_info.program, ProgramQuery::ActiveAttributes)
+            .unwrap_or(0);
 
         if max <= 0 {
             return Ok(());
         }
 
         for i in 0..max {
-            let name = self.gl.awsm_get_active_attrib(&program_info.program, i)
+            let name = self
+                .gl
+                .awsm_get_active_attrib(&program_info.program, i)
                 .map(|info| info.name())?;
 
             let entry = program_info.attribute_lookup.entry(name.to_string());
 
             match entry {
-                Entry::Occupied(_) => { 
+                Entry::Occupied(_) => {
                     info!("skipping attribute cache for [{}] (already exists)", &name);
-                },
+                }
                 Entry::Vacant(entry) => {
-                    let loc = self.gl.awsm_get_attribute_location(&program_info.program, &name)?;
+                    let loc = self
+                        .gl
+                        .awsm_get_attribute_location(&program_info.program, &name)?;
                     entry.insert(loc);
                     info!("caching attribute [{}] at location [{}]", &name, loc);
                 }
             }
-        };
+        }
 
         Ok(())
     }
-
 }
 
-
 impl WebGlRenderer<WebGlRenderingContext> {
-    pub fn compile_program(&mut self, vertex:&str, fragment:&str) -> Result<Id, Error> {
+    pub fn compile_program(&mut self, vertex: &str, fragment: &str) -> Result<Id, Error> {
         let program = compile_program(&self.gl, &vertex, &fragment)?;
 
         let program_info = ProgramInfo::new(program);
 
         let id = self.program_lookup.insert(program_info);
-        
+
         self.activate_program(id)?;
 
         self.cache_attribute_ids()?;
@@ -286,13 +325,13 @@ impl WebGlRenderer<WebGlRenderingContext> {
 }
 
 impl WebGlRenderer<WebGl2RenderingContext> {
-    pub fn compile_program(&mut self, vertex:&str, fragment:&str) -> Result<Id, Error> {
+    pub fn compile_program(&mut self, vertex: &str, fragment: &str) -> Result<Id, Error> {
         let program = compile_program(&self.gl, &vertex, &fragment)?;
 
         let program_info = ProgramInfo::new(program);
 
         let id = self.program_lookup.insert(program_info);
-        
+
         self.activate_program(id)?;
 
         self.cache_attribute_ids()?;
@@ -305,12 +344,23 @@ impl WebGlRenderer<WebGl2RenderingContext> {
 
     //returns the uniforms that are in blocks, so they can be excluded from further caching
     fn cache_uniform_buffers(&mut self) -> Result<Vec<u32>, Error> {
-        let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
-        let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_id = self
+            .current_program_id
+            .ok_or(Error::from(NativeError::MissingShaderProgram))?;
+        let program_info = self
+            .program_lookup
+            .get_mut(program_id)
+            .ok_or(Error::from(NativeError::MissingShaderProgram))?;
 
-        let mut uniforms_in_blocks:Vec<u32> = Vec::new();
+        let mut uniforms_in_blocks: Vec<u32> = Vec::new();
 
-        let max:u32 = self.gl.awsm_get_program_parameter_u32(&program_info.program, ProgramQuery::ActiveUniformBlocks).unwrap_or(0);
+        let max: u32 = self
+            .gl
+            .awsm_get_program_parameter_u32(
+                &program_info.program,
+                ProgramQuery::ActiveUniformBlocks,
+            )
+            .unwrap_or(0);
 
         let mut max_bind_point_offset = self.ubo_global_loc_lookup.len() as u32;
 
@@ -318,25 +368,29 @@ impl WebGlRenderer<WebGl2RenderingContext> {
             for i in 0..max {
                 let program = &program_info.program;
 
-                let name = self.gl.get_active_uniform_block_name(&program, i).ok_or(Error::from(NativeError::UniformBufferName))?;
+                let name = self
+                    .gl
+                    .get_active_uniform_block_name(&program, i)
+                    .ok_or(Error::from(NativeError::UniformBufferName))?;
 
                 let block_index = self.gl.get_uniform_block_index(&program, &name);
 
-                let global_loc = 
-                    self.ubo_global_loc_lookup
-                        .iter()
-                        .position(|global_name| name == *global_name)
-                        .map(|n| n as u32);
+                let global_loc = self
+                    .ubo_global_loc_lookup
+                    .iter()
+                    .position(|global_name| name == *global_name)
+                    .map(|n| n as u32);
 
-                let bind_point = match global_loc { 
+                let bind_point = match global_loc {
                     None => {
                         let ret = max_bind_point_offset.clone();
                         max_bind_point_offset += 1;
                         ret
-                    },
-                    Some(n) => n
+                    }
+                    Some(n) => n,
                 };
-                self.gl.uniform_block_binding(&program, block_index, bind_point);
+                self.gl
+                    .uniform_block_binding(&program, block_index, bind_point);
 
                 //program_info.uniform_buffer_offset_lookup
                 /*let bind_point = self.gl.get_active_uniform_block_parameter(&program, i, UniformBlockQuery::BindingPoint as u32)?
@@ -345,42 +399,62 @@ impl WebGlRenderer<WebGl2RenderingContext> {
                         .unwrap();
                 */
 
-                let entry = program_info.uniform_buffer_loc_lookup.entry(name.to_string());
+                let entry = program_info
+                    .uniform_buffer_loc_lookup
+                    .entry(name.to_string());
 
                 match entry {
-                    Entry::Occupied(_) => { 
-                        info!("skipping uniform buffer cache for [{}] (already exists)", &name);
-                    },
+                    Entry::Occupied(_) => {
+                        info!(
+                            "skipping uniform buffer cache for [{}] (already exists)",
+                            &name
+                        );
+                    }
                     Entry::Vacant(entry) => {
                         entry.insert(bind_point);
-                        info!("caching uniform buffer [{}] at index {} and bind point {}", &name, block_index, bind_point);
+                        info!(
+                            "caching uniform buffer [{}] at index {} and bind point {}",
+                            &name, block_index, bind_point
+                        );
                     }
                 };
 
-               
-                //Need to keep a list of the uniforms that are in blocks, 
+                //Need to keep a list of the uniforms that are in blocks,
                 //so they don't get double-cached
-                let mut active_uniforms:Vec<u32> = self.gl.get_active_uniform_block_parameter(&program, i, UniformBlockQuery::ActiveUniformIndices as u32)
+                let mut active_uniforms: Vec<u32> = self
+                    .gl
+                    .get_active_uniform_block_parameter(
+                        &program,
+                        i,
+                        UniformBlockQuery::ActiveUniformIndices as u32,
+                    )
                     .map(|vals| vals.into())
                     .map(|vals| clone_to_vec_u32(&vals))?;
 
                 uniforms_in_blocks.extend(&active_uniforms);
 
                 //Also need to cache their offsets
-                let block_lookup = program_info.uniform_buffer_offset_lookup
-                        .entry(name.to_string())
-                        .or_insert_with(|| FxHashMap::default());
+                let block_lookup = program_info
+                    .uniform_buffer_offset_lookup
+                    .entry(name.to_string())
+                    .or_insert_with(|| FxHashMap::default());
 
-                let offsets:Vec<u32> = unsafe {
+                let offsets: Vec<u32> = unsafe {
                     let values = js_sys::Uint32Array::view(&active_uniforms);
-                    let active_uniform_offsets = self.gl.get_active_uniforms(&program, &values, UniformBlockActiveQuery::Offset as u32);
+                    let active_uniform_offsets = self.gl.get_active_uniforms(
+                        &program,
+                        &values,
+                        UniformBlockActiveQuery::Offset as u32,
+                    );
                     clone_to_vec_u32(&active_uniform_offsets.into())
                 };
 
                 info!("{:?}", &offsets);
 
                 for (idx, loc) in active_uniforms.iter().enumerate() {
-                    let (u_name, u_type_, u_size) = self.gl.get_active_uniform(&program_info.program, *loc)
+                    let (u_name, u_type_, u_size) = self
+                        .gl
+                        .get_active_uniform(&program_info.program, *loc)
                         .map(|info| (info.name(), info.type_(), info.size()))
                         .ok_or(Error::from(NativeError::UniformLocation(None)))?;
 
@@ -403,7 +477,7 @@ struct CompileSteps {
     vertex: Option<WebGlShader>,
 }
 
-type WithError<T> = Result<T,(T,Error)>;
+type WithError<T> = Result<T, (T, Error)>;
 
 impl CompileSteps {
     pub fn new() -> CompileSteps {
@@ -414,26 +488,26 @@ impl CompileSteps {
         }
     }
 
-    pub fn free_shaders<T: WebGlCommon>(&mut self, gl:&T) {
-        let free_shader = |s:Option<&WebGlShader>| {
-            s.map(|shader:&WebGlShader| {
+    pub fn free_shaders<T: WebGlCommon>(&mut self, gl: &T) {
+        let free_shader = |s: Option<&WebGlShader>| {
+            s.map(|shader: &WebGlShader| {
                 //if the shader exists, the program had to have been valid
                 gl.awsm_detach_shader(self.program.as_ref().unwrap(), shader);
                 gl.awsm_delete_shader(shader);
             });
         };
 
-        free_shader(self.fragment.as_ref()); 
-        free_shader(self.vertex.as_ref()); 
+        free_shader(self.fragment.as_ref());
+        free_shader(self.vertex.as_ref());
 
         self.fragment = None;
         self.vertex = None;
     }
 
-    pub fn free_all<T: WebGlCommon>(&mut self, gl:&T) {
+    pub fn free_all<T: WebGlCommon>(&mut self, gl: &T) {
         self.free_shaders(gl);
 
-        self.program.as_ref().map(|program:&WebGlProgram| {
+        self.program.as_ref().map(|program: &WebGlProgram| {
             gl.awsm_delete_program(program);
         });
 
@@ -441,18 +515,19 @@ impl CompileSteps {
     }
 }
 
-
-pub fn compile_program<T: WebGlCommon>(gl:&T, vertex:&str, fragment:&str) -> Result<WebGlProgram, Error> {
+pub fn compile_program<T: WebGlCommon>(
+    gl: &T,
+    vertex: &str,
+    fragment: &str,
+) -> Result<WebGlProgram, Error> {
     let result = compile_program_steps(gl, CompileSteps::new())
-        .and_then(|compile_steps:CompileSteps|
+        .and_then(|compile_steps: CompileSteps| {
             compile_source(gl, compile_steps, fragment, ShaderType::Fragment)
-        )
-        .and_then(|compile_steps:CompileSteps|
+        })
+        .and_then(|compile_steps: CompileSteps| {
             compile_source(gl, compile_steps, vertex, ShaderType::Vertex)
-        )
-        .and_then(|compile_steps:CompileSteps|
-            link_program(gl, compile_steps)
-        );
+        })
+        .and_then(|compile_steps: CompileSteps| link_program(gl, compile_steps));
 
     match result {
         Ok(mut compile_steps) => {
@@ -464,32 +539,38 @@ pub fn compile_program<T: WebGlCommon>(gl:&T, vertex:&str, fragment:&str) -> Res
             Err(Error::from(error_message))
         }
     }
-
 }
 
-fn compile_program_steps <T: WebGlCommon>(gl:&T, mut compile_steps:CompileSteps) -> WithError<CompileSteps> { 
+fn compile_program_steps<T: WebGlCommon>(
+    gl: &T,
+    mut compile_steps: CompileSteps,
+) -> WithError<CompileSteps> {
     match gl.awsm_create_program() {
         Ok(program) => {
             compile_steps.program = Some(program);
             Ok(compile_steps)
-        },
-        Err(err) => {
-            Err((compile_steps, err))
         }
+        Err(err) => Err((compile_steps, err)),
     }
 }
 
-fn compile_source <T: WebGlCommon> (gl:&T, mut compile_steps:CompileSteps, source: &str, source_type:ShaderType) -> WithError<CompileSteps> { 
+fn compile_source<T: WebGlCommon>(
+    gl: &T,
+    mut compile_steps: CompileSteps,
+    source: &str,
+    source_type: ShaderType,
+) -> WithError<CompileSteps> {
     let option_shader = gl.awsm_create_shader(source_type);
 
     match option_shader {
         Some(shader) => {
             gl.awsm_shader_source(&shader, source);
             gl.awsm_compile_shader(&shader);
-            match do_with_check( || gl.awsm_get_shader_parameter_bool(&shader, ShaderQuery::CompileStatus), || gl.awsm_get_shader_info_log(&shader)) {
-                Some(error_message) => {
-                    Err((compile_steps, Error::from(error_message)))
-                }
+            match do_with_check(
+                || gl.awsm_get_shader_parameter_bool(&shader, ShaderQuery::CompileStatus),
+                || gl.awsm_get_shader_info_log(&shader),
+            ) {
+                Some(error_message) => Err((compile_steps, Error::from(error_message))),
                 None => {
                     gl.awsm_attach_shader(&compile_steps.program.as_ref().unwrap(), &shader);
                     if source_type == ShaderType::Vertex {
@@ -500,43 +581,41 @@ fn compile_source <T: WebGlCommon> (gl:&T, mut compile_steps:CompileSteps, sourc
                     Ok(compile_steps)
                 }
             }
-
         }
-        None => {
-            Err((compile_steps, Error::from("bad shader (unknown error")))
-        }
+        None => Err((compile_steps, Error::from("bad shader (unknown error"))),
     }
 }
 
-fn link_program <T: WebGlCommon>(gl:&T, compile_steps:CompileSteps) -> WithError<CompileSteps> { 
+fn link_program<T: WebGlCommon>(gl: &T, compile_steps: CompileSteps) -> WithError<CompileSteps> {
     let program = &compile_steps.program.as_ref().unwrap();
     gl.awsm_link_program(program);
 
-    match do_with_check( || gl.awsm_get_program_parameter_bool(program, ProgramQuery::LinkStatus), || gl.awsm_get_program_info_log(program)) {
-        Some(error_message) => {
-            Err((compile_steps, Error::from(error_message)))
-        }
-        None => Ok(compile_steps)
+    match do_with_check(
+        || gl.awsm_get_program_parameter_bool(program, ProgramQuery::LinkStatus),
+        || gl.awsm_get_program_info_log(program),
+    ) {
+        Some(error_message) => Err((compile_steps, Error::from(error_message))),
+        None => Ok(compile_steps),
     }
 }
 
-
-fn do_with_check <T,U>(set_status: T, get_status: U) -> Option<String> 
-    where T: Fn() -> Result<bool, Error>, U: Fn() -> Option<String>, 
+fn do_with_check<T, U>(set_status: T, get_status: U) -> Option<String>
+where
+    T: Fn() -> Result<bool, Error>,
+    U: Fn() -> Option<String>,
 {
-
     match set_status() {
         Ok(flag) => {
             if !flag {
                 match get_status() {
                     None => Some(String::from("unknown shader compiler error!")),
-                    err => err
+                    err => err,
                 }
             } else {
                 None
             }
-        },
+        }
 
-        Err(err) => Some(err.to_string())
+        Err(err) => Some(err.to_string()),
     }
 }

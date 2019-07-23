@@ -1,22 +1,22 @@
+use super::{AttributeOptions, BufferTarget, Id, WebGlRenderer};
 use crate::errors::{Error, NativeError};
 use wasm_bindgen::JsCast;
-use web_sys::{WebGlVertexArrayObject};
-use super::{WebGlRenderer, Id, AttributeOptions, BufferTarget};
-use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
-use web_sys::{OesVertexArrayObject};
+use web_sys::OesVertexArrayObject;
+use web_sys::WebGlVertexArrayObject;
+use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
 
 pub struct VertexArray<'a> {
-    pub attribute_name: &'a str, 
+    pub attribute_name: &'a str,
     pub buffer_id: Id,
-    pub opts: &'a AttributeOptions
+    pub opts: &'a AttributeOptions,
 }
 
-impl <'a> VertexArray<'a> {
-    pub fn new(attribute_name:&'a str, buffer_id: Id, opts: &'a AttributeOptions) -> Self {
+impl<'a> VertexArray<'a> {
+    pub fn new(attribute_name: &'a str, buffer_id: Id, opts: &'a AttributeOptions) -> Self {
         Self {
             attribute_name,
             buffer_id,
-            opts
+            opts,
         }
     }
 }
@@ -32,7 +32,7 @@ macro_rules! impl_renderer {
 
             pub fn activate_vertex_array(&self, vao_id:Id) -> Result<(), Error> {
                 if Some(vao_id) != self.current_vao_id.get() {
-                    if let Some(vao) = self.vao_lookup.get(vao_id) { 
+                    if let Some(vao) = self.vao_lookup.get(vao_id) {
                         self._bind_vertex_array(Some(vao_id), Some(&vao))
                     } else {
                         Err(Error::from(NativeError::VertexArrayMissing))
@@ -43,7 +43,7 @@ macro_rules! impl_renderer {
             }
 
             pub fn assign_vertex_array(&self, vao_id:Id, element_buffer_id:Option<Id>, configs:&[VertexArray]) -> Result<(), Error> {
-                let result = if let Some(vao) = self.vao_lookup.get(vao_id) { 
+                let result = if let Some(vao) = self.vao_lookup.get(vao_id) {
                     self._bind_vertex_array(Some(vao_id), Some(&vao))?;
 
                     //Skip buffer assignment cache checks
@@ -59,7 +59,7 @@ macro_rules! impl_renderer {
                 } else {
                     Err(Error::from(NativeError::VertexArrayMissing))
                 };
-                   
+
                 //relase it for the next call that might use elements
                 self.release_vertex_array()?;
 
@@ -71,7 +71,7 @@ macro_rules! impl_renderer {
     };
 }
 
-impl_renderer!{
+impl_renderer! {
     WebGlRenderingContext{
         pub fn register_extension_vertex_array(&mut self) -> Result<&OesVertexArrayObject, Error> {
             self.register_extension("OES_vertex_array_object")

@@ -1,20 +1,19 @@
+use super::start_raf_loop;
+use crate::errors::Error;
+use crate::window::get_window;
+use log::info;
+use std::cell::Cell;
+use std::cell::RefCell;
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use std::cell::RefCell;
-use std::cell::Cell;
-use std::rc::Rc;
-use web_sys::{Window};
-use log::{info};
-use crate::errors::{Error};
-use crate::window::{get_window};
-use super::{start_raf_loop};
+use web_sys::Window;
 
 ///Options for start_main_loop()
-pub struct MainLoopOptions{
+pub struct MainLoopOptions {
     /// The amount of time (in milliseconds) to simulate each time update()
     /// runs. See `MainLoop.setSimulationTimestep()` for details.
-    pub simulation_timestep:f64,
-
+    pub simulation_timestep: f64,
 
     /// A factor that affects how heavily to weight more recent seconds'
     /// performance when calculating the average frames per second. Valid values
@@ -25,7 +24,6 @@ pub struct MainLoopOptions{
     /// The minimum duration between updates to the frames-per-second estimate.
     /// Higher values increase accuracy, but result in slower updates.
     pub fps_update_interval: f64,
-
 
     /// The minimum amount of time in milliseconds that must pass since the last
     /// frame was executed before another frame can be executed. The
@@ -48,26 +46,26 @@ impl Default for MainLoopOptions {
 /// A Rust port of https://github.com/IceCreamYou/MainLoop.js
 ///
 /// It's pretty much a direct port, except for two differences:
-/// 1. it all runs in one loop with a branch (probably cheaper than passing the required Rc/RefCells around) 
+/// 1. it all runs in one loop with a branch (probably cheaper than passing the required Rc/RefCells around)
 /// 2. starting/stopping is explicit via cancelling and restarting (there is no reset_frame_delta() or runtime fps cap)
-/// 
-/// 
+///
+///
 /// @begin: A function that runs at the beginning of the main loop.
 ///  
 /// The begin() function is typically used to process input before the
 /// updates run. Processing input here (in chunks) can reduce the running
 /// time of event handlers, which is useful because long-running event
 /// handlers can sometimes delay frames.
-/// 
+///
 /// Unlike update(), which can run zero or more times per
 /// frame, begin() always runs exactly once per frame. This makes it useful
 /// for any updates that are not dependent on time in the simulation.
 /// Examples include adjusting HUD calculations or performing long-running
 /// updates incrementally. Compared to end(), generally
 /// actions should occur in begin() if they affect anything that
-/// update() or draw() use 
-/// 
-/// * timestamp 
+/// update() or draw() use
+///
+/// * timestamp
 ///
 ///   The current timestamp (when the frame started), in milliseconds. This
 ///   should only be used for comparison to other timestamps because the
@@ -81,13 +79,13 @@ impl Default for MainLoopOptions {
 ///
 ///   The total elapsed time that has not yet been simulated, in
 ///   milliseconds.
-/// 
+///
 /// @update: The function that runs updates (e.g. AI and physics).
-/// 
+///
 /// The update() function should simulate anything that is affected by time.
 /// It can be called zero or more times per frame depending on the frame
 /// rate.
-/// 
+///
 /// As with everything in the main loop, the running time of update()
 /// directly affects the frame rate. If update() takes long enough that the
 /// frame rate drops below the target ("budgeted") frame rate, parts of the
@@ -99,10 +97,10 @@ impl Default for MainLoopOptions {
 /// updates will still block rendering and drag down the frame rate. Web
 /// Workers execute in separate threads, so they free up more time in the
 /// main loop.)
-/// 
+///
 /// This script can be imported into a Web Worker using importScripts() and
 /// used to run a second main loop in the worker. Some considerations:
-/// 
+///
 /// - Profile your code before doing the work to move it into Web Workers.
 ///   It could be the rendering that is the bottleneck, in which case the
 ///   solution is to decrease the visual complexity of the scene.
@@ -120,19 +118,19 @@ impl Default for MainLoopOptions {
 ///   Workers is a pain. The fastest way to do it is with Transferable
 ///   Objects: basically, you can pass an ArrayBuffer to a worker,
 ///   destroying the original reference in the process.
-/// 
+///
 /// You can read more about Web Workers and Transferable Objects at
 /// [HTML5 Rocks](http://www.html5rocks.com/en/tutorials/workers/basics/).
-/// 
-/// * delta 
+///
+/// * delta
 ///
 ///   The amount of time in milliseconds to simulate in the update. In most
 ///   cases this timestep never changes in order to ensure deterministic
 ///   updates. The timestep is the same as that returned by
 ///   `MainLoop.getSimulationTimestep()`.
-/// 
+///
 /// @draw: A function that draws things on the screen.
-/// 
+///
 /// The draw() function gets passed the percent of time that the next run of
 /// update() will simulate that has actually elapsed, as
 /// a decimal. In other words, draw() gets passed how far between update()
@@ -144,7 +142,7 @@ impl Default for MainLoopOptions {
 /// happen at each vertical bar in the second row below, then some frames
 /// will have time left over that is not yet simulated by update() when
 /// rendering occurs in draw():
-/// 
+///
 /// update() timesteps:  |  |  |  |  |  |  |  |  |
 /// draw() calls:        |   |   |   |   |   |   |
 ///
@@ -156,15 +154,15 @@ impl Default for MainLoopOptions {
 /// states can be difficult to set up, and keep in mind that running this
 /// process takes time that could push the frame rate down, so it's often
 /// not worthwhile unless stuttering is visible.
-/// 
-/// * interpolation_percentage 
+///
+/// * interpolation_percentage
 ///
 ///   The cumulative amount of time that hasn't been simulated yet, divided
 ///   by the amount of time that will be simulated the next time update()
 ///   runs. Useful for interpolating frames.
-/// 
+///
 /// @end: A function that runs at the end of the main loop.
-/// 
+///
 /// Unlike update(), which can run zero or more times per
 /// frame, end() always runs exactly once per frame. This makes it useful
 /// for any updates that are not dependent on time in the simulation.
@@ -173,10 +171,10 @@ impl Default for MainLoopOptions {
 /// is too low, or performing long-running updates incrementally. Compared
 /// to begin(), generally actions should occur in end() if they use anything
 /// that update() or draw() affect.
-/// 
-/// * fps 
 ///
-///   The exponential moving average of the frames per second. It can be used 
+/// * fps
+///
+///   The exponential moving average of the frames per second. It can be used
 ///   to take action when the FPS is too low (or to restore to normalcy if the FPS
 ///   moves back up). Examples of actions to take if the FPS is too low
 ///   include exiting the application, lowering the visual quality, stopping
@@ -186,7 +184,7 @@ impl Default for MainLoopOptions {
 ///   results in more time being simulated per update() call, which causes
 ///   the application to behave non-deterministically.
 ///
-/// * end_panic 
+/// * end_panic
 ///
 ///   Indicates whether the simulation has fallen too far behind real time.
 ///   Specifically, `panic` will be `true` if too many updates occurred in
@@ -206,14 +204,19 @@ impl Default for MainLoopOptions {
 ///   be noticeable before a panic occurs. To help the application catch up
 ///   after a panic caused by a spiral of death, the same steps can be taken
 ///   that are suggested above if the FPS drops too low.
-pub fn start_main_loop<B,U,D,E>(mut opts:MainLoopOptions, mut begin: B, mut update: U, mut draw: D, mut end: E) -> Result<impl (FnOnce() -> ()), Error> 
+pub fn start_main_loop<B, U, D, E>(
+    mut opts: MainLoopOptions,
+    mut begin: B,
+    mut update: U,
+    mut draw: D,
+    mut end: E,
+) -> Result<impl (FnOnce() -> ()), Error>
 where
-B: FnMut(f64, f64) -> () + 'static,
+    B: FnMut(f64, f64) -> () + 'static,
     U: FnMut(f64) -> () + 'static,
     D: FnMut(f64) -> () + 'static,
     E: FnMut(f64, bool) -> () + 'static,
 {
-
     // Whether the main loop is running.
     let mut running = false;
 
@@ -248,7 +251,6 @@ B: FnMut(f64, f64) -> () + 'static,
     /// held externally so that this variable is not marked for garbage
     /// collection every time the main loop runs.
     let mut end_panic = false;
-
 
     start_raf_loop(move |timestamp| {
         if !running {

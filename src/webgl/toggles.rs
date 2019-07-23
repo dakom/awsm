@@ -1,9 +1,9 @@
-use super::{WebGlRenderer, WebGlCommon, GlToggle};
-use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
+use super::{GlToggle, WebGlCommon, WebGlRenderer};
+use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
 
 pub trait PartialWebGlToggle {
-    fn awsm_enable(&self, toggle:GlToggle);
-    fn awsm_disable(&self, toggle:GlToggle);
+    fn awsm_enable(&self, toggle: GlToggle);
+    fn awsm_disable(&self, toggle: GlToggle);
 }
 
 macro_rules! impl_context {
@@ -20,7 +20,7 @@ macro_rules! impl_context {
     };
 }
 
-impl_context!{
+impl_context! {
     WebGlRenderingContext{}
     WebGl2RenderingContext{}
 }
@@ -33,14 +33,13 @@ pub(super) struct ToggleFlags {
     polygon_offset_fill: bool,
     sample_alpha_to_coverage: bool,
     sample_coverage: bool,
-    scissor_test: bool, 
+    scissor_test: bool,
     stencil_test: bool,
     rasterizer_discard: bool,
 }
 
-impl <T: WebGlCommon> WebGlRenderer<T> {
-    pub fn toggle(&mut self, toggle:GlToggle, flag:bool) {
-    
+impl<T: WebGlCommon> WebGlRenderer<T> {
+    pub fn toggle(&mut self, toggle: GlToggle, flag: bool) {
         let curr = match toggle {
             GlToggle::Blend => &mut self.toggle_flags.blend,
             GlToggle::CullFace => &mut self.toggle_flags.cull_face,
@@ -53,12 +52,12 @@ impl <T: WebGlCommon> WebGlRenderer<T> {
             GlToggle::StencilTest => &mut self.toggle_flags.stencil_test,
             GlToggle::RasterizerDiscard => &mut self.toggle_flags.rasterizer_discard,
         };
-       
+
         if *curr != flag {
             *curr = flag;
             match flag {
                 true => self.gl.awsm_enable(toggle),
-                false => self.gl.awsm_disable(toggle)
+                false => self.gl.awsm_disable(toggle),
             };
         }
     }

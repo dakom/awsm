@@ -1,11 +1,11 @@
-use wasm_bindgen::prelude::JsValue; 
 use std::fmt;
+use wasm_bindgen::prelude::JsValue;
 
 pub enum Error {
     Empty,
     String(String),
     Js(JsValue),
-    Native(NativeError)
+    Native(NativeError),
 }
 
 pub enum NativeError {
@@ -47,11 +47,11 @@ pub enum NativeError {
     TextureCubeFaceNotCube,
     TextureMissingCubeFace,
     NoTextureTarget,
-    Internal
+    Internal,
 }
 
 impl Error {
-    pub fn to_js(self:&Self) -> JsValue {
+    pub fn to_js(self: &Self) -> JsValue {
         match self {
             Error::Empty => JsValue::null(),
             Error::String(s) => JsValue::from_str(&s[..]),
@@ -65,7 +65,13 @@ impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self {
             Error::Empty => write!(f, "empty error"),
-            _ => write!(f, "{}", self.to_js().as_string().unwrap_or("unknown error".to_string()))
+            _ => write!(
+                f,
+                "{}",
+                self.to_js()
+                    .as_string()
+                    .unwrap_or("unknown error".to_string())
+            ),
         }
     }
 }
@@ -74,21 +80,27 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self {
             Error::Empty => write!(f, "empty error"),
-            _ => write!(f, "{}", self.to_js().as_string().unwrap_or("unknown error".to_string()))
+            _ => write!(
+                f,
+                "{}",
+                self.to_js()
+                    .as_string()
+                    .unwrap_or("unknown error".to_string())
+            ),
         }
     }
 }
 
 impl NativeError {
-    pub fn default_str (self:&Self) -> &'static str{
+    pub fn default_str(self: &Self) -> &'static str {
         match self {
-            NativeError::Canvas2dContext=> "couldn't create 2d canvas context",
-            NativeError::WebGlContext=> "couldn't create webgl context",
+            NativeError::Canvas2dContext => "couldn't create 2d canvas context",
+            NativeError::WebGlContext => "couldn't create webgl context",
             NativeError::WebGlProgram => "couldn't create webgl program",
             NativeError::WebGlCanvas => "couldn't get canvas from webgl context",
             NativeError::Window => "couldn't get window",
             NativeError::WindowWidth => "couldn't get window width",
-            NativeError::WindowHeight=> "couldn't get window height",
+            NativeError::WindowHeight => "couldn't get window height",
             NativeError::CanvasCreate => "Couldn't create canvas",
             NativeError::AttributeLocation(_optional_name) => "Couldn't get attribute location",
             NativeError::UniformLocation(_optional_name) => "Couldn't get uniform location",
@@ -104,53 +116,62 @@ impl NativeError {
             NativeError::VertexArrayMissing => "no such vertex array",
             NativeError::VertexArrayCreate => "unable to create vertex array",
             NativeError::UniformMatrixMustBeFloat => "uniform matrix must be floats",
-            NativeError::UniformType=> "wrong uniform type",
+            NativeError::UniformType => "wrong uniform type",
             NativeError::UniformSize => "uniform data is not large enough",
             NativeError::UniformBufferName => "couldn't get uniform block name",
             NativeError::UniformBufferParameter => "couldn't get uniform block parameter",
             NativeError::UniformBufferMissing(_optional_name) => "uniform buffer is missing",
-            NativeError::UniformBufferOffsetMissing(_optional_name) => "uniform buffer offset is missing",
-            NativeError::UniformBufferTarget => "buffer target must be UniformBuffer for uniform buffers",
-            NativeError::WebGlBufferSourceOneNonZero => "webgl 1 only supports sub buffer uploads from 0",
-            NativeError::WebGl1TextureOffsetNonZero => "webgl 1 only supports texture uploads from offset 0",
+            NativeError::UniformBufferOffsetMissing(_optional_name) => {
+                "uniform buffer offset is missing"
+            }
+            NativeError::UniformBufferTarget => {
+                "buffer target must be UniformBuffer for uniform buffers"
+            }
+            NativeError::WebGlBufferSourceOneNonZero => {
+                "webgl 1 only supports sub buffer uploads from 0"
+            }
+            NativeError::WebGl1TextureOffsetNonZero => {
+                "webgl 1 only supports texture uploads from offset 0"
+            }
             NativeError::WebGl1TextureArray2d => "webgl 1 doesn't support 2d texture arrays",
             NativeError::WebGl1Texture3d => "webgl 1 doesn't support 3d textures",
             NativeError::JsValueExpectedBool => "expected jsvalue to be a bool",
             NativeError::JsValueExpectedNumber => "expected jsvalue to be a number",
-            NativeError::NoTextureTarget => "texture target must be known (call assign before activate)",
+            NativeError::NoTextureTarget => {
+                "texture target must be known (call assign before activate)"
+            }
             NativeError::TextureCubeFaceNotCube => "texture cube face is set but not cube target",
             NativeError::TextureMissingCubeFace => "texture cube face missing for cube target",
             NativeError::Internal => "internal error",
         }
     }
-    pub fn to_string (self:&Self) -> String {
+    pub fn to_string(self: &Self) -> String {
         match self {
-            NativeError::AttributeLocation(optional_name) => 
-                match optional_name {
-                    None => self.default_str().to_string(),
-                    Some(name) => format!("couldn't get attribute location named {}", name.as_str())
-                },
-            NativeError::UniformLocation(optional_name) => 
-                match optional_name {
-                    None => self.default_str().to_string(),
-                    Some(name) => format!("couldn't get uniform location named {}", name.as_str())
-                },
-            NativeError::UniformBufferMissing(optional_name) => 
-                match optional_name {
-                    None => self.default_str().to_string(),
-                    Some(name) => format!("couldn't get uniform buffer named {}", name.as_str())
-                },
-            NativeError::UniformBufferOffsetMissing(optional_name) => 
-                match optional_name {
-                    None => self.default_str().to_string(),
-                    Some((block_name, uniform_name)) => format!("couldn't get offset for uniform named {} in buffer named {}", uniform_name, block_name.as_str())
-                },
-            NativeError::MissingTextureSampler(optional_name) => 
-                match optional_name {
-                    None => self.default_str().to_string(),
-                    Some(name) => format!("couldn't get texture sampler named {}", name.as_str())
-                },
-            _ => self.default_str().to_string()
+            NativeError::AttributeLocation(optional_name) => match optional_name {
+                None => self.default_str().to_string(),
+                Some(name) => format!("couldn't get attribute location named {}", name.as_str()),
+            },
+            NativeError::UniformLocation(optional_name) => match optional_name {
+                None => self.default_str().to_string(),
+                Some(name) => format!("couldn't get uniform location named {}", name.as_str()),
+            },
+            NativeError::UniformBufferMissing(optional_name) => match optional_name {
+                None => self.default_str().to_string(),
+                Some(name) => format!("couldn't get uniform buffer named {}", name.as_str()),
+            },
+            NativeError::UniformBufferOffsetMissing(optional_name) => match optional_name {
+                None => self.default_str().to_string(),
+                Some((block_name, uniform_name)) => format!(
+                    "couldn't get offset for uniform named {} in buffer named {}",
+                    uniform_name,
+                    block_name.as_str()
+                ),
+            },
+            NativeError::MissingTextureSampler(optional_name) => match optional_name {
+                None => self.default_str().to_string(),
+                Some(name) => format!("couldn't get texture sampler named {}", name.as_str()),
+            },
+            _ => self.default_str().to_string(),
         }
     }
 }
@@ -193,7 +214,7 @@ impl From<&str> for Error {
 
 /* TODO: this doesn't work, but maybe it could!
  * idea is to consolidate str and String into one impl
-impl From<Borrow<str>> for Error 
+impl From<Borrow<str>> for Error
 {
     fn from(err: &str) -> Self {
         Error::String(String::from(err))

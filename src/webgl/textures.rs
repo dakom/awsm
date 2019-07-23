@@ -1,14 +1,20 @@
-use web_sys::{WebGlTexture, ImageBitmap, ImageData, HtmlImageElement, HtmlCanvasElement, HtmlVideoElement};
-use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
-use wasm_bindgen::prelude::JsValue;
-use js_sys::{Object};
+use super::{
+    DataType, Id, PixelFormat, TextureCubeFace, TextureMagFilter, TextureMinFilter,
+    TextureParameterName, TextureTarget, TextureUnit, TextureWrapMode, TextureWrapTarget,
+    WebGlCommon, WebGlRenderer, WebGlSpecific,
+};
+use crate::data::TypedData;
 use crate::errors::{Error, NativeError};
-use crate::data::{TypedData};
-use super::{Id, TextureCubeFace, TextureWrapTarget, TextureWrapMode, WebGlCommon, WebGlRenderer, TextureUnit, TextureParameterName, TextureMinFilter, TextureMagFilter, TextureTarget, PixelFormat, DataType, WebGlSpecific};
+use js_sys::Object;
+use log::info;
 use std::marker::PhantomData;
-use log::{info};
+use wasm_bindgen::prelude::JsValue;
+use web_sys::{
+    HtmlCanvasElement, HtmlImageElement, HtmlVideoElement, ImageBitmap, ImageData, WebGlTexture,
+};
+use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
 
-pub enum WebGlTextureSource <'a> {
+pub enum WebGlTextureSource<'a> {
     ArrayBufferView(&'a js_sys::Object, u32, u32, u32), //width, height, depth
     ImageBitmap(&'a ImageBitmap),
     ImageData(&'a ImageData),
@@ -17,8 +23,7 @@ pub enum WebGlTextureSource <'a> {
     VideoElement(&'a HtmlVideoElement),
 }
 
-
-// SimpleTexutreOptions represents the typical use case 
+// SimpleTexutreOptions represents the typical use case
 pub struct SimpleTextureOptions {
     pub flip_y: Option<bool>,
     pub premultiply_alpha: Option<bool>,
@@ -39,7 +44,7 @@ impl Default for SimpleTextureOptions {
             premultiply_alpha: None,
             wrap_s: Some(TextureWrapMode::ClampToEdge),
             wrap_t: Some(TextureWrapMode::ClampToEdge),
-            wrap_r: None, 
+            wrap_r: None,
             filter_min: Some(TextureMinFilter::Linear),
             filter_mag: Some(TextureMagFilter::Linear),
             pixel_format: PixelFormat::Rgb,
@@ -50,7 +55,7 @@ impl Default for SimpleTextureOptions {
 }
 
 pub struct TextureOptions {
-    pub internal_format: PixelFormat, 
+    pub internal_format: PixelFormat,
     pub data_format: PixelFormat,
     pub data_type: DataType,
     pub cube_face: Option<TextureCubeFace>,
@@ -59,24 +64,71 @@ pub struct TextureOptions {
 pub trait PartialWebGlTextures {
     fn awsm_create_texture(&self) -> Result<WebGlTexture, Error>;
 
-    fn awsm_texture_set_wrap(&self, bind_target: TextureTarget, wrap_target:TextureWrapTarget, wrap_mode: TextureWrapMode);
+    fn awsm_texture_set_wrap(
+        &self,
+        bind_target: TextureTarget,
+        wrap_target: TextureWrapTarget,
+        wrap_mode: TextureWrapMode,
+    );
     fn awsm_texture_set_min_filter(&self, bind_target: TextureTarget, filter: TextureMinFilter);
     fn awsm_texture_set_mag_filter(&self, bind_target: TextureTarget, filter: TextureMagFilter);
-    fn awsm_texture_sources_can_mipmap(&self, srcs:&[&WebGlTextureSource]) -> Result<(), Error>;
+    fn awsm_texture_sources_can_mipmap(&self, srcs: &[&WebGlTextureSource]) -> Result<(), Error>;
 
-    fn awsm_assign_simple_texture(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error>;
+    fn awsm_assign_simple_texture(
+        &self,
+        bind_target: TextureTarget,
+        opts: &SimpleTextureOptions,
+        src: &WebGlTextureSource,
+        dest: &WebGlTexture,
+    ) -> Result<(), Error>;
 
-    fn awsm_assign_simple_texture_mips(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error>;
+    fn awsm_assign_simple_texture_mips(
+        &self,
+        bind_target: TextureTarget,
+        opts: &SimpleTextureOptions,
+        srcs: &[&WebGlTextureSource],
+        dest: &WebGlTexture,
+    ) -> Result<(), Error>;
 
-    fn awsm_simple_parameters(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, use_mips: bool);
+    fn awsm_simple_parameters(
+        &self,
+        bind_target: TextureTarget,
+        opts: &SimpleTextureOptions,
+        use_mips: bool,
+    );
 
-    fn awsm_assign_texture(&self, bind_target: TextureTarget, opts:&TextureOptions,set_parameters:Option<impl Fn(&Self) -> ()>, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error>;
+    fn awsm_assign_texture(
+        &self,
+        bind_target: TextureTarget,
+        opts: &TextureOptions,
+        set_parameters: Option<impl Fn(&Self) -> ()>,
+        src: &WebGlTextureSource,
+        dest: &WebGlTexture,
+    ) -> Result<(), Error>;
 
-    fn awsm_assign_texture_mips(&self, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&Self) -> ()>, srcs:&[&WebGlTextureSource], dest:&WebGlTexture) -> Result<(), Error>;
+    fn awsm_assign_texture_mips(
+        &self,
+        bind_target: TextureTarget,
+        opts: &TextureOptions,
+        set_parameters: Option<impl Fn(&Self) -> ()>,
+        srcs: &[&WebGlTextureSource],
+        dest: &WebGlTexture,
+    ) -> Result<(), Error>;
 
-    fn awsm_activate_texture_for_sampler_index(&self, bind_target: TextureTarget, sampler_index: u32, texture:&WebGlTexture);
+    fn awsm_activate_texture_for_sampler_index(
+        &self,
+        bind_target: TextureTarget,
+        sampler_index: u32,
+        texture: &WebGlTexture,
+    );
 
-    fn _awsm_assign_texture(&self, bind_target: TextureTarget, mip_level: i32, opts:&TextureOptions, src:&WebGlTextureSource) -> Result<(), Error>;
+    fn _awsm_assign_texture(
+        &self,
+        bind_target: TextureTarget,
+        mip_level: i32,
+        opts: &TextureOptions,
+        src: &WebGlTextureSource,
+    ) -> Result<(), Error>;
 }
 
 macro_rules! impl_context {
@@ -88,14 +140,14 @@ macro_rules! impl_context {
             }
 
             fn awsm_texture_set_wrap(&self, bind_target: TextureTarget, wrap_target:TextureWrapTarget, wrap_mode: TextureWrapMode) {
-                self.tex_parameteri(bind_target as u32, wrap_target as u32, wrap_mode as i32); 
+                self.tex_parameteri(bind_target as u32, wrap_target as u32, wrap_mode as i32);
             }
             fn awsm_texture_set_min_filter(&self, bind_target: TextureTarget, filter: TextureMinFilter) {
-                self.tex_parameteri(bind_target as u32, TextureParameterName::MinFilter as u32, filter as i32); 
+                self.tex_parameteri(bind_target as u32, TextureParameterName::MinFilter as u32, filter as i32);
             }
 
             fn awsm_texture_set_mag_filter(&self, bind_target: TextureTarget, filter: TextureMagFilter) {
-                self.tex_parameteri(bind_target as u32, TextureParameterName::MagFilter as u32, filter as i32); 
+                self.tex_parameteri(bind_target as u32, TextureParameterName::MagFilter as u32, filter as i32);
             }
 
             fn awsm_assign_simple_texture(&self, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource, dest:&WebGlTexture) -> Result<(), Error> {
@@ -191,7 +243,7 @@ macro_rules! impl_context {
     };
 }
 
-impl_context!{
+impl_context! {
     WebGlRenderingContext{
         fn awsm_texture_sources_can_mipmap(&self, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
             match srcs.iter().all(|&src| is_power_of_2(&src)) {
@@ -310,11 +362,11 @@ impl_context!{
                     match bind_target {
                         TextureTarget::Texture2d => {
                             self.tex_image_2d_with_u32_and_u32_and_image(
-                                bind_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                bind_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 img
                             ).map_err(|err| err.into())
                         },
@@ -326,11 +378,11 @@ impl_context!{
                         },
                         TextureTarget::CubeMap => {
                             self.tex_image_2d_with_u32_and_u32_and_image(
-                                cube_face_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 img
                             ).map_err(|err| err.into())
                         }
@@ -340,11 +392,11 @@ impl_context!{
                     match bind_target {
                         TextureTarget::Texture2d => {
                             self.tex_image_2d_with_u32_and_u32_and_canvas(
-                                bind_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                bind_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 canvas
                             ).map_err(|err| err.into())
                         },
@@ -356,11 +408,11 @@ impl_context!{
                         },
                         TextureTarget::CubeMap => {
                             self.tex_image_2d_with_u32_and_u32_and_canvas(
-                                cube_face_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 canvas
                             ).map_err(|err| err.into())
                         }
@@ -370,11 +422,11 @@ impl_context!{
                     match bind_target {
                         TextureTarget::Texture2d => {
                             self.tex_image_2d_with_u32_and_u32_and_video(
-                                bind_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                bind_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 video
                             ).map_err(|err| err.into())
                         },
@@ -386,11 +438,11 @@ impl_context!{
                         },
                         TextureTarget::CubeMap => {
                             self.tex_image_2d_with_u32_and_u32_and_video(
-                                cube_face_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 video
                             ).map_err(|err| err.into())
                         }
@@ -430,16 +482,16 @@ impl_context!{
                         },
                         TextureTarget::Texture3d => {
                             self.tex_image_3d_with_opt_array_buffer_view(
-                                bind_u32, 
-                                mip_level, 
-                                internal_format, 
-                                *width as i32, 
-                                *height as i32, 
-                                *depth as i32, 
-                                0, 
-                                data_format, 
-                                data_type, 
-                                Some(buffer_view) 
+                                bind_u32,
+                                mip_level,
+                                internal_format,
+                                *width as i32,
+                                *height as i32,
+                                *depth as i32,
+                                0,
+                                data_format,
+                                data_type,
+                                Some(buffer_view)
                                 ).map_err(|err| err.into())
                         },
                         TextureTarget::Array2d => {
@@ -524,11 +576,11 @@ impl_context!{
                     match bind_target {
                         TextureTarget::Texture2d => {
                             self.tex_image_2d_with_u32_and_u32_and_html_image_element(
-                                bind_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                bind_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 img
                             ).map_err(|err| err.into())
                         },
@@ -540,11 +592,11 @@ impl_context!{
                         },
                         TextureTarget::CubeMap => {
                             self.tex_image_2d_with_u32_and_u32_and_html_image_element(
-                                cube_face_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 img
                             ).map_err(|err| err.into())
                         }
@@ -554,11 +606,11 @@ impl_context!{
                     match bind_target {
                         TextureTarget::Texture2d => {
                             self.tex_image_2d_with_u32_and_u32_and_html_canvas_element(
-                                bind_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                bind_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 canvas
                             ).map_err(|err| err.into())
                         },
@@ -570,11 +622,11 @@ impl_context!{
                         },
                         TextureTarget::CubeMap => {
                             self.tex_image_2d_with_u32_and_u32_and_html_canvas_element(
-                                cube_face_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 canvas
                             ).map_err(|err| err.into())
                         }
@@ -584,11 +636,11 @@ impl_context!{
                     match bind_target {
                         TextureTarget::Texture2d => {
                             self.tex_image_2d_with_u32_and_u32_and_html_video_element(
-                                bind_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                bind_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 video
                             ).map_err(|err| err.into())
 
@@ -601,11 +653,11 @@ impl_context!{
                         },
                         TextureTarget::CubeMap => {
                             self.tex_image_2d_with_u32_and_u32_and_html_video_element(
-                                cube_face_u32, 
-                                mip_level, 
-                                internal_format, 
-                                data_format, 
-                                data_type, 
+                                cube_face_u32,
+                                mip_level,
+                                internal_format,
+                                data_format,
+                                data_type,
                                 video
                             ).map_err(|err| err.into())
                         }
@@ -616,40 +668,30 @@ impl_context!{
         }
 
         fn awsm_texture_sources_can_mipmap(&self, _:&[&WebGlTextureSource]) -> Result<(), Error> {
-            Ok(()) 
+            Ok(())
         }
     }
 }
 
-pub fn get_size (src:&WebGlTextureSource) -> (u32, u32, u32) {
+pub fn get_size(src: &WebGlTextureSource) -> (u32, u32, u32) {
     match src {
         WebGlTextureSource::ArrayBufferView(_buffer, width, height, depth) => {
             (*width, *height, *depth)
-        },
-        WebGlTextureSource::ImageBitmap(bmp) => {
-            (bmp.width(), bmp.height(), 0)
-        },
-        WebGlTextureSource::ImageData(data) => {
-            (data.width(), data.height(), 0)
-        },
-        WebGlTextureSource::ImageElement(img) => {
-            (img.width(), img.height(), 0)
-        },
-        WebGlTextureSource::CanvasElement(canvas) => {
-            (canvas.width(), canvas.height(), 0)
-        },
-        WebGlTextureSource::VideoElement(video) => {
-            (video.width(), video.height(), 0)
-        },
+        }
+        WebGlTextureSource::ImageBitmap(bmp) => (bmp.width(), bmp.height(), 0),
+        WebGlTextureSource::ImageData(data) => (data.width(), data.height(), 0),
+        WebGlTextureSource::ImageElement(img) => (img.width(), img.height(), 0),
+        WebGlTextureSource::CanvasElement(canvas) => (canvas.width(), canvas.height(), 0),
+        WebGlTextureSource::VideoElement(video) => (video.width(), video.height(), 0),
     }
 }
 
-pub fn is_power_of_2 (src:&WebGlTextureSource) -> bool {
+pub fn is_power_of_2(src: &WebGlTextureSource) -> bool {
     let (width, height, depth) = get_size(&src);
     is_power_of_2_val(width) && is_power_of_2_val(height) && is_power_of_2_val(depth)
 }
 
-fn get_texture_options_from_simple(opts:&SimpleTextureOptions) -> TextureOptions {
+fn get_texture_options_from_simple(opts: &SimpleTextureOptions) -> TextureOptions {
     TextureOptions {
         internal_format: opts.pixel_format,
         data_format: opts.pixel_format,
@@ -658,10 +700,9 @@ fn get_texture_options_from_simple(opts:&SimpleTextureOptions) -> TextureOptions
     }
 }
 
-fn is_power_of_2_val (val:u32) -> bool {
-    val == 0 || (val & (val -1) == 0)
+fn is_power_of_2_val(val: u32) -> bool {
+    val == 0 || (val & (val - 1) == 0)
 }
-
 
 //WebGlRenderer Impl
 pub(super) struct TextureInfo {
@@ -669,66 +710,125 @@ pub(super) struct TextureInfo {
     bind_target: Option<TextureTarget>,
 }
 
-impl <G: WebGlCommon> WebGlRenderer<G> {
-
+impl<G: WebGlCommon> WebGlRenderer<G> {
     pub fn create_texture(&mut self) -> Result<Id, Error> {
         let texture = self.gl.awsm_create_texture()?;
 
-        let id = self.texture_lookup.insert(TextureInfo{
+        let id = self.texture_lookup.insert(TextureInfo {
             texture,
-            bind_target: None
+            bind_target: None,
         });
 
         Ok(id)
     }
 
-    pub fn assign_simple_texture(&mut self, texture_id:Id, bind_target: TextureTarget, opts:&SimpleTextureOptions, src:&WebGlTextureSource) -> Result<(), Error> {
-        let texture_info = self.texture_lookup.get_mut(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
+    pub fn assign_simple_texture(
+        &mut self,
+        texture_id: Id,
+        bind_target: TextureTarget,
+        opts: &SimpleTextureOptions,
+        src: &WebGlTextureSource,
+    ) -> Result<(), Error> {
+        let texture_info = self
+            .texture_lookup
+            .get_mut(texture_id)
+            .ok_or(Error::from(NativeError::MissingTexture))?;
 
         texture_info.bind_target = Some(bind_target);
         self.current_texture_id = Some(texture_id);
 
-        self.gl.awsm_assign_simple_texture(bind_target, &opts, &src, &texture_info.texture)
-
+        self.gl
+            .awsm_assign_simple_texture(bind_target, &opts, &src, &texture_info.texture)
     }
 
-    pub fn assign_simple_texture_mips(&mut self, texture_id:Id, bind_target: TextureTarget, opts:&SimpleTextureOptions, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
-
-        let texture_info = self.texture_lookup.get_mut(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
+    pub fn assign_simple_texture_mips(
+        &mut self,
+        texture_id: Id,
+        bind_target: TextureTarget,
+        opts: &SimpleTextureOptions,
+        srcs: &[&WebGlTextureSource],
+    ) -> Result<(), Error> {
+        let texture_info = self
+            .texture_lookup
+            .get_mut(texture_id)
+            .ok_or(Error::from(NativeError::MissingTexture))?;
 
         texture_info.bind_target = Some(bind_target);
         self.current_texture_id = Some(texture_id);
 
-        self.gl.awsm_assign_simple_texture_mips(bind_target, &opts, &srcs, &texture_info.texture)
+        self.gl
+            .awsm_assign_simple_texture_mips(bind_target, &opts, &srcs, &texture_info.texture)
     }
 
-
-    pub fn assign_texture(&mut self, texture_id: Id, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&G) -> ()>, src:&WebGlTextureSource) -> Result<(), Error> {
-
-        let texture_info  = self.texture_lookup.get_mut(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
+    pub fn assign_texture(
+        &mut self,
+        texture_id: Id,
+        bind_target: TextureTarget,
+        opts: &TextureOptions,
+        set_parameters: Option<impl Fn(&G) -> ()>,
+        src: &WebGlTextureSource,
+    ) -> Result<(), Error> {
+        let texture_info = self
+            .texture_lookup
+            .get_mut(texture_id)
+            .ok_or(Error::from(NativeError::MissingTexture))?;
 
         texture_info.bind_target = Some(bind_target);
         self.current_texture_id = Some(texture_id);
 
-        self.gl.awsm_assign_texture(bind_target, &opts, set_parameters, &src, &texture_info.texture)
+        self.gl.awsm_assign_texture(
+            bind_target,
+            &opts,
+            set_parameters,
+            &src,
+            &texture_info.texture,
+        )
     }
 
-    pub fn assign_texture_mips(&mut self, texture_id: Id, bind_target: TextureTarget, opts:&TextureOptions, set_parameters:Option<impl Fn(&G) -> ()>, srcs:&[&WebGlTextureSource]) -> Result<(), Error> {
-
-        let texture_info = self.texture_lookup.get_mut(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
+    pub fn assign_texture_mips(
+        &mut self,
+        texture_id: Id,
+        bind_target: TextureTarget,
+        opts: &TextureOptions,
+        set_parameters: Option<impl Fn(&G) -> ()>,
+        srcs: &[&WebGlTextureSource],
+    ) -> Result<(), Error> {
+        let texture_info = self
+            .texture_lookup
+            .get_mut(texture_id)
+            .ok_or(Error::from(NativeError::MissingTexture))?;
         texture_info.bind_target = Some(bind_target);
         self.current_texture_id = Some(texture_id);
 
-        self.gl.awsm_assign_texture_mips(bind_target, &opts, set_parameters, &srcs, &texture_info.texture)
+        self.gl.awsm_assign_texture_mips(
+            bind_target,
+            &opts,
+            set_parameters,
+            &srcs,
+            &texture_info.texture,
+        )
     }
 
-    pub fn activate_texture_for_sampler(&mut self, texture_id: Id, sampler_name: &str) -> Result<(), Error> {
+    pub fn activate_texture_for_sampler(
+        &mut self,
+        texture_id: Id,
+        sampler_name: &str,
+    ) -> Result<(), Error> {
         let sampler_slot = {
-            let program_id = self.current_program_id.ok_or(Error::from(NativeError::MissingShaderProgram))?;
-            let program_info = self.program_lookup.get_mut(program_id).ok_or(Error::from(NativeError::MissingShaderProgram))?;
+            let program_id = self
+                .current_program_id
+                .ok_or(Error::from(NativeError::MissingShaderProgram))?;
+            let program_info = self
+                .program_lookup
+                .get_mut(program_id)
+                .ok_or(Error::from(NativeError::MissingShaderProgram))?;
 
-            let sampler_slot = program_info.texture_sampler_slot_lookup.get(sampler_name)
-                .ok_or(Error::from(NativeError::MissingTextureSampler(Some(sampler_name.to_string()))))?;
+            let sampler_slot = program_info
+                .texture_sampler_slot_lookup
+                .get(sampler_name)
+                .ok_or(Error::from(NativeError::MissingTextureSampler(Some(
+                    sampler_name.to_string(),
+                ))))?;
 
             *sampler_slot
         };
@@ -737,9 +837,15 @@ impl <G: WebGlCommon> WebGlRenderer<G> {
         Ok(())
     }
 
-    pub fn activate_texture_for_sampler_index(&mut self, texture_id: Id, sampler_index: u32) -> Result<(), Error> {
-
-        let entry = self.texture_sampler_lookup.get(sampler_index as usize).ok_or(Error::from(NativeError::Internal))?;
+    pub fn activate_texture_for_sampler_index(
+        &mut self,
+        texture_id: Id,
+        sampler_index: u32,
+    ) -> Result<(), Error> {
+        let entry = self
+            .texture_sampler_lookup
+            .get(sampler_index as usize)
+            .ok_or(Error::from(NativeError::Internal))?;
 
         let requires_activation = match entry {
             Some(entry) => {
@@ -748,25 +854,34 @@ impl <G: WebGlCommon> WebGlRenderer<G> {
                 } else {
                     false
                 }
-            },
-            None => {
-                true
             }
+            None => true,
         };
 
         if requires_activation {
-
             self.texture_sampler_lookup[sampler_index as usize] = Some(texture_id);
-            let texture_info = self.texture_lookup.get(texture_id).ok_or(Error::from(NativeError::MissingTexture))?;
-            let bind_target = texture_info.bind_target.ok_or(Error::from(NativeError::NoTextureTarget))?;
-            self.gl.awsm_activate_texture_for_sampler_index(bind_target, sampler_index, &texture_info.texture);
+            let texture_info = self
+                .texture_lookup
+                .get(texture_id)
+                .ok_or(Error::from(NativeError::MissingTexture))?;
+            let bind_target = texture_info
+                .bind_target
+                .ok_or(Error::from(NativeError::NoTextureTarget))?;
+            self.gl.awsm_activate_texture_for_sampler_index(
+                bind_target,
+                sampler_index,
+                &texture_info.texture,
+            );
         }
 
         Ok(())
     }
 }
 
-fn get_cube_face_u32(bind_target:TextureTarget, cube_face:Option<TextureCubeFace>) -> Result<u32, Error> {
+fn get_cube_face_u32(
+    bind_target: TextureTarget,
+    cube_face: Option<TextureCubeFace>,
+) -> Result<u32, Error> {
     match cube_face {
         Some(cube_face) => {
             if bind_target != TextureTarget::CubeMap {
@@ -774,7 +889,7 @@ fn get_cube_face_u32(bind_target:TextureTarget, cube_face:Option<TextureCubeFace
             } else {
                 Ok(cube_face as u32)
             }
-        },
+        }
         None => {
             if bind_target == TextureTarget::CubeMap {
                 Err(Error::from(NativeError::TextureMissingCubeFace))

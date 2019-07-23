@@ -1,2 +1,2 @@
-use beach_map::{ID, DefaultVersion};
-pub type Id = ID<DefaultVersion>; 
+use beach_map::{DefaultVersion, ID};
+pub type Id = ID<DefaultVersion>;

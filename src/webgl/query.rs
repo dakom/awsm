@@ -1,12 +1,12 @@
-use super::enums::{GlQuery};
-use crate::errors::{Error};
-use crate::data::{clone_to_vec_f32};
-use wasm_bindgen::prelude::{JsValue};
-use web_sys::{WebGlRenderingContext,WebGl2RenderingContext};
+use super::enums::GlQuery;
+use crate::data::clone_to_vec_f32;
+use crate::errors::Error;
+use wasm_bindgen::prelude::JsValue;
+use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
 
 pub trait PartialWebGlQueries {
-    fn awsm_get_parameter_usize(&self, query:GlQuery) -> Result<usize, Error>;
-    fn awsm_get_parameter_vf32(&self, query:GlQuery) -> Result<Vec<f32>, Error>;
+    fn awsm_get_parameter_usize(&self, query: GlQuery) -> Result<usize, Error>;
+    fn awsm_get_parameter_vf32(&self, query: GlQuery) -> Result<Vec<f32>, Error>;
 }
 
 macro_rules! impl_context {
@@ -35,7 +35,7 @@ macro_rules! impl_context {
     };
 }
 
-impl_context!{
+impl_context! {
     WebGlRenderingContext{}
     WebGl2RenderingContext{}
 }
