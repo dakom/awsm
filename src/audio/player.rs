@@ -3,7 +3,6 @@ use wasm_bindgen::JsCast;
 use web_sys::{Event, Element, AudioBuffer, AudioContext, AudioNode, AudioBufferSourceNode};
 use js_sys::{Object};
 use crate::errors::{Error, NativeError};
-use gloo_events::{EventListener};
 use log::{info};
 use std::cell::{Cell, RefCell};
 use std::rc::{Rc};

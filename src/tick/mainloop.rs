@@ -145,8 +145,8 @@ impl Default for MainLoopOptions {
 /// will have time left over that is not yet simulated by update() when
 /// rendering occurs in draw():
 /// 
-///     update() timesteps:  |  |  |  |  |  |  |  |  |
-///     draw() calls:        |   |   |   |   |   |   |
+/// update() timesteps:  |  |  |  |  |  |  |  |  |
+/// draw() calls:        |   |   |   |   |   |   |
 ///
 /// To interpolate motion for rendering purposes, objects' state after the
 /// last update() must be retained and used to calculate an intermediate
