@@ -71,7 +71,7 @@ impl<'a> PointerLock<'a> {
                     info!("lock enabled!");
 
                     let move_cb = Closure::wrap(Box::new({
-                        let f = on_pointer_move.clone();
+                        let f = Rc::clone(&on_pointer_move);
                         move |e: &Event| f(e)
                     }) as Box<dyn FnMut(&Event)>);
                     document
