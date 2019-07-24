@@ -1,4 +1,4 @@
-use awsm::input::{listen_pointer_lock};
+use awsm::input::{PointerLock};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Window, Element, Document, HtmlElement};
@@ -88,9 +88,9 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
         }
     };
 
-    let cancel_fn = listen_pointer_lock(&button, &bg, &document, on_start, on_move, on_end); 
+    let pointer_lock = PointerLock::start(&button, &bg, &document, on_start, on_move, on_end); 
 
-    std::mem::forget(Box::new(cancel_fn));
+    std::mem::forget(Box::new(pointer_lock));
     Ok(())
 }
 
