@@ -1,5 +1,5 @@
 use awsm::tick;
-use awsm::tick::{Timestamp, start_timestamp_loop};
+use awsm::tick::{Timestamp, TimestampLoop};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Window, Element, Document, HtmlElement};
@@ -23,10 +23,10 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
 
     //Closure needs to take ownership since it occurs past the JS boundry and is 'static
     //but we need to assign the value of cancel from outside the closure
-    let cancel:Rc<RefCell<Option<Box<dyn FnOnce() -> ()>>>> = Rc::new(RefCell::new(None));
+    let timestamp_loop:Rc<RefCell<Option<TimestampLoop>>> = Rc::new(RefCell::new(None));
 
-    let cancel_fn = tick::start_timestamp_loop({
-        let cancel = Rc::clone(&cancel);
+    let _timestamp_loop = TimestampLoop::start({
+        let timestamp_loop= Rc::clone(&timestamp_loop);
         move |time_stamp| {
             let Timestamp {time, delta, elapsed} = time_stamp;
 
@@ -38,15 +38,13 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
             info.set_text_content(Some(&my_str.as_str()));
 
             if elapsed > MAX { 
-                if let Some(cb) = cancel.borrow_mut().take() {
-                    cb();
-                }
+                timestamp_loop.borrow_mut().take();
                 header.set_text_content(Some("ticker stopped!"));
             }
         }
     })?;
    
-    *cancel.borrow_mut() = Some(Box::new(cancel_fn));
+    *timestamp_loop.borrow_mut() = Some(_timestamp_loop);
 
     Ok(())
 }

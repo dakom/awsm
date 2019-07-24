@@ -1,6 +1,6 @@
 use awsm::webgl::{VertexArray, Id, GlToggle, AttributeOptions, DataType, ClearBufferMask, BeginMode};
 use crate::{WebGlRenderer};
-use awsm::tick::{Timestamp, start_timestamp_loop};
+use awsm::tick::{Timestamp, TimestampLoop};
 use std::rc::Rc; 
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
@@ -95,7 +95,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     state.borrow_mut().vao_id = Some(vao_id);
 
-    let _ = start_timestamp_loop({
+    TimestampLoop::start({
         let state = Rc::clone(&state);
         move |_timestamp:Timestamp| {
             let state = state.borrow();

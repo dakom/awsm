@@ -1,4 +1,4 @@
-use super::start_raf_loop;
+use super::RafLoop;
 use crate::errors::Error;
 use crate::window::get_window;
 use log::info;
@@ -204,233 +204,241 @@ impl Default for MainLoopOptions {
 ///   be noticeable before a panic occurs. To help the application catch up
 ///   after a panic caused by a spiral of death, the same steps can be taken
 ///   that are suggested above if the FPS drops too low.
-pub fn start_main_loop<B, U, D, E>(
-    mut opts: MainLoopOptions,
-    mut begin: B,
-    mut update: U,
-    mut draw: D,
-    mut end: E,
-) -> Result<impl (FnOnce() -> ()), Error>
-where
-    B: FnMut(f64, f64) -> () + 'static,
-    U: FnMut(f64) -> () + 'static,
-    D: FnMut(f64) -> () + 'static,
-    E: FnMut(f64, bool) -> () + 'static,
-{
-    // Whether the main loop is running.
-    let mut running = false;
+pub struct MainLoop {
+    raf_loop: RafLoop
+}
 
-    /// The cumulative amount of in-app time that hasn't been simulated yet.
-    /// See the comments inside animate() for details.
-    let mut frame_delta = 0.0f64;
+impl MainLoop {
+    pub fn start<B, U, D, E>(
+        mut opts: MainLoopOptions,
+        mut begin: B,
+        mut update: U,
+        mut draw: D,
+        mut end: E,
+        ) -> Result<MainLoop, Error>
+        where
+        B: FnMut(f64, f64) -> () + 'static,
+        U: FnMut(f64) -> () + 'static,
+        D: FnMut(f64) -> () + 'static,
+        E: FnMut(f64, bool) -> () + 'static,
+        {
+            // Whether the main loop is running.
+            let mut running = false;
 
-    /// The timestamp in milliseconds of the last time the main loop was run.
-    /// Used to compute the time elapsed between frames.
-    let mut last_frame_time_ms = 0.0f64;
+            /// The cumulative amount of in-app time that hasn't been simulated yet.
+            /// See the comments inside animate() for details.
+            let mut frame_delta = 0.0f64;
 
-    /// An exponential moving average of the frames per second.
-    let mut fps = 60.0f64;
+            /// The timestamp in milliseconds of the last time the main loop was run.
+            /// Used to compute the time elapsed between frames.
+            let mut last_frame_time_ms = 0.0f64;
 
-    /// The timestamp (in milliseconds) of the last time the `fps` moving
-    /// average was updated.
-    let mut last_fps_update = 0.0f64;
+            /// An exponential moving average of the frames per second.
+            let mut fps = 60.0f64;
 
-    /// The number of frames delivered since the last time the `fps` moving
-    /// average was updated (i.e. since `lastFpsUpdate`).
-    let mut frames_since_last_fps_update = 0u32;
+            /// The timestamp (in milliseconds) of the last time the `fps` moving
+            /// average was updated.
+            let mut last_fps_update = 0.0f64;
 
-    /// The number of times update() is called in a given frame. This is only
-    /// relevant inside of animate(), but a reference is held externally so that
-    /// this variable is not marked for garbage collection every time the main
-    /// loop runs.
-    let mut num_update_steps = 0u32;
+            /// The number of frames delivered since the last time the `fps` moving
+            /// average was updated (i.e. since `lastFpsUpdate`).
+            let mut frames_since_last_fps_update = 0u32;
 
-    /// Whether the simulation has fallen too far behind real time.
-    /// Specifically, `panic` will be set to `true` if too many updates occur in
-    /// one frame. This is only relevant inside of animate(), but a reference is
-    /// held externally so that this variable is not marked for garbage
-    /// collection every time the main loop runs.
-    let mut end_panic = false;
+            /// The number of times update() is called in a given frame. This is only
+            /// relevant inside of animate(), but a reference is held externally so that
+            /// this variable is not marked for garbage collection every time the main
+            /// loop runs.
+            let mut num_update_steps = 0u32;
 
-    start_raf_loop(move |timestamp| {
-        if !running {
-            // Render the initial state before any updates occur.
-            draw(1.0);
+            /// Whether the simulation has fallen too far behind real time.
+            /// Specifically, `panic` will be set to `true` if too many updates occur in
+            /// one frame. This is only relevant inside of animate(), but a reference is
+            /// held externally so that this variable is not marked for garbage
+            /// collection every time the main loop runs.
+            let mut end_panic = false;
 
-            // Reset variables that are used for tracking time so that we
-            // don't simulate time passed while the application was paused.
-            last_frame_time_ms = timestamp;
-            last_fps_update = timestamp;
-            frames_since_last_fps_update = 0;
+            let raf_loop = RafLoop::start(move |timestamp| {
+                if !running {
+                    // Render the initial state before any updates occur.
+                    draw(1.0);
 
-            // The application isn't considered "running" until the
-            // application starts drawing.
-            running = true;
-        } else {
-            // Throttle the frame rate (if minFrameDelay is set to a non-zero value by
-            // `MainLoop.setMaxAllowedFPS()`).
-            if timestamp < (last_frame_time_ms + opts.min_frame_delay) {
-                return;
-            }
+                    // Reset variables that are used for tracking time so that we
+                    // don't simulate time passed while the application was paused.
+                    last_frame_time_ms = timestamp;
+                    last_fps_update = timestamp;
+                    frames_since_last_fps_update = 0;
 
-            // frameDelta is the cumulative amount of in-app time that hasn't been
-            // simulated yet. Add the time since the last frame. We need to track total
-            // not-yet-simulated time (as opposed to just the time elapsed since the
-            // last frame) because not all actually elapsed time is guaranteed to be
-            // simulated each frame. See the comments below for details.
-            frame_delta += timestamp - last_frame_time_ms;
-            last_frame_time_ms = timestamp;
+                    // The application isn't considered "running" until the
+                    // application starts drawing.
+                    running = true;
+                } else {
+                    // Throttle the frame rate (if minFrameDelay is set to a non-zero value by
+                    // `MainLoop.setMaxAllowedFPS()`).
+                    if timestamp < (last_frame_time_ms + opts.min_frame_delay) {
+                        return;
+                    }
 
-            // Run any updates that are not dependent on time in the simulation. See
-            // `MainLoop.setBegin()` for additional details on how to use this.
-            begin(timestamp, frame_delta);
+                    // frameDelta is the cumulative amount of in-app time that hasn't been
+                    // simulated yet. Add the time since the last frame. We need to track total
+                    // not-yet-simulated time (as opposed to just the time elapsed since the
+                    // last frame) because not all actually elapsed time is guaranteed to be
+                    // simulated each frame. See the comments below for details.
+                    frame_delta += timestamp - last_frame_time_ms;
+                    last_frame_time_ms = timestamp;
 
-            // Update the estimate of the frame rate, `fps`. Approximately every
-            // second, the number of frames that occurred in that second are included
-            // in an exponential moving average of all frames per second. This means
-            // that more recent seconds affect the estimated frame rate more than older
-            // seconds.
-            if timestamp > (last_fps_update + opts.fps_update_interval) {
-                // Compute the new exponential moving average.
-                fps =
-                    // Divide the number of frames since the last FPS update by the
-                    // amount of time that has passed to get the mean frames per second
-                    // over that period. This is necessary because slightly more than a
-                    // second has likely passed since the last update.
-                    opts.fps_alpha * (frames_since_last_fps_update as f64) * 1000.0 / (timestamp - last_fps_update) + (1.0 - opts.fps_alpha) * fps;
+                    // Run any updates that are not dependent on time in the simulation. See
+                    // `MainLoop.setBegin()` for additional details on how to use this.
+                    begin(timestamp, frame_delta);
 
-                // Reset the frame counter and last-updated timestamp since their
-                // latest values have now been incorporated into the FPS estimate.
-                last_fps_update = timestamp;
-                frames_since_last_fps_update = 0;
-            }
-            // Count the current frame in the next frames-per-second update. This
-            // happens after the previous section because the previous section
-            // calculates the frames that occur up until `timestamp`, and `timestamp`
-            // refers to a time just before the current frame was delivered.
-            frames_since_last_fps_update += 1;
+                    // Update the estimate of the frame rate, `fps`. Approximately every
+                    // second, the number of frames that occurred in that second are included
+                    // in an exponential moving average of all frames per second. This means
+                    // that more recent seconds affect the estimated frame rate more than older
+                    // seconds.
+                    if timestamp > (last_fps_update + opts.fps_update_interval) {
+                        // Compute the new exponential moving average.
+                        fps =
+                            // Divide the number of frames since the last FPS update by the
+                            // amount of time that has passed to get the mean frames per second
+                            // over that period. This is necessary because slightly more than a
+                            // second has likely passed since the last update.
+                            opts.fps_alpha * (frames_since_last_fps_update as f64) * 1000.0 / (timestamp - last_fps_update) + (1.0 - opts.fps_alpha) * fps;
 
-            /*
-             * A naive way to move an object along its X-axis might be to write a main
-             * loop containing the statement `obj.x += 10;` which would move the object
-             * 10 units per frame. This approach suffers from the issue that it is
-             * dependent on the frame rate. In other words, if your application is
-             * running slowly (that is, fewer frames per second), your object will also
-             * appear to move slowly, whereas if your application is running quickly
-             * (that is, more frames per second), your object will appear to move
-             * quickly. This is undesirable, especially in multiplayer/multi-user
-             * applications.
-             *
-             * One solution is to multiply the speed by the amount of time that has
-             * passed between rendering frames. For example, if you want your object to
-             * move 600 units per second, you might write `obj.x += 600 * delta`, where
-             * `delta` is the time passed since the last frame. (For convenience, let's
-             * move this statement to an update() function that takes `delta` as a
-             * parameter.) This way, your object will move a constant distance over
-             * time. However, at low frame rates and high speeds, your object will move
-             * large distances every frame, which can cause it to do strange things
-             * such as move through walls. Additionally, we would like our program to
-             * be deterministic. That is, every time we run the application with the
-             * same input, we would like exactly the same output. If the time between
-             * frames (the `delta`) varies, our output will diverge the longer the
-             * program runs due to accumulated rounding errors, even at normal frame
-             * rates.
-             *
-             * A better solution is to separate the amount of time simulated in each
-             * update() from the amount of time between frames. Our update() function
-             * doesn't need to change; we just need to change the delta we pass to it
-             * so that each update() simulates a fixed amount of time (that is, `delta`
-             * should have the same value each time update() is called). The update()
-             * function can be run multiple times per frame if needed to simulate the
-             * total amount of time passed since the last frame. (If the time that has
-             * passed since the last frame is less than the fixed simulation time, we
-             * just won't run an update() until the the next frame. If there is
-             * unsimulated time left over that is less than our timestep, we'll just
-             * leave it to be simulated during the next frame.) This approach avoids
-             * inconsistent rounding errors and ensures that there are no giant leaps
-             * through walls between frames.
-             *
-             * That is what is done below. It introduces a new problem, but it is a
-             * manageable one: if the amount of time spent simulating is consistently
-             * longer than the amount of time between frames, the application could
-             * freeze and crash in a spiral of death. This won't happen as long as the
-             * fixed simulation time is set to a value that is high enough that
-             * update() calls usually take less time than the amount of time they're
-             * simulating. If it does start to happen anyway, see `MainLoop.setEnd()`
-             * for a discussion of ways to stop it.
-             *
-             * Additionally, see `MainLoop.setUpdate()` for a discussion of performance
-             * considerations.
-             *
-             * Further reading for those interested:
-             *
-             * - http://gameprogrammingpatterns.com/game-loop.html
-             * - http://gafferongames.com/game-physics/fix-your-timestep/
-             * - https://gamealchemist.wordpress.com/2013/03/16/thoughts-on-the-javascript-game-loop/
-             * - https://developer.mozilla.org/en-US/docs/Games/Anatomy
-             */
-            num_update_steps = 0;
+                        // Reset the frame counter and last-updated timestamp since their
+                        // latest values have now been incorporated into the FPS estimate.
+                        last_fps_update = timestamp;
+                        frames_since_last_fps_update = 0;
+                    }
+                    // Count the current frame in the next frames-per-second update. This
+                    // happens after the previous section because the previous section
+                    // calculates the frames that occur up until `timestamp`, and `timestamp`
+                    // refers to a time just before the current frame was delivered.
+                    frames_since_last_fps_update += 1;
 
-            while frame_delta >= opts.simulation_timestep {
-                update(opts.simulation_timestep);
-                frame_delta -= opts.simulation_timestep;
+                    /*
+                     * A naive way to move an object along its X-axis might be to write a main
+                     * loop containing the statement `obj.x += 10;` which would move the object
+                     * 10 units per frame. This approach suffers from the issue that it is
+                     * dependent on the frame rate. In other words, if your application is
+                     * running slowly (that is, fewer frames per second), your object will also
+                     * appear to move slowly, whereas if your application is running quickly
+                     * (that is, more frames per second), your object will appear to move
+                     * quickly. This is undesirable, especially in multiplayer/multi-user
+                     * applications.
+                     *
+                     * One solution is to multiply the speed by the amount of time that has
+                     * passed between rendering frames. For example, if you want your object to
+                     * move 600 units per second, you might write `obj.x += 600 * delta`, where
+                     * `delta` is the time passed since the last frame. (For convenience, let's
+                     * move this statement to an update() function that takes `delta` as a
+                     * parameter.) This way, your object will move a constant distance over
+                     * time. However, at low frame rates and high speeds, your object will move
+                     * large distances every frame, which can cause it to do strange things
+                     * such as move through walls. Additionally, we would like our program to
+                     * be deterministic. That is, every time we run the application with the
+                     * same input, we would like exactly the same output. If the time between
+                     * frames (the `delta`) varies, our output will diverge the longer the
+                     * program runs due to accumulated rounding errors, even at normal frame
+                     * rates.
+                     *
+                     * A better solution is to separate the amount of time simulated in each
+                     * update() from the amount of time between frames. Our update() function
+                     * doesn't need to change; we just need to change the delta we pass to it
+                     * so that each update() simulates a fixed amount of time (that is, `delta`
+                     * should have the same value each time update() is called). The update()
+                     * function can be run multiple times per frame if needed to simulate the
+                     * total amount of time passed since the last frame. (If the time that has
+                     * passed since the last frame is less than the fixed simulation time, we
+                     * just won't run an update() until the the next frame. If there is
+                     * unsimulated time left over that is less than our timestep, we'll just
+                     * leave it to be simulated during the next frame.) This approach avoids
+                     * inconsistent rounding errors and ensures that there are no giant leaps
+                     * through walls between frames.
+                     *
+                     * That is what is done below. It introduces a new problem, but it is a
+                     * manageable one: if the amount of time spent simulating is consistently
+                     * longer than the amount of time between frames, the application could
+                     * freeze and crash in a spiral of death. This won't happen as long as the
+                     * fixed simulation time is set to a value that is high enough that
+                     * update() calls usually take less time than the amount of time they're
+                     * simulating. If it does start to happen anyway, see `MainLoop.setEnd()`
+                     * for a discussion of ways to stop it.
+                     *
+                     * Additionally, see `MainLoop.setUpdate()` for a discussion of performance
+                     * considerations.
+                     *
+                     * Further reading for those interested:
+                     *
+                     * - http://gameprogrammingpatterns.com/game-loop.html
+                     * - http://gafferongames.com/game-physics/fix-your-timestep/
+                     * - https://gamealchemist.wordpress.com/2013/03/16/thoughts-on-the-javascript-game-loop/
+                     * - https://developer.mozilla.org/en-US/docs/Games/Anatomy
+                     */
+                    num_update_steps = 0;
 
-                /*
-                 * Sanity check: bail if we run the loop too many times.
-                 *
-                 * One way this could happen is if update() takes longer to run than
-                 * the time it simulates, thereby causing a spiral of death. For ways
-                 * to avoid this, see `MainLoop.setEnd()`. Another way this could
-                 * happen is if the browser throttles serving frames, which typically
-                 * occurs when the tab is in the background or the device battery is
-                 * low. An event outside of the main loop such as audio processing or
-                 * synchronous resource reads could also cause the application to hang
-                 * temporarily and accumulate not-yet-simulated time as a result.
-                 *
-                 * 240 is chosen because, for any sane value of simulationTimestep, 240
-                 * updates will simulate at least one second, and it will simulate four
-                 * seconds with the default value of simulationTimestep. (Safari
-                 * notifies users that the script is taking too long to run if it takes
-                 * more than five seconds.)
-                 *
-                 * If there are more updates to run in a frame than this, the
-                 * application will appear to slow down to the user until it catches
-                 * back up. In networked applications this will usually cause the user
-                 * to get out of sync with their peers, but if the updates are taking
-                 * this long already, they're probably already out of sync.
-                 */
-                num_update_steps += 1;
-                if num_update_steps >= 240 {
-                    end_panic = true;
-                    break;
+                    while frame_delta >= opts.simulation_timestep {
+                        update(opts.simulation_timestep);
+                        frame_delta -= opts.simulation_timestep;
+
+                        /*
+                         * Sanity check: bail if we run the loop too many times.
+                         *
+                         * One way this could happen is if update() takes longer to run than
+                         * the time it simulates, thereby causing a spiral of death. For ways
+                         * to avoid this, see `MainLoop.setEnd()`. Another way this could
+                         * happen is if the browser throttles serving frames, which typically
+                         * occurs when the tab is in the background or the device battery is
+                         * low. An event outside of the main loop such as audio processing or
+                         * synchronous resource reads could also cause the application to hang
+                         * temporarily and accumulate not-yet-simulated time as a result.
+                         *
+                         * 240 is chosen because, for any sane value of simulationTimestep, 240
+                         * updates will simulate at least one second, and it will simulate four
+                         * seconds with the default value of simulationTimestep. (Safari
+                         * notifies users that the script is taking too long to run if it takes
+                         * more than five seconds.)
+                         *
+                         * If there are more updates to run in a frame than this, the
+                         * application will appear to slow down to the user until it catches
+                         * back up. In networked applications this will usually cause the user
+                         * to get out of sync with their peers, but if the updates are taking
+                         * this long already, they're probably already out of sync.
+                         */
+                        num_update_steps += 1;
+                        if num_update_steps >= 240 {
+                            end_panic = true;
+                            break;
+                        }
+
+                        /*
+                         * Render the screen. We do this regardless of whether update() has run
+                         * during this frame because it is possible to interpolate between updates
+                         * to make the frame rate appear faster than updates are actually
+                         * happening. See `MainLoop.setDraw()` for an explanation of how to do
+                         * that.
+                         *
+                         * We draw after updating because we want the screen to reflect a state of
+                         * the application that is as up-to-date as possible. (`MainLoop.start()`
+                         * draws the very first frame in the application's initial state, before
+                         * any updates have occurred.) Some sources speculate that rendering
+                         * earlier in the requestAnimationFrame callback can get the screen painted
+                         * faster; this is mostly not true, and even when it is, it's usually just
+                         * a trade-off between rendering the current frame sooner and rendering the
+                         * next frame later.
+                         *
+                         * See `MainLoop.setDraw()` for details about draw() itself.
+                         */
+                        draw(frame_delta / opts.simulation_timestep);
+
+                        // Run any updates that are not dependent on time in the simulation. See
+                        // `MainLoop.setEnd()` for additional details on how to use this.
+                        end(fps, end_panic);
+
+                        end_panic = false;
+                    }
                 }
+            })?;
 
-                /*
-                 * Render the screen. We do this regardless of whether update() has run
-                 * during this frame because it is possible to interpolate between updates
-                 * to make the frame rate appear faster than updates are actually
-                 * happening. See `MainLoop.setDraw()` for an explanation of how to do
-                 * that.
-                 *
-                 * We draw after updating because we want the screen to reflect a state of
-                 * the application that is as up-to-date as possible. (`MainLoop.start()`
-                 * draws the very first frame in the application's initial state, before
-                 * any updates have occurred.) Some sources speculate that rendering
-                 * earlier in the requestAnimationFrame callback can get the screen painted
-                 * faster; this is mostly not true, and even when it is, it's usually just
-                 * a trade-off between rendering the current frame sooner and rendering the
-                 * next frame later.
-                 *
-                 * See `MainLoop.setDraw()` for details about draw() itself.
-                 */
-                draw(frame_delta / opts.simulation_timestep);
-
-                // Run any updates that are not dependent on time in the simulation. See
-                // `MainLoop.setEnd()` for additional details on how to use this.
-                end(fps, end_panic);
-
-                end_panic = false;
-            }
+            Ok(Self{raf_loop})
         }
-    })
 }

@@ -22,78 +22,99 @@ pub struct Timestamp {
     pub elapsed: f64,
 }
 
-/// similar to the top-level start_raf_loop() but instead of a callback with the current time
-/// it provides a Timestamp struct which contains commonly useful info
-pub fn start_timestamp_loop<F>(mut on_tick: F) -> Result<impl (FnOnce() -> ()), Error>
-where
-    F: (FnMut(Timestamp) -> ()) + 'static,
-{
-    let mut last_time: Option<f64> = None;
-    let mut first_time = 0f64;
-
-    start_raf_loop(move |time| {
-        match last_time {
-            Some(last_time) => {
-                on_tick(Timestamp {
-                    time,
-                    delta: time - last_time,
-                    elapsed: time - first_time,
-                });
-            }
-            None => {
-                on_tick(Timestamp {
-                    time,
-                    delta: 0.0,
-                    elapsed: 0.0,
-                });
-                first_time = time;
-            }
-        }
-        last_time = Some(time);
-    })
+pub struct TimestampLoop {
+    raf_loop: RafLoop
 }
 
-/// Kick off a rAF loop. The returned function can be called to cancel it
-pub fn start_raf_loop<F>(mut on_tick: F) -> Result<impl (FnOnce() -> ()), Error>
-where
-    F: (FnMut(f64) -> ()) + 'static,
-{
-    let f = Rc::new(RefCell::new(None));
-    let g = f.clone();
-
-    //the main closure must be static - and so it needs to take in its deps via move
-    //but keep_alive also exists in cancel() - so we're left with multiple owners
-    let keep_alive = Rc::new(Cell::new(true));
-
-    let mut raf_id: Option<i32> = None;
-
-    //this window is passed into the loop
-    let window = get_window()?;
+impl TimestampLoop {
+/// similar to the top-level start_raf_loop() but instead of a callback with the current time
+/// it provides a Timestamp struct which contains commonly useful info
+    pub fn start<F>(mut on_tick: F) -> Result<Self, Error>
+    where
+        F: (FnMut(Timestamp) -> ()) + 'static,
     {
-        let keep_alive = Rc::clone(&keep_alive);
-        *g.borrow_mut() = Some(Closure::wrap(Box::new(move |time| {
-            if !keep_alive.get() {
-                if let Some(id) = raf_id {
-                    info!("clearing raf id: {}", id);
+        let mut last_time: Option<f64> = None;
+        let mut first_time = 0f64;
 
-                    window.cancel_animation_frame(id).unwrap();
+        let raf_loop = RafLoop::start(move |time| {
+            match last_time {
+                Some(last_time) => {
+                    on_tick(Timestamp {
+                        time,
+                        delta: time - last_time,
+                        elapsed: time - first_time,
+                    });
                 }
-                //stopping tick loop
-                f.borrow_mut().take();
-            } else {
-                raf_id = request_animation_frame(&window, f.borrow().as_ref().unwrap()).ok();
-                on_tick(time);
+                None => {
+                    on_tick(Timestamp {
+                        time,
+                        delta: 0.0,
+                        elapsed: 0.0,
+                    });
+                    first_time = time;
+                }
             }
-        }) as Box<dyn FnMut(f64) -> ()>));
+            last_time = Some(time);
+        })?;
+
+        Ok(Self{raf_loop})
     }
+}
 
-    //this is just used to create the first invocation
-    let window = get_window()?;
-    raf_id = request_animation_frame(&window, g.borrow().as_ref().unwrap()).ok();
+pub struct RafLoop {
+    keep_alive:Rc<Cell<bool>>
+}
 
-    let cancel = move || keep_alive.set(false);
+impl Drop for RafLoop {
+    fn drop(&mut self) {
+        self.keep_alive.set(false);
+    }
+}
 
-    Ok(cancel)
+impl RafLoop {
+
+    /// Kick off a rAF loop. The returned function can be called to cancel it
+    pub fn start<F>(mut on_tick: F) -> Result<Self, Error>
+    where
+        F: (FnMut(f64) -> ()) + 'static,
+    {
+        let f = Rc::new(RefCell::new(None));
+        let g = f.clone();
+
+        //the main closure must be static - and so it needs to take in its deps via move
+        //but keep_alive also exists in cancel() - so we're left with multiple owners
+        let keep_alive = Rc::new(Cell::new(true));
+
+        let mut raf_id: Option<i32> = None;
+
+        //this window is passed into the loop
+        let window = get_window()?;
+        {
+            let keep_alive = Rc::clone(&keep_alive);
+            *g.borrow_mut() = Some(Closure::wrap(Box::new(move |time| {
+                if !keep_alive.get() {
+                    if let Some(id) = raf_id {
+                        info!("clearing raf id: {}", id);
+
+                        window.cancel_animation_frame(id).unwrap();
+                    }
+                    //stopping tick loop
+                    f.borrow_mut().take();
+                } else {
+                    raf_id = request_animation_frame(&window, f.borrow().as_ref().unwrap()).ok();
+                    on_tick(time);
+                }
+            }) as Box<dyn FnMut(f64) -> ()>));
+        }
+
+        //this is just used to create the first invocation
+        let window = get_window()?;
+        raf_id = request_animation_frame(&window, g.borrow().as_ref().unwrap()).ok();
+
+        Ok(Self{
+            keep_alive
+        })
+    }
 }
 
 fn request_animation_frame(

@@ -1,5 +1,5 @@
 use awsm::tick;
-use awsm::tick::{MainLoopOptions, start_main_loop};
+use awsm::tick::{MainLoopOptions, MainLoop};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Window, Element, Document, HtmlElement};
@@ -35,7 +35,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
 
     //Closure needs to take ownership since it occurs past the JS boundry and is 'static
     //but we need to assign the value of cancel from outside the closure
-    let cancel:Rc<RefCell<Option<Box<dyn FnOnce() -> ()>>>> = Rc::new(RefCell::new(None));
+    let main_loop:Rc<RefCell<Option<MainLoop>>> = Rc::new(RefCell::new(None));
 
     //callbacks
     let begin = move |time, delta| {
@@ -44,7 +44,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
     };
 
     let update = {
-        let cancel = cancel.clone();
+        let main_loop = main_loop .clone();
         move |delta| {
             elapsed += delta;
             let elapsed = (elapsed / 1000.0).round() as u64;
@@ -54,9 +54,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
             update_div.set_text_content(Some(&my_str.as_str()));
 
             if elapsed > MAX { 
-                if let Some(cb) = cancel.borrow_mut().take() {
-                    cb();
-                }
+                main_loop.borrow_mut().take();
                 header.set_text_content(Some("ticker stopped!"));
             }
         }
@@ -71,8 +69,8 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
         fps_div.set_text_content(Some(&my_str.as_str()));
     };
 
-    let cancel_fn = start_main_loop(MainLoopOptions::default(), begin, update, draw, end)?;
-    *cancel.borrow_mut() = Some(Box::new(cancel_fn));
+    let _main_loop = MainLoop::start(MainLoopOptions::default(), begin, update, draw, end)?;
+    *main_loop.borrow_mut() = Some(_main_loop);
 
 
     Ok(())
