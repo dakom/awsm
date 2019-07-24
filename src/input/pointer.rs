@@ -5,9 +5,9 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{Document, Element, Event,EventTarget, MouseEvent};
+use web_sys::{Document, Element, Event, EventTarget, MouseEvent};
 
-pub struct PointerLock <'a> {
+pub struct PointerLock<'a> {
     trigger: &'a EventTarget,
     target: &'a EventTarget,
     click_cb: Closure<dyn FnMut(&Event)>,
@@ -17,8 +17,7 @@ pub struct PointerLock <'a> {
     document: &'a Document,
 }
 
-impl <'a> PointerLock <'a> {
-
+impl<'a> PointerLock<'a> {
     pub fn start<F, G, H>(
         trigger: &'a Element,
         target: &'a Element,
@@ -57,7 +56,7 @@ impl <'a> PointerLock <'a> {
             let document = document.clone();
             let is_locked = Rc::clone(&is_locked);
 
-            let mut listener:Option<Closure<dyn FnMut(&Event)>> = None;
+            let mut listener: Option<Closure<dyn FnMut(&Event)>> = None;
 
             Rc::new(RefCell::new(move |initial_evt: &Event| {
                 let lock_enabled = match document.pointer_lock_element() {
@@ -73,58 +72,110 @@ impl <'a> PointerLock <'a> {
 
                     let move_cb = Closure::wrap(Box::new({
                         let f = on_pointer_move.clone();
-                        move |e:&Event| f(e) 
+                        move |e: &Event| f(e)
                     }) as Box<dyn FnMut(&Event)>);
-                    document.add_event_listener_with_callback("mousemove", move_cb.as_ref().unchecked_ref()).unwrap_throw();
+                    document
+                        .add_event_listener_with_callback(
+                            "mousemove",
+                            move_cb.as_ref().unchecked_ref(),
+                        )
+                        .unwrap_throw();
                     listener = Some(move_cb);
                 } else {
                     on_end();
                     if let Some(l) = listener.take() {
-                        document.remove_event_listener_with_callback("mousemove", l.as_ref().unchecked_ref()).unwrap_throw();
+                        document
+                            .remove_event_listener_with_callback(
+                                "mousemove",
+                                l.as_ref().unchecked_ref(),
+                            )
+                            .unwrap_throw();
                     }
                 }
             }))
         };
 
         let click_cb = Closure::wrap(Box::new(request_lock) as Box<dyn FnMut(&Event)>);
-        trigger.add_event_listener_with_callback( "click", click_cb.as_ref().unchecked_ref()).unwrap_throw();
-        
+        trigger
+            .add_event_listener_with_callback("click", click_cb.as_ref().unchecked_ref())
+            .unwrap_throw();
+
         let change_cb = Closure::wrap(Box::new({
-                let f = pointer_lock_change.clone();
-                move |e:&Event| {
-                    let f = &mut *f.borrow_mut();
-                    f(e);
-                }
+            let f = pointer_lock_change.clone();
+            move |e: &Event| {
+                let f = &mut *f.borrow_mut();
+                f(e);
+            }
         }) as Box<dyn FnMut(&Event)>);
-        document.add_event_listener_with_callback( "pointerlockchange", change_cb.as_ref().unchecked_ref()).unwrap_throw();
-        
+        document
+            .add_event_listener_with_callback(
+                "pointerlockchange",
+                change_cb.as_ref().unchecked_ref(),
+            )
+            .unwrap_throw();
+
         let change_cb_moz = Closure::wrap(Box::new({
-                let f = pointer_lock_change.clone();
-                move |e:&Event| {
-                    let f = &mut *f.borrow_mut();
-                    f(e);
-                }
+            let f = pointer_lock_change.clone();
+            move |e: &Event| {
+                let f = &mut *f.borrow_mut();
+                f(e);
+            }
         }) as Box<dyn FnMut(&Event)>);
-        document.add_event_listener_with_callback( "mozpointerlockchange", change_cb_moz.as_ref().unchecked_ref()).unwrap_throw();
+        document
+            .add_event_listener_with_callback(
+                "mozpointerlockchange",
+                change_cb_moz.as_ref().unchecked_ref(),
+            )
+            .unwrap_throw();
         let change_cb_webkit = Closure::wrap(Box::new({
-                let f = pointer_lock_change.clone();
-                move |e:&Event| {
-                    let f = &mut *f.borrow_mut();
-                    f(e);
-                }
+            let f = pointer_lock_change.clone();
+            move |e: &Event| {
+                let f = &mut *f.borrow_mut();
+                f(e);
+            }
         }) as Box<dyn FnMut(&Event)>);
-        document.add_event_listener_with_callback( "webkitpointerlockchange", change_cb_webkit.as_ref().unchecked_ref()).unwrap_throw();
-        
-        Self{click_cb, change_cb, change_cb_moz, change_cb_webkit, target, trigger, document}
+        document
+            .add_event_listener_with_callback(
+                "webkitpointerlockchange",
+                change_cb_webkit.as_ref().unchecked_ref(),
+            )
+            .unwrap_throw();
+
+        Self {
+            click_cb,
+            change_cb,
+            change_cb_moz,
+            change_cb_webkit,
+            target,
+            trigger,
+            document,
+        }
     }
 }
 
-impl <'a> Drop for PointerLock <'a> {
+impl<'a> Drop for PointerLock<'a> {
     fn drop(&mut self) {
-        self.trigger.remove_event_listener_with_callback( "click", self.click_cb.as_ref().unchecked_ref()).unwrap_throw();
-        self.document.remove_event_listener_with_callback( "pointerlockchange", self.change_cb.as_ref().unchecked_ref()).unwrap_throw();
-        self.document.remove_event_listener_with_callback( "mozpointerlockchange", self.change_cb_moz.as_ref().unchecked_ref()).unwrap_throw();
-        self.document.remove_event_listener_with_callback( "webkitpointerlockchange", self.change_cb_webkit.as_ref().unchecked_ref()).unwrap_throw();
+        self.trigger
+            .remove_event_listener_with_callback("click", self.click_cb.as_ref().unchecked_ref())
+            .unwrap_throw();
+        self.document
+            .remove_event_listener_with_callback(
+                "pointerlockchange",
+                self.change_cb.as_ref().unchecked_ref(),
+            )
+            .unwrap_throw();
+        self.document
+            .remove_event_listener_with_callback(
+                "mozpointerlockchange",
+                self.change_cb_moz.as_ref().unchecked_ref(),
+            )
+            .unwrap_throw();
+        self.document
+            .remove_event_listener_with_callback(
+                "webkitpointerlockchange",
+                self.change_cb_webkit.as_ref().unchecked_ref(),
+            )
+            .unwrap_throw();
         info!("dropped!");
     }
 }

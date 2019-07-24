@@ -23,12 +23,12 @@ pub struct Timestamp {
 }
 
 pub struct TimestampLoop {
-    raf_loop: RafLoop
+    raf_loop: RafLoop,
 }
 
 impl TimestampLoop {
-/// similar to the top-level start_raf_loop() but instead of a callback with the current time
-/// it provides a Timestamp struct which contains commonly useful info
+    /// similar to the top-level start_raf_loop() but instead of a callback with the current time
+    /// it provides a Timestamp struct which contains commonly useful info
     pub fn start<F>(mut on_tick: F) -> Result<Self, Error>
     where
         F: (FnMut(Timestamp) -> ()) + 'static,
@@ -57,12 +57,12 @@ impl TimestampLoop {
             last_time = Some(time);
         })?;
 
-        Ok(Self{raf_loop})
+        Ok(Self { raf_loop })
     }
 }
 
 pub struct RafLoop {
-    raf_id:Rc<Cell<Option<i32>>>,
+    raf_id: Rc<Cell<Option<i32>>>,
 }
 
 impl Drop for RafLoop {
@@ -76,8 +76,7 @@ impl Drop for RafLoop {
 }
 
 impl RafLoop {
-
-    /// Kick off a rAF loop. It will be cancelled when dropped 
+    /// Kick off a rAF loop. It will be cancelled when dropped
     pub fn start<F>(mut on_tick: F) -> Result<Self, Error>
     where
         F: (FnMut(f64) -> ()) + 'static,
@@ -97,7 +96,7 @@ impl RafLoop {
             *g.borrow_mut() = Some(Closure::wrap(Box::new(move |time| {
                 let id = raf_id.get();
 
-                if id.is_some() { 
+                if id.is_some() {
                     raf_id.set(request_animation_frame(&window, f.borrow().as_ref().unwrap()).ok());
                     on_tick(time);
                 }
@@ -108,7 +107,7 @@ impl RafLoop {
         let window = get_window()?;
         raf_id.set(request_animation_frame(&window, g.borrow().as_ref().unwrap()).ok());
 
-        Ok(Self{raf_id })
+        Ok(Self { raf_id })
     }
 }
 
