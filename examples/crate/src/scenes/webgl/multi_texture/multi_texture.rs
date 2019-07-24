@@ -1,17 +1,20 @@
-use awsm::webgl::{Id, ClearBufferMask, TextureTarget, SimpleTextureOptions, WebGlTextureSource, PixelFormat, BeginMode};
-use crate::{WebGlRenderer};
-use awsm::loaders::{fetch};
-use crate::router::{get_static_href};
-use awsm::tick::{Timestamp, TimestampLoop};
-use std::rc::Rc; 
-use std::cell::RefCell;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::futures_0_3::{future_to_promise};
-use web_sys::{Window, Document, HtmlElement};
-use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
+use crate::router::get_static_href;
 use crate::scenes::webgl::common::datatypes::*;
-use nalgebra::{Matrix4, Vector3, Point2};
-use log::{info};
+use crate::scenes::webgl::common::{create_and_assign_unit_quad_buffer, start_webgl};
+use crate::WebGlRenderer;
+use awsm::loaders::fetch;
+use awsm::tick::{Timestamp, TimestampLoop};
+use awsm::webgl::{
+    BeginMode, ClearBufferMask, Id, PixelFormat, SimpleTextureOptions, TextureTarget,
+    WebGlTextureSource,
+};
+use log::info;
+use nalgebra::{Matrix4, Point2, Vector3};
+use std::cell::RefCell;
+use std::rc::Rc;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen_futures::futures_0_3::future_to_promise;
+use web_sys::{Document, HtmlElement, Window};
 
 struct State {
     //mutable for each tick
@@ -35,17 +38,14 @@ impl State {
             texture1_id: None,
             texture2_id: None,
         }
-
     }
-
 }
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
-
     let state = Rc::new(RefCell::new(State::new()));
 
     let on_resize = {
         let state = Rc::clone(&state);
-        move |width:u32, height: u32| {
+        move |width: u32, height: u32| {
             let mut state = state.borrow_mut();
             state.camera_width = width.into();
             state.camera_height = height.into();
@@ -54,7 +54,6 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         }
     };
 
-
     let webgl_renderer = start_webgl(window, document, body, on_resize)?;
     let webgl_renderer_clone = Rc::clone(&webgl_renderer);
 
@@ -62,7 +61,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let program_id = webgl_renderer.compile_program(
         include_str!("shaders/multi-texture-vertex.glsl"),
-        include_str!("shaders/multi-texture-fragment.glsl")
+        include_str!("shaders/multi-texture-fragment.glsl"),
     )?;
 
     state.borrow_mut().program_id = Some(program_id);
@@ -80,46 +79,48 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         let mut state_obj = state.borrow_mut();
 
         //let href2 = get_static_href("smiley.svg");
-        let img_1  = fetch::image(&get_static_href("smiley.svg")).await?;
-        let img_2  = fetch::image(&get_static_href("photo.jpg")).await?;
+        let img_1 = fetch::image(&get_static_href("smiley.svg")).await?;
+        let img_2 = fetch::image(&get_static_href("photo.jpg")).await?;
 
         //they're the same height
-        state_obj.area = Area{
+        state_obj.area = Area {
             width: img_1.natural_width().into(),
-            height: img_1.natural_height().into() 
+            height: img_1.natural_height().into(),
         };
 
-        info!("image size: {}x{}", state_obj.area.width, state_obj.area.height);
+        info!(
+            "image size: {}x{}",
+            state_obj.area.width, state_obj.area.height
+        );
 
         let (width, height) = webgl_renderer.current_size();
 
         reposition(&mut state_obj, width, height);
 
         webgl_renderer.assign_simple_texture(
-            state_obj.texture1_id.unwrap(), 
+            state_obj.texture1_id.unwrap(),
             TextureTarget::Texture2d,
-            &SimpleTextureOptions{
+            &SimpleTextureOptions {
                 pixel_format: PixelFormat::Rgba,
                 ..SimpleTextureOptions::default()
             },
-            &WebGlTextureSource::ImageElement(&img_1)
+            &WebGlTextureSource::ImageElement(&img_1),
         )?;
 
-
         webgl_renderer.assign_simple_texture(
-            state_obj.texture2_id.unwrap(), 
+            state_obj.texture2_id.unwrap(),
             TextureTarget::Texture2d,
-            &SimpleTextureOptions{
+            &SimpleTextureOptions {
                 pixel_format: PixelFormat::Rgba,
                 ..SimpleTextureOptions::default()
             },
-            &WebGlTextureSource::ImageElement(&img_2)
+            &WebGlTextureSource::ImageElement(&img_2),
         )?;
 
         TimestampLoop::start({
             let state = Rc::clone(&state);
             let webgl_renderer_raf = Rc::clone(&webgl_renderer_clone);
-            move |_timestamp:Timestamp| {
+            move |_timestamp: Timestamp| {
                 let state = state.borrow_mut();
                 let mut webgl_renderer = webgl_renderer_raf.borrow_mut();
                 render(&state, &mut webgl_renderer).unwrap();
@@ -136,17 +137,23 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     Ok(())
 }
 
-fn reposition(state:&mut State, width: u32, height: u32) {
-
+fn reposition(state: &mut State, width: u32, height: u32) {
     state.pos = Point2::new(
         ((width as f64) - state.area.width) / 2.0,
         ((height as f64) - state.area.height) / 2.0,
     );
 }
 
-
-fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let State {pos, area, camera_width, camera_height, program_id, texture1_id, texture2_id} = state;
+fn render(state: &State, webgl_renderer: &mut WebGlRenderer) -> Result<(), JsValue> {
+    let State {
+        pos,
+        area,
+        camera_width,
+        camera_height,
+        program_id,
+        texture1_id,
+        texture2_id,
+    } = state;
 
     webgl_renderer.activate_program(program_id.unwrap())?;
 
@@ -155,8 +162,19 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     webgl_renderer.activate_texture_for_sampler(texture2_id.unwrap(), "u_sampler_bridge")?;
 
     //Build our matrices (must cast to f32)
-    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(area.width as f32, area.height as f32, 0.0f32));
-    let projection_mat = Matrix4::new_orthographic(0.0, *camera_width as f32, 0.0, *camera_height as f32, 0.0, 1.0);
+    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(
+        area.width as f32,
+        area.height as f32,
+        0.0f32,
+    ));
+    let projection_mat = Matrix4::new_orthographic(
+        0.0,
+        *camera_width as f32,
+        0.0,
+        *camera_height as f32,
+        0.0,
+        1.0,
+    );
     let model_mat = Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, 0.0));
     let mvp_mat = projection_mat * model_mat;
 
@@ -165,9 +183,11 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice())?;
 
     //draw!
-    webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
+    webgl_renderer.clear(&[
+        ClearBufferMask::ColorBufferBit,
+        ClearBufferMask::DepthBufferBit,
+    ]);
     webgl_renderer.draw_arrays(BeginMode::TriangleStrip, 0, 4);
-
 
     Ok(())
 }

@@ -1,2 +1,2 @@
-pub mod raf;
 pub mod mainloop;
+pub mod raf;

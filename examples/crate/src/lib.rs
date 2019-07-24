@@ -1,19 +1,19 @@
-#![feature(async_await, await_macro)] 
+#![feature(async_await, await_macro)]
 
-mod router;
 mod menu;
+mod router;
 mod scenes;
 
-use wasm_bindgen::prelude::*;
-use cfg_if::cfg_if;
-use log::{Level, info};
 use awsm::webgl::{WebGl1Renderer, WebGl2Renderer};
+use cfg_if::cfg_if;
+use log::{info, Level};
+use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "webgl_1")]
-pub type WebGlRenderer = WebGl1Renderer; 
+pub type WebGlRenderer = WebGl1Renderer;
 
 #[cfg(feature = "webgl_2")]
-pub type WebGlRenderer = WebGl2Renderer; 
+pub type WebGlRenderer = WebGl2Renderer;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -21,7 +21,7 @@ pub type WebGlRenderer = WebGl2Renderer;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-// enable logging only during debug builds 
+// enable logging only during debug builds
 cfg_if! {
     if #[cfg(feature = "console_log")] {
         fn init_log() {
@@ -57,4 +57,3 @@ pub fn run() -> Result<(), JsValue> {
 
     router::start_router(window, document)
 }
-

@@ -1,13 +1,13 @@
-use awsm::webgl::{Id, ClearBufferMask, BeginMode};
-use crate::{WebGlRenderer};
-use awsm::tick::{Timestamp, TimestampLoop};
-use std::rc::Rc; 
-use std::cell::RefCell;
-use wasm_bindgen::prelude::*;
-use web_sys::{Window, Document, HtmlElement};
-use crate::scenes::webgl::common::{start_webgl, create_and_assign_unit_quad_buffer}; 
-use nalgebra::{Matrix4, Vector3, Point2};
 use crate::scenes::webgl::common::datatypes::*;
+use crate::scenes::webgl::common::{create_and_assign_unit_quad_buffer, start_webgl};
+use crate::WebGlRenderer;
+use awsm::tick::{Timestamp, TimestampLoop};
+use awsm::webgl::{BeginMode, ClearBufferMask, Id};
+use nalgebra::{Matrix4, Point2, Vector3};
+use std::cell::RefCell;
+use std::rc::Rc;
+use wasm_bindgen::prelude::*;
+use web_sys::{Document, HtmlElement, Window};
 
 struct State {
     //mutable for each tick
@@ -28,24 +28,21 @@ impl State {
             color: Color::new(1.0, 1.0, 0.0, 1.0),
             camera_width: 0.0,
             camera_height: 0.0,
-            direction: 0.05, 
-            program_id: None
+            direction: 0.05,
+            program_id: None,
         }
-
     }
 }
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
-
     let state = Rc::new(RefCell::new(State::new()));
 
     let on_resize = {
         let state = Rc::clone(&state);
-        move |width:u32, height: u32| {
+        move |width: u32, height: u32| {
             let mut state = state.borrow_mut();
             state.resize(width.into(), height.into());
         }
     };
-
 
     let webgl_renderer = start_webgl(window, document, body, on_resize)?;
     let webgl_renderer_clone = Rc::clone(&webgl_renderer);
@@ -54,7 +51,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     let program_id = webgl_renderer.compile_program(
         include_str!("shaders/simple-vertex.glsl"),
-        include_str!("shaders/simple-fragment.glsl")
+        include_str!("shaders/simple-fragment.glsl"),
     )?;
 
     state.borrow_mut().program_id = Some(program_id);
@@ -62,7 +59,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     TimestampLoop::start({
         let state = Rc::clone(&state);
-        move |timestamp:Timestamp| {
+        move |timestamp: Timestamp| {
             let mut state = state.borrow_mut();
             state.update(timestamp.time);
             render(&state, &mut webgl_renderer_clone.borrow_mut()).unwrap();
@@ -73,7 +70,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 }
 
 impl State {
-    pub fn update(&mut self, _time_stamp:f64) {
+    pub fn update(&mut self, _time_stamp: f64) {
         let color = &mut self.color;
         let direction = &mut (self.direction);
         color.r += *direction;
@@ -88,10 +85,9 @@ impl State {
                 *direction *= -1.0;
             }
         }
-
     }
 
-    pub fn resize(&mut self, width:f64, height:f64) {
+    pub fn resize(&mut self, width: f64, height: f64) {
         self.camera_width = width;
         self.camera_height = height;
 
@@ -102,15 +98,30 @@ impl State {
     }
 }
 
-fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue> {
-    let State {pos, area, color, camera_width, camera_height, program_id, ..} = state;
+fn render(state: &State, webgl_renderer: &mut WebGlRenderer) -> Result<(), JsValue> {
+    let State {
+        pos,
+        area,
+        color,
+        camera_width,
+        camera_height,
+        program_id,
+        ..
+    } = state;
 
     webgl_renderer.activate_program(program_id.unwrap())?;
 
-
     //Build our matrices (must cast to f32)
-    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(area.width as f32, area.height as f32, 0.0));
-    let camera_mat = Matrix4::new_orthographic(0.0, *camera_width as f32, 0.0, *camera_height as f32, 0.0, 1.0);
+    let scaling_mat =
+        Matrix4::new_nonuniform_scaling(&Vector3::new(area.width as f32, area.height as f32, 0.0));
+    let camera_mat = Matrix4::new_orthographic(
+        0.0,
+        *camera_width as f32,
+        0.0,
+        *camera_height as f32,
+        0.0,
+        1.0,
+    );
     let model_mat = Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, 0.0));
     let mvp_mat = camera_mat * model_mat;
 
@@ -119,13 +130,20 @@ fn render(state:&State, webgl_renderer:&mut WebGlRenderer) -> Result<(), JsValue
     webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice())?;
 
     let color_values = color.values();
-    let color_values = (color_values[0] as f32, color_values[1] as f32, color_values[2] as f32, color_values[3] as f32);
+    let color_values = (
+        color_values[0] as f32,
+        color_values[1] as f32,
+        color_values[2] as f32,
+        color_values[3] as f32,
+    );
     webgl_renderer.upload_uniform_fvals_4("u_color", color_values)?;
 
     //draw!
-    webgl_renderer.clear(&[ClearBufferMask::ColorBufferBit, ClearBufferMask::DepthBufferBit]);
+    webgl_renderer.clear(&[
+        ClearBufferMask::ColorBufferBit,
+        ClearBufferMask::DepthBufferBit,
+    ]);
     webgl_renderer.draw_arrays(BeginMode::TriangleStrip, 0, 4);
-
 
     Ok(())
 }

@@ -1,11 +1,11 @@
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::{Document, Node, Element, HtmlElement, HtmlAnchorElement};
+use cfg_if::cfg_if;
 use lazy_static::*;
 use std::collections::HashMap;
-use cfg_if::cfg_if;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use web_sys::{Document, Element, HtmlAnchorElement, HtmlElement, Node};
 
-pub struct Menu <'a> {
+pub struct Menu<'a> {
     pub label: &'a str,
     pub source: &'a str,
 }
@@ -49,24 +49,26 @@ fn get_webgl_title() -> &'static str {
     "WebGl (version 2)"
 }
 
-pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
+pub fn build_menu(document: &Document) -> Result<web_sys::Node, JsValue> {
     let container: Node = document.create_element("div")?.into();
 
     append_home_button(&container, &document)?;
 
-    append_menu(&container, &document, "Tick Loop", vec![
-      "tick-raf",
-      "tick-mainloop" 
-    ])?;
+    append_menu(
+        &container,
+        &document,
+        "Tick Loop",
+        vec!["tick-raf", "tick-mainloop"],
+    )?;
 
-    append_menu(&container, &document, "Loaders", vec![
-        "loaders-image",
-        "loaders-text",
-    ])?;
+    append_menu(
+        &container,
+        &document,
+        "Loaders",
+        vec!["loaders-image", "loaders-text"],
+    )?;
 
-    append_menu(&container, &document, "Input", vec![
-        "input-pointer-lock",
-    ])?;
+    append_menu(&container, &document, "Input", vec!["input-pointer-lock"])?;
 
     let mut webgl_menu = vec![
         "webgl-simple",
@@ -95,32 +97,32 @@ pub fn build_menu(document:&Document) -> Result<web_sys::Node, JsValue> {
 
     append_menu(&container, &document, get_webgl_title(), webgl_menu)?;
 
-    append_menu(&container, &document, "Audio", vec![
-        "audio-player",
-    ])?;
+    append_menu(&container, &document, "Audio", vec!["audio-player"])?;
 
     Ok(container)
 }
 
-fn append_home_button (container:&Node, document:&Document) -> Result<(), JsValue> {
-
-    let item:HtmlElement = document.create_element("div")?.dyn_into()?;
+fn append_home_button(container: &Node, document: &Document) -> Result<(), JsValue> {
+    let item: HtmlElement = document.create_element("div")?.dyn_into()?;
     item.set_class_name("button");
     item.set_text_content(Some("Home"));
 
     let link = wrap_link("/", item, &document)?;
 
-    let item:HtmlElement = document.create_element("div")?.dyn_into()?;
+    let item: HtmlElement = document.create_element("div")?.dyn_into()?;
     item.set_class_name("home-button");
 
     item.append_child(&link)?;
     container.append_child(&item)?;
-    
+
     Ok(())
-
 }
-fn append_menu (container:&Node, document:&Document, label:&str, menu_routes:Vec<&str>) -> Result<(), JsValue> {
-
+fn append_menu(
+    container: &Node,
+    document: &Document,
+    label: &str,
+    menu_routes: Vec<&str>,
+) -> Result<(), JsValue> {
     let menu_element: Element = document.create_element("div")?.into();
     menu_element.set_class_name("menu");
 
@@ -143,11 +145,9 @@ fn append_menu (container:&Node, document:&Document, label:&str, menu_routes:Vec
 
     container.append_child(&menu_element)?;
     Ok(())
-
 }
 
-fn create_menu_item(href:&str, menu:&Menu, document:&Document) -> Result<HtmlElement, JsValue> {
-
+fn create_menu_item(href: &str, menu: &Menu, document: &Document) -> Result<HtmlElement, JsValue> {
     let item: HtmlElement = document.create_element("div")?.dyn_into()?;
     item.set_class_name("button");
     item.set_text_content(Some(&menu.label));
@@ -155,11 +155,15 @@ fn create_menu_item(href:&str, menu:&Menu, document:&Document) -> Result<HtmlEle
     wrap_link(&href, item, &document)
 }
 
-fn wrap_link(href:&str, contents:HtmlElement, document:&Document) -> Result<HtmlElement, JsValue> {
+fn wrap_link(
+    href: &str,
+    contents: HtmlElement,
+    document: &Document,
+) -> Result<HtmlElement, JsValue> {
     let anchor: HtmlElement = document.create_element("a")?.dyn_into()?;
 
     anchor.append_child(&contents)?;
-    
+
     let anchor = anchor.unchecked_into::<HtmlAnchorElement>();
     anchor.set_href(&href);
 

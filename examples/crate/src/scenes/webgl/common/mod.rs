@@ -1,8 +1,8 @@
-mod starters;
-mod primitives;
 mod canvas;
 pub mod datatypes;
+mod primitives;
+mod starters;
 
-pub use starters::*;
-pub use primitives::*;
 pub use canvas::*;
+pub use primitives::*;
+pub use starters::*;

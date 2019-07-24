@@ -1,16 +1,15 @@
 use awsm::tick;
-use awsm::tick::{MainLoopOptions, MainLoop};
+use awsm::tick::{MainLoop, MainLoopOptions};
+use log::info;
+use std::cell::RefCell;
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{Window, Element, Document, HtmlElement};
-use std::rc::Rc;
-use std::cell::RefCell;
-use log::{info};
+use web_sys::{Document, Element, HtmlElement, Window};
 
-const MAX:u64 = 10;
+const MAX: u64 = 10;
 
 pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
-
     let root: Element = document.create_element("div")?.into();
     root.set_class_name("tick");
     body.append_child(&root)?;
@@ -35,7 +34,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
 
     //Closure needs to take ownership since it occurs past the JS boundry and is 'static
     //but we need to assign the value of cancel from outside the closure
-    let main_loop:Rc<RefCell<Option<MainLoop>>> = Rc::new(RefCell::new(None));
+    let main_loop: Rc<RefCell<Option<MainLoop>>> = Rc::new(RefCell::new(None));
 
     //callbacks
     let begin = move |time, delta| {
@@ -44,16 +43,19 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
     };
 
     let update = {
-        let main_loop = main_loop .clone();
+        let main_loop = main_loop.clone();
         move |delta| {
             elapsed += delta;
             let elapsed = (elapsed / 1000.0).round() as u64;
-            let my_str = format!("{} seconds left till stopping the ticker!", get_remaining(elapsed));
+            let my_str = format!(
+                "{} seconds left till stopping the ticker!",
+                get_remaining(elapsed)
+            );
             header.set_text_content(Some(&my_str.as_str()));
             let my_str = format!("updating timestep of {}!", delta);
             update_div.set_text_content(Some(&my_str.as_str()));
 
-            if elapsed > MAX { 
+            if elapsed > MAX {
                 main_loop.borrow_mut().take();
                 header.set_text_content(Some("ticker stopped!"));
             }
@@ -72,12 +74,10 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
     let _main_loop = MainLoop::start(MainLoopOptions::default(), begin, update, draw, end)?;
     *main_loop.borrow_mut() = Some(_main_loop);
 
-
     Ok(())
 }
 
-
-fn get_remaining(elapsed:u64) -> u64 {
+fn get_remaining(elapsed: u64) -> u64 {
     if MAX > elapsed {
         MAX - elapsed
     } else {
