@@ -48,7 +48,6 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     };
 
     let webgl_renderer = start_webgl(window, document, body, on_resize)?;
-    let webgl_renderer_clone = Rc::clone(&webgl_renderer);
 
     let mut webgl_renderer = webgl_renderer.borrow_mut();
 
@@ -62,13 +61,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
 
     state.borrow_mut().buffer_ids = Some(buffer_ids);
 
-    TimestampLoop::start({
-        let state = Rc::clone(&state);
-        move |_timestamp: Timestamp| {
-            let state = state.borrow();
-            render(&state, &mut webgl_renderer_clone.borrow_mut()).unwrap();
-        }
-    })?;
+    render(&state.borrow(), &mut webgl_renderer).unwrap();
 
     Ok(())
 }

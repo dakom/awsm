@@ -57,7 +57,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
     state.borrow_mut().program_id = Some(program_id);
     let _buffer_id = create_and_assign_unit_quad_buffer(&mut webgl_renderer)?;
 
-    TimestampLoop::start({
+    let time_loop = TimestampLoop::start({
         let state = Rc::clone(&state);
         move |timestamp: Timestamp| {
             let mut state = state.borrow_mut();
@@ -65,6 +65,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
             render(&state, &mut webgl_renderer_clone.borrow_mut()).unwrap();
         }
     })?;
+
+    std::mem::forget(Box::new(time_loop));
 
     Ok(())
 }

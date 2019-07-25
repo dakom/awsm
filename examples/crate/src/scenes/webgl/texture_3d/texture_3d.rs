@@ -150,7 +150,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
             &WebGlTextureSource::ImageElement(&img),
         )?;
 
-        TimestampLoop::start({
+        let time_loop = TimestampLoop::start({
             let state = Rc::clone(&state);
             let webgl_renderer_raf = Rc::clone(&webgl_renderer_clone);
             move |_timestamp: Timestamp| {
@@ -159,6 +159,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                 render(&state, &mut webgl_renderer).unwrap();
             }
         })?;
+
+        std::mem::forget(Box::new(time_loop));
 
         let button = create_button(state_obj.lut_enabled, &document, &body)?;
 

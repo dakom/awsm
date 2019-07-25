@@ -123,7 +123,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
             &WebGlTextureSource::ImageElement(&img),
         )?;
 
-        TimestampLoop::start({
+        let time_loop = TimestampLoop::start({
             let state = Rc::clone(&state);
             let webgl_renderer_raf = Rc::clone(&webgl_renderer_clone);
             move |timestamp: Timestamp| {
@@ -136,6 +136,9 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                 render(&state, &mut webgl_renderer).unwrap();
             }
         })?;
+
+        std::mem::forget(Box::new(time_loop));
+
         Ok(JsValue::null())
     };
 

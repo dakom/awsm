@@ -97,15 +97,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
             &WebGlTextureSource::ImageElement(&img),
         )?;
 
-        TimestampLoop::start({
-            let state = Rc::clone(&state);
-            let webgl_renderer_raf = Rc::clone(&webgl_renderer_clone);
-            move |_timestamp: Timestamp| {
-                let state = state.borrow_mut();
-                let mut webgl_renderer = webgl_renderer_raf.borrow_mut();
-                render(&state, &mut webgl_renderer).unwrap();
-            }
-        })?;
+        render(&state_obj, &mut webgl_renderer).unwrap();
+
         Ok(JsValue::null())
     };
 
