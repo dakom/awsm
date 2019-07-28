@@ -673,7 +673,8 @@ impl_context! {
     }
 }
 
-pub fn get_size(src: &WebGlTextureSource) -> (u32, u32, u32) {
+/// get the width, height, and depth of the texture in pixels
+pub fn get_texture_size(src: &WebGlTextureSource) -> (u32, u32, u32) {
     match src {
         WebGlTextureSource::ArrayBufferView(_buffer, width, height, depth) => {
             (*width, *height, *depth)
@@ -686,8 +687,9 @@ pub fn get_size(src: &WebGlTextureSource) -> (u32, u32, u32) {
     }
 }
 
+/// check if the texture's width, height, and depth are all power of 2
 pub fn is_power_of_2(src: &WebGlTextureSource) -> bool {
-    let (width, height, depth) = get_size(&src);
+    let (width, height, depth) = get_texture_size(&src);
     is_power_of_2_val(width) && is_power_of_2_val(height) && is_power_of_2_val(depth)
 }
 

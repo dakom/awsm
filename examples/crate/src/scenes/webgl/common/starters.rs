@@ -54,7 +54,7 @@ where
     let window_clone = window.clone();
 
     let mut on_resize = move |_: &web_sys::Event| {
-        let (width, height) = window::get_size(&window_clone).unwrap();
+        let (width, height) = window::get_window_size(&window_clone).unwrap();
         webgl_renderer_clone.borrow_mut().resize(width, height);
         resize_cb(width, height);
     };

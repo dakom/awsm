@@ -1,7 +1,7 @@
 use crate::errors::{Error, NativeError};
 use web_sys::Window;
 
-pub fn get_size(window: &web_sys::Window) -> Result<(u32, u32), Error> {
+pub fn get_window_size(window: &web_sys::Window) -> Result<(u32, u32), Error> {
     /*
     let document_element =
         window

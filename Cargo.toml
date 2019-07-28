@@ -1,11 +1,11 @@
 [package]
 name = "awsm"
 edition = "2018"
-version = "0.0.5"
+version = "0.0.6"
 authors = ["David Komer <david.komer@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-documentation = "https://docs.rs/awsm/0.0.5/awsm/"
+documentation = "https://docs.rs/awsm/"
 repository = "https://github.com/dakom/awsm"
 homepage = "https://github.com/dakom/awsm"
 description = "Wrappers for WASM"
