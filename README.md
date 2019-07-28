@@ -16,6 +16,7 @@ It's also just my personal stomping grounds to figure stuff out, both on the Rus
 
 The various features pretty much match what is testable on the [demo](https://awsm.netlify.com/) and each one has a link to that example's source.
 
+Although it's a mid-level, and at times- very opinionated, wrapper, the goal is also to keep it very low level and low-cost abstraction. For example, the webgl wrapper does a ton of up-front caching and stores local state to avoid making gl calls unnecessarily - something most projects would do, but it doesn't provide a scene graph or any sort of inherent groups of draw calls. It's essentially _free_ to work with all the shader variables by name (uploading attributes, uniforms, switching textures and programs, etc.) and changing rendering state (blending functions, toggles, etc.) - but this library does not check that all the calls that you'd want to do in a certain blend state are grouped together, for example. That would be another level abstraction on top of this.
 
 ## Building 
 
