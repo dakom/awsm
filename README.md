@@ -2,18 +2,20 @@
 
 [CRATES.IO](https://crates.io/crates/awsm) - [DOCS](https://docs.rs/awsm)
 
+## About
+
+awsm is mid-level crate for rust-powered wasm, especially gamedev / immersive experience things that need higher performance and/or no GC
+
 ## Demos
 
-* [Feature Tests](https://awsm.netlify.com/) 
-* [Bunnymark](https://dakom.github.io/rust-bunnymark/)
+* ### [Feature Tests](https://awsm.netlify.com/) 
+* ### [Bunnymark](https://dakom.github.io/rust-bunnymark/)
 
 ## Status
 
 Still keeping it in minor version number for now, since the API might change - but lots of stuff is done :) Check it out!
 
-## About
-
-awsm is mid-level crate for wasm, especially gamedev / immersive experience things that need higher performance and/or no GC
+## Description 
 
 Overall, the approach with this library is similar in spirit to [gloo](https://github.com/rustwasm/gloo) - that is to say, it aims to bridge the gap between the auto-generated WebIDL-powered bindings web-sys provides, and the type of code we'd typically consider a real starting point in web apps.
 
