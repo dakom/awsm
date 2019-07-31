@@ -1,4 +1,4 @@
-use js_sys::{ArrayBuffer, Float32Array, Float64Array, Object, Uint32Array};
+use js_sys::{ArrayBuffer, Float32Array, Float64Array, Object, Int32Array, Int16Array, Int8Array, Uint8Array, Uint16Array, Uint32Array};
 use std::marker::PhantomData;
 use wasm_bindgen::JsValue;
 
@@ -14,8 +14,37 @@ pub fn clone_to_vec_f64(src: &Float64Array) -> Vec<f64> {
     dest
 }
 
+pub fn clone_to_vec_u8(src: &Uint8Array) -> Vec<u8> {
+    let mut dest: Vec<u8> = vec![0; src.length() as usize];
+    src.copy_to(&mut dest);
+    dest
+}
+pub fn clone_to_vec_u16(src: &Uint16Array) -> Vec<u16> {
+    let mut dest: Vec<u16> = vec![0; src.length() as usize];
+    src.copy_to(&mut dest);
+    dest
+}
+
 pub fn clone_to_vec_u32(src: &Uint32Array) -> Vec<u32> {
     let mut dest: Vec<u32> = vec![0; src.length() as usize];
+    src.copy_to(&mut dest);
+    dest
+}
+
+pub fn clone_to_vec_i8(src: &Int8Array) -> Vec<i8> {
+    let mut dest: Vec<i8> = vec![0; src.length() as usize];
+    src.copy_to(&mut dest);
+    dest
+}
+
+pub fn clone_to_vec_i16(src: &Int16Array) -> Vec<i16> {
+    let mut dest: Vec<i16> = vec![0; src.length() as usize];
+    src.copy_to(&mut dest);
+    dest
+}
+
+pub fn clone_to_vec_i32(src: &Int32Array) -> Vec<i32> {
+    let mut dest: Vec<i32> = vec![0; src.length() as usize];
     src.copy_to(&mut dest);
     dest
 }
