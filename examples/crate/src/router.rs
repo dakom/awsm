@@ -39,6 +39,7 @@ pub fn start_router(window: web_sys::Window, document: web_sys::Document) -> Res
         "tick-mainloop" => tick::mainloop::start(window, document, body),
 
         "loaders-image" => loaders::image::start(window, document, body),
+        "loaders-image-data" => loaders::image_data::start(window, document, body),
         "loaders-text" => loaders::text::start(window, document, body),
 
         "input-pointer-lock" => input::pointer_lock::start(window, document, body),

@@ -37,8 +37,8 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
 
     let ctx: AudioContext = AudioContext::new()?;
     let future = async move {
-        let bg_loop_buffer = fetch::audio_buffer(&get_static_href("loop.mp3"), &ctx).await?;
-        let one_shot_buffer = fetch::audio_buffer(&get_static_href("oneshot.mp3"), &ctx).await?;
+        let bg_loop_buffer = fetch::audio(&get_static_href("loop.mp3"), &ctx).await?;
+        let one_shot_buffer = fetch::audio(&get_static_href("oneshot.mp3"), &ctx).await?;
 
         container.remove_child(&loading);
 

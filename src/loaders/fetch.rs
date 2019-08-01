@@ -1,35 +1,165 @@
 use super::image::Image;
+use crate::data::{TypedData};
 use crate::errors::{Error, NativeError};
 use crate::window::get_window;
 use crate::data::*;
 use futures::Future;
-use js_sys::{ArrayBuffer, Promise};
+use futures::future::{self, TryFutureExt, FutureExt};
+use js_sys::{ArrayBuffer, Promise, Array, Uint8Array};
+use std::marker::PhantomData;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::futures_0_3::JsFuture;
-use web_sys::{AudioBuffer, AudioContext, HtmlImageElement, Request, Response};
+use web_sys::{AudioBuffer, AudioContext, HtmlImageElement, Request, Response, Url,Blob, BlobPropertyBag};
+use log::info;
 
 pub fn image(url: &str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
     Image::new(url)
 }
 
-pub fn audio_buffer<'a>(
-    url: &str,
-    ctx: &'a AudioContext,
-) -> impl Future<Output = Result<AudioBuffer, Error>> + 'a {
-    let url = url.to_owned();
-
-    async move {
-        let audio_data = array_buffer(&url).await?;
-
-        let promise = ctx.decode_audio_data(&audio_data)?;
-
-        let data = JsFuture::from(promise).await?;
-
-        Ok(data.into())
+pub fn image_blob(blob:&Blob) -> impl Future<Output = Result<HtmlImageElement, Error>> {
+    match Url::create_object_url_with_blob(&blob) {
+        Ok(url) => future::ok(url),
+        Err(err) => future::err(err.into())
     }
+    .and_then(|url| image(&url))
 }
 
+pub fn image_u8<T: AsRef<[u8]>>(data:T, mime_type:&str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
+    let mut blob_opts = BlobPropertyBag::new();
+    blob_opts.type_(mime_type);
+
+    match Blob::new_with_buffer_source_sequence_and_options(&Array::of1(&TypedData::new(data.as_ref()).into()).into(), &blob_opts) {
+        Ok(blob) => future::ok(blob),
+        Err(err) => future::err(err.into())
+    }.and_then(|blob| image_blob(&blob))
+}
+
+pub fn image_u16<T: AsRef<[u16]>>(data:T, mime_type:&str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
+    let mut blob_opts = BlobPropertyBag::new();
+    blob_opts.type_(mime_type);
+
+    match Blob::new_with_buffer_source_sequence_and_options(&Array::of1(&TypedData::new(data.as_ref()).into()).into(), &blob_opts) {
+        Ok(blob) => future::ok(blob),
+        Err(err) => future::err(err.into())
+    }.and_then(|blob| image_blob(&blob))
+}
+
+pub fn image_u32<T: AsRef<[u32]>>(data:T, mime_type:&str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
+    let mut blob_opts = BlobPropertyBag::new();
+    blob_opts.type_(mime_type);
+
+    match Blob::new_with_buffer_source_sequence_and_options(&Array::of1(&TypedData::new(data.as_ref()).into()).into(), &blob_opts) {
+        Ok(blob) => future::ok(blob),
+        Err(err) => future::err(err.into())
+    }.and_then(|blob| image_blob(&blob))
+}
+
+pub fn image_i8<T: AsRef<[i8]>>(data:T, mime_type:&str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
+    let mut blob_opts = BlobPropertyBag::new();
+    blob_opts.type_(mime_type);
+
+    match Blob::new_with_buffer_source_sequence_and_options(&Array::of1(&TypedData::new(data.as_ref()).into()).into(), &blob_opts) {
+        Ok(blob) => future::ok(blob),
+        Err(err) => future::err(err.into())
+    }.and_then(|blob| image_blob(&blob))
+}
+
+pub fn image_i16<T: AsRef<[i16]>>(data:T, mime_type:&str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
+    let mut blob_opts = BlobPropertyBag::new();
+    blob_opts.type_(mime_type);
+
+    match Blob::new_with_buffer_source_sequence_and_options(&Array::of1(&TypedData::new(data.as_ref()).into()).into(), &blob_opts) {
+        Ok(blob) => future::ok(blob),
+        Err(err) => future::err(err.into())
+    }.and_then(|blob| image_blob(&blob))
+}
+
+pub fn image_i32<T: AsRef<[i32]>>(data:T, mime_type:&str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
+    let mut blob_opts = BlobPropertyBag::new();
+    blob_opts.type_(mime_type);
+
+    match Blob::new_with_buffer_source_sequence_and_options(&Array::of1(&TypedData::new(data.as_ref()).into()).into(), &blob_opts) {
+        Ok(blob) => future::ok(blob),
+        Err(err) => future::err(err.into())
+    }.and_then(|blob| image_blob(&blob))
+}
+
+pub fn image_f32<T: AsRef<[f32]>>(data:T, mime_type:&str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
+    let mut blob_opts = BlobPropertyBag::new();
+    blob_opts.type_(mime_type);
+
+    match Blob::new_with_buffer_source_sequence_and_options(&Array::of1(&TypedData::new(data.as_ref()).into()).into(), &blob_opts) {
+        Ok(blob) => future::ok(blob),
+        Err(err) => future::err(err.into())
+    }.and_then(|blob| image_blob(&blob))
+}
+
+pub fn image_f64<T: AsRef<[f64]>>(data:T, mime_type:&str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
+    let mut blob_opts = BlobPropertyBag::new();
+    blob_opts.type_(mime_type);
+
+    match Blob::new_with_buffer_source_sequence_and_options(&Array::of1(&TypedData::new(data.as_ref()).into()).into(), &blob_opts) {
+        Ok(blob) => future::ok(blob),
+        Err(err) => future::err(err.into())
+    }.and_then(|blob| image_blob(&blob))
+}
+
+//Audio
+pub fn audio<'a>( url: &str, ctx: &'a AudioContext) -> impl Future<Output = Result<AudioBuffer, Error>> + 'a {
+    array_buffer(&url)
+        .and_then(move |buf| audio_buffer(&buf, &ctx))
+}
+
+
+pub fn audio_buffer<'a>(array_buffer: &ArrayBuffer, ctx: &AudioContext) -> impl Future<Output = Result<AudioBuffer, Error>> {
+    match ctx.decode_audio_data(&array_buffer) {
+        Ok(promise) => future::ok(promise),
+        Err(err) => future::err(err.into())
+    }
+    .and_then(|promise| JsFuture::from(promise))
+    .map(|res| match res {
+        Ok(x) => Ok(AudioBuffer::from(x)),
+        Err(x) => Err(Error::from(x))
+    })
+}
+
+//convenince helpers for loading slices, vecs, etc.
+pub fn audio_u8<T: AsRef<[u8]>>(data:T, ctx:&AudioContext) -> impl Future<Output = Result<AudioBuffer, Error>> {
+    let array_buffer:ArrayBuffer = TypedData::new(data.as_ref()).into(); 
+    audio_buffer(&array_buffer, &ctx)
+}
+
+pub fn audio_u16<T: AsRef<[u16]>>(data:T, ctx:&AudioContext) -> impl Future<Output = Result<AudioBuffer, Error>> {
+    let array_buffer:ArrayBuffer = TypedData::new(data.as_ref()).into(); 
+    audio_buffer(&array_buffer, &ctx)
+}
+pub fn audio_u32<T: AsRef<[u32]>>(data:T, ctx:&AudioContext) -> impl Future<Output = Result<AudioBuffer, Error>> {
+    let array_buffer:ArrayBuffer = TypedData::new(data.as_ref()).into(); 
+    audio_buffer(&array_buffer, &ctx)
+}
+pub fn audio_i8<T: AsRef<[i8]>>(data:T, ctx:&AudioContext) -> impl Future<Output = Result<AudioBuffer, Error>> {
+    let array_buffer:ArrayBuffer = TypedData::new(data.as_ref()).into(); 
+    audio_buffer(&array_buffer, &ctx)
+}
+pub fn audio_i16<T: AsRef<[i16]>>(data:T, ctx:&AudioContext) -> impl Future<Output = Result<AudioBuffer, Error>> {
+    let array_buffer:ArrayBuffer = TypedData::new(data.as_ref()).into(); 
+    audio_buffer(&array_buffer, &ctx)
+}
+pub fn audio_i32<T: AsRef<[i32]>>(data:T, ctx:&AudioContext) -> impl Future<Output = Result<AudioBuffer, Error>> {
+    let array_buffer:ArrayBuffer = TypedData::new(data.as_ref()).into(); 
+    audio_buffer(&array_buffer, &ctx)
+}
+pub fn audio_f32<T: AsRef<[f32]>>(data:T, ctx:&AudioContext) -> impl Future<Output = Result<AudioBuffer, Error>> {
+    let array_buffer:ArrayBuffer = TypedData::new(data.as_ref()).into(); 
+    audio_buffer(&array_buffer, &ctx)
+}
+pub fn audio_f64<T: AsRef<[f64]>>(data:T, ctx:&AudioContext) -> impl Future<Output = Result<AudioBuffer, Error>> {
+    let array_buffer:ArrayBuffer = TypedData::new(data.as_ref()).into(); 
+    audio_buffer(&array_buffer, &ctx)
+}
+
+//text
 pub fn text(url: &str) -> impl Future<Output = Result<String, Error>> {
     let req = Request::new_with_str(url);
 

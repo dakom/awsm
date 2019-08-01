@@ -18,6 +18,7 @@ lazy_static! {
         m.insert("tick-mainloop", Menu {label: "Main Loop", source: "tick/mainloop.rs"});
         //Loaders
         m.insert("loaders-image", Menu {label: "Image", source: "loaders/image.rs"});
+        m.insert("loaders-image-data", Menu {label: "Image Data", source: "loaders/image_data.rs"});
         m.insert("loaders-text", Menu {label: "Text", source: "loaders/text.rs"});
         //Input
         m.insert("input-pointer-lock", Menu {label: "Pointer Lock", source: "input/pointer_lock.rs"});
@@ -65,7 +66,7 @@ pub fn build_menu(document: &Document) -> Result<web_sys::Node, JsValue> {
         &container,
         &document,
         "Loaders",
-        vec!["loaders-image", "loaders-text"],
+        vec!["loaders-image", "loaders-image-data", "loaders-text"],
     )?;
 
     append_menu(&container, &document, "Input", vec!["input-pointer-lock"])?;
