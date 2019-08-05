@@ -50,6 +50,7 @@ canvas = [
 input = [
     'web-sys/MouseEvent',
     'web-sys/Event',
+    'web-sys/Element',
     'web-sys/Document',
     'web-sys/EventTarget',
 ]
@@ -60,6 +61,7 @@ loaders = [
     "web-sys/RequestInit",
     "web-sys/Response",
     "web-sys/ResponseInit",
+    'web-sys/Location',
     'web-sys/Url',
     'web-sys/Blob',
     'web-sys/BlobPropertyBag',
