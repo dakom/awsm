@@ -66,6 +66,9 @@ loaders = [
     'web-sys/Url',
     'web-sys/Blob',
     'web-sys/BlobPropertyBag',
+
+    "futures-preview",
+    "wasm-bindgen-futures",
 ]
 tick = [
     "window",
