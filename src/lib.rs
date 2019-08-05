@@ -1,4 +1,4 @@
-#![feature(async_await, await_macro)]
+#![feature(async_await)]
 
 //these are used in enough places that
 //it makes no sense to put them behind features
