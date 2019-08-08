@@ -3,12 +3,12 @@
 pub mod errors;
 
 //each of these can be enabled/disabled as needed
-#[cfg(feature = "data")]
-pub mod data;
 #[cfg(feature = "audio")]
 pub mod audio;
 #[cfg(feature = "canvas")]
 pub mod canvas;
+#[cfg(feature = "data")]
+pub mod data;
 #[cfg(feature = "input")]
 pub mod input;
 #[cfg(feature = "loaders")]

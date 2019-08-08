@@ -3,7 +3,7 @@ use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
 
 pub trait PartialWebGlMisc {
     fn awsm_depth_mask(&self, flag: bool);
-    fn awsm_clear_color(&self, r:f32, g: f32, b: f32, a: f32);
+    fn awsm_clear_color(&self, r: f32, g: f32, b: f32, a: f32);
 }
 
 macro_rules! impl_context {

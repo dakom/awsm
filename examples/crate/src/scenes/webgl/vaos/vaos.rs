@@ -33,7 +33,12 @@ impl State {
     }
 }
 
-pub fn start(window: Window, document: Document, body: HtmlElement, version:WebGlVersion) -> Result<(), JsValue> {
+pub fn start(
+    window: Window,
+    document: Document,
+    body: HtmlElement,
+    version: WebGlVersion,
+) -> Result<(), JsValue> {
     let state = Rc::new(RefCell::new(State::new()));
 
     start_webgl!(
@@ -44,7 +49,6 @@ pub fn start(window: Window, document: Document, body: HtmlElement, version:WebG
         {
             let state = Rc::clone(&state);
             move |webgl_renderer, on_ready| {
-
                 let webgl_renderer_clone = Rc::clone(&webgl_renderer);
 
                 let mut webgl_renderer = webgl_renderer.borrow_mut();
@@ -58,7 +62,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement, version:WebG
 
                 let vao_id = webgl_renderer.create_vertex_array()?;
 
-                let (geom_id, colors_id, elements_id) = create_unit_box_buffers(&mut webgl_renderer)?;
+                let (geom_id, colors_id, elements_id) =
+                    create_unit_box_buffers(&mut webgl_renderer)?;
 
                 webgl_renderer.assign_vertex_array(
                     vao_id,
@@ -92,7 +97,6 @@ pub fn start(window: Window, document: Document, body: HtmlElement, version:WebG
             }
         },
         {
-
             let state = Rc::clone(&state);
             move |time, webgl_renderer| {
                 let state = state.borrow();
@@ -104,7 +108,9 @@ pub fn start(window: Window, document: Document, body: HtmlElement, version:WebG
                     ..
                 } = *state;
 
-                webgl_renderer.activate_program(program_id.unwrap()).unwrap();
+                webgl_renderer
+                    .activate_program(program_id.unwrap())
+                    .unwrap();
 
                 webgl_renderer.toggle(GlToggle::DepthTest, true);
 
@@ -129,16 +135,25 @@ pub fn start(window: Window, document: Document, body: HtmlElement, version:WebG
                     3000.0,
                 );
 
-                let model_mat =
-                    Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, pos.z as f32));
+                let model_mat = Matrix4::new_translation(&Vector3::new(
+                    pos.x as f32,
+                    pos.y as f32,
+                    pos.z as f32,
+                ));
                 let mvp_mat = projection.to_homogeneous() * (view.to_homogeneous() * model_mat);
 
                 //Upload them to the GPU
-                webgl_renderer.upload_uniform_mat_4("u_size", &scaling_mat.as_slice()).unwrap();
-                webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice()).unwrap();
+                webgl_renderer
+                    .upload_uniform_mat_4("u_size", &scaling_mat.as_slice())
+                    .unwrap();
+                webgl_renderer
+                    .upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice())
+                    .unwrap();
 
                 //activate buffers
-                webgl_renderer.activate_vertex_array(vao_id.unwrap()).unwrap();
+                webgl_renderer
+                    .activate_vertex_array(vao_id.unwrap())
+                    .unwrap();
 
                 //draw!
                 webgl_renderer.clear(&[
@@ -151,7 +166,6 @@ pub fn start(window: Window, document: Document, body: HtmlElement, version:WebG
                     DataType::UnsignedByte,
                     0,
                 );
-
             }
         }
     )

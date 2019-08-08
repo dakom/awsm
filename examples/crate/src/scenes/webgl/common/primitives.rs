@@ -1,5 +1,8 @@
 use awsm::errors::Error;
-use awsm::webgl::{AttributeOptions, BufferData, BufferTarget, BufferUsage, DataType, Id, WebGlRenderer, WebGlCommon};
+use awsm::webgl::{
+    AttributeOptions, BufferData, BufferTarget, BufferUsage, DataType, Id, WebGlCommon,
+    WebGlRenderer,
+};
 
 static QUAD_GEOM_UNIT: [f32; 8] = [
     0.0, 1.0, // top-left
@@ -37,7 +40,9 @@ static BOX_ELEMENTS: [u8; 36] = [
 
 pub static N_BOX_ELEMENTS: u32 = 36;
 
-pub fn create_and_assign_unit_quad_buffer<T: WebGlCommon>(webgl_renderer: &mut WebGlRenderer<T>) -> Result<Id, Error> {
+pub fn create_and_assign_unit_quad_buffer<T: WebGlCommon>(
+    webgl_renderer: &mut WebGlRenderer<T>,
+) -> Result<Id, Error> {
     let buffer_id = webgl_renderer.create_buffer()?;
 
     webgl_renderer.upload_buffer_to_attribute(
@@ -54,7 +59,9 @@ pub fn create_and_assign_unit_quad_buffer<T: WebGlCommon>(webgl_renderer: &mut W
     Ok(buffer_id)
 }
 
-pub fn create_unit_box_buffers<T: WebGlCommon>(webgl_renderer: &mut WebGlRenderer<T>) -> Result<(Id, Id, Id), Error> {
+pub fn create_unit_box_buffers<T: WebGlCommon>(
+    webgl_renderer: &mut WebGlRenderer<T>,
+) -> Result<(Id, Id, Id), Error> {
     let geom_id = webgl_renderer.create_buffer()?;
     let colors_id = webgl_renderer.create_buffer()?;
     let elements_id = webgl_renderer.create_buffer()?;

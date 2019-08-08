@@ -41,7 +41,6 @@ lazy_static! {
     };
 }
 
-
 pub fn build_menu(document: &Document) -> Result<web_sys::Node, JsValue> {
     let container: Node = document.create_element("div")?.into();
 
@@ -63,7 +62,13 @@ pub fn build_menu(document: &Document) -> Result<web_sys::Node, JsValue> {
         None,
     )?;
 
-    append_menu(&container, &document, "Input", &vec!["input-pointer-lock"], None)?;
+    append_menu(
+        &container,
+        &document,
+        "Input",
+        &vec!["input-pointer-lock"],
+        None,
+    )?;
 
     let mut webgl_menu_common = vec![
         "webgl-simple",
@@ -76,15 +81,24 @@ pub fn build_menu(document: &Document) -> Result<web_sys::Node, JsValue> {
         "webgl-texture_cube",
     ];
 
-    let mut webgl_menu_1 = webgl_menu_common.clone(); 
+    let mut webgl_menu_1 = webgl_menu_common.clone();
     let mut webgl_menu_2 = webgl_menu_common.clone();
-    webgl_menu_2.extend(vec![
-        "webgl-ubos",
-        "webgl-texture_3d"
-    ]);
+    webgl_menu_2.extend(vec!["webgl-ubos", "webgl-texture_3d"]);
 
-    append_menu(&container, &document, "WebGl 1", &webgl_menu_1, Some("?webgl=1"))?;
-    append_menu(&container, &document, "WebGl 2", &webgl_menu_2, Some("?webgl=2"))?;
+    append_menu(
+        &container,
+        &document,
+        "WebGl 1",
+        &webgl_menu_1,
+        Some("?webgl=1"),
+    )?;
+    append_menu(
+        &container,
+        &document,
+        "WebGl 2",
+        &webgl_menu_2,
+        Some("?webgl=2"),
+    )?;
 
     append_menu(&container, &document, "Audio", &vec!["audio-player"], None)?;
 
@@ -111,7 +125,7 @@ fn append_menu(
     document: &Document,
     label: &str,
     menu_routes: &[&str],
-    menu_suffix: Option<&str>
+    menu_suffix: Option<&str>,
 ) -> Result<(), JsValue> {
     let menu_element: Element = document.create_element("div")?.into();
     menu_element.set_class_name("menu");
@@ -127,7 +141,7 @@ fn append_menu(
         if let Some(menu) = MENU_LOOKUP.get(menu_route) {
             let href = match menu_suffix {
                 None => format!("{}", menu_route),
-                Some(suffix) => format!("{}{}", menu_route, suffix)
+                Some(suffix) => format!("{}{}", menu_route, suffix),
             };
 
             let item = create_menu_item(&href, &menu, document)?;

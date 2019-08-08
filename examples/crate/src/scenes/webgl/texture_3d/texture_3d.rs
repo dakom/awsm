@@ -1,6 +1,6 @@
-use crate::start_webgl;
 use crate::router::get_static_href;
 use crate::scenes::webgl::common::*;
+use crate::start_webgl;
 use awsm::data::TypedData;
 use awsm::loaders::fetch;
 use awsm::tick::{Timestamp, TimestampLoop};
@@ -8,8 +8,7 @@ use awsm::webgl::PartialWebGlTextures;
 use awsm::webgl::{
     BeginMode, ClearBufferMask, DataType, Id, PixelFormat, SimpleTextureOptions, TextureMagFilter,
     TextureMinFilter, TextureOptions, TextureTarget, TextureWrapMode, TextureWrapTarget,
-    WebGlTextureSource,
-    WebGl2Renderer
+    WebGl2Renderer, WebGlTextureSource,
 };
 use gloo_events::EventListener;
 use log::info;
@@ -61,7 +60,6 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         {
             let state = Rc::clone(&state);
             move |webgl_renderer, on_ready| {
-
                 let webgl_renderer_clone = Rc::clone(&webgl_renderer);
 
                 let mut webgl_renderer = webgl_renderer.borrow_mut();
@@ -89,7 +87,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                     let img = fetch::image(&href).await?;
                     let href = get_static_href("LUT.cube");
                     let txt: String = fetch::text(&href).await?;
-                    let lut = CubeLut::<f32>::from_str(&txt).map_err(|_| "couldn't parse cube file")?;
+                    let lut =
+                        CubeLut::<f32>::from_str(&txt).map_err(|_| "couldn't parse cube file")?;
 
                     let mut state_obj = state.borrow_mut();
                     state_obj.area = Area {
@@ -148,7 +147,6 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                         &WebGlTextureSource::ImageElement(&img),
                     )?;
 
-
                     let button = create_button(state_obj.lut_enabled, &document, &body)?;
 
                     let my_cb = {
@@ -184,7 +182,6 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
             }
         },
         {
-
             let state = Rc::clone(&state);
             move |time, webgl_renderer| {
                 let state = state.borrow();
@@ -200,12 +197,17 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                     lut_enabled,
                 } = *state;
 
-                webgl_renderer.activate_program(program_id.unwrap()).unwrap();
+                webgl_renderer
+                    .activate_program(program_id.unwrap())
+                    .unwrap();
 
                 //enable texture
                 webgl_renderer
-                    .activate_texture_for_sampler(diffuse_texture_id.unwrap(), "u_diffuse_sampler").unwrap();
-                webgl_renderer.activate_texture_for_sampler(lut_texture_id.unwrap(), "u_lut_sampler").unwrap();
+                    .activate_texture_for_sampler(diffuse_texture_id.unwrap(), "u_diffuse_sampler")
+                    .unwrap();
+                webgl_renderer
+                    .activate_texture_for_sampler(lut_texture_id.unwrap(), "u_lut_sampler")
+                    .unwrap();
 
                 //Build our matrices (must cast to f32)
                 let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(
@@ -221,15 +223,22 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                     0.0,
                     1.0,
                 );
-                let model_mat = Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, 0.0));
+                let model_mat =
+                    Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, 0.0));
                 let mvp_mat = projection_mat * model_mat;
 
                 //Upload them to the GPU
-                webgl_renderer.upload_uniform_mat_4("u_size", &scaling_mat.as_slice()).unwrap();
-                webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice()).unwrap();
+                webgl_renderer
+                    .upload_uniform_mat_4("u_size", &scaling_mat.as_slice())
+                    .unwrap();
+                webgl_renderer
+                    .upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice())
+                    .unwrap();
 
                 //set uniform for toggle
-                webgl_renderer.upload_uniform_uval("u_lut_enabled", lut_enabled as u32).unwrap();
+                webgl_renderer
+                    .upload_uniform_uval("u_lut_enabled", lut_enabled as u32)
+                    .unwrap();
 
                 //draw!
                 webgl_renderer.clear(&[
@@ -237,9 +246,8 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
                     ClearBufferMask::DepthBufferBit,
                 ]);
                 webgl_renderer.draw_arrays(BeginMode::TriangleStrip, 0, 4);
-
             }
-        }
+        },
     )
 }
 
@@ -249,7 +257,6 @@ fn reposition(state: &mut State, width: u32, height: u32) {
         ((height as f64) - state.area.height) / 2.0,
     );
 }
-
 
 fn create_button(
     lut_enabled: bool,

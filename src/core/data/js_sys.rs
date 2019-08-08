@@ -1,4 +1,7 @@
-use js_sys::{ArrayBuffer, Float32Array, Float64Array, Object, Int32Array, Int16Array, Int8Array, Uint8Array, Uint16Array, Uint32Array};
+use js_sys::{
+    ArrayBuffer, Float32Array, Float64Array, Int16Array, Int32Array, Int8Array, Object,
+    Uint16Array, Uint32Array, Uint8Array,
+};
 use std::marker::PhantomData;
 use wasm_bindgen::JsValue;
 

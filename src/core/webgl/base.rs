@@ -58,7 +58,6 @@ pub struct WebGlRenderer<T: WebGlCommon> {
 
     pub(super) func_settings: FuncSettings,
     pub(super) misc_settings: MiscSettings,
-
 }
 
 impl<T: WebGlCommon> WebGlRenderer<T> {
@@ -115,8 +114,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
                 ..FuncSettings::default()
             },
 
-            misc_settings: MiscSettings::default()
-
+            misc_settings: MiscSettings::default(),
         })
     }
 }
