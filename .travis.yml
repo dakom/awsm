@@ -9,6 +9,5 @@ install:
 script:
   - cargo test
   - cd examples/crate
-  - cargo test --features webgl_1
-  - cargo test --features webgl_2
-  - cd ..
+  - cargo test
+  - cargo test
