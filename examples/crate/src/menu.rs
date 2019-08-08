@@ -41,14 +41,6 @@ lazy_static! {
     };
 }
 
-#[cfg(feature = "webgl_1")]
-fn get_webgl_title() -> &'static str {
-    "WebGl (version 1)"
-}
-#[cfg(feature = "webgl_2")]
-fn get_webgl_title() -> &'static str {
-    "WebGl (version 2)"
-}
 
 pub fn build_menu(document: &Document) -> Result<web_sys::Node, JsValue> {
     let container: Node = document.create_element("div")?.into();
@@ -59,19 +51,21 @@ pub fn build_menu(document: &Document) -> Result<web_sys::Node, JsValue> {
         &container,
         &document,
         "Tick Loop",
-        vec!["tick-raf", "tick-mainloop"],
+        &vec!["tick-raf", "tick-mainloop"],
+        None,
     )?;
 
     append_menu(
         &container,
         &document,
         "Loaders",
-        vec!["loaders-image", "loaders-image-data", "loaders-text"],
+        &vec!["loaders-image", "loaders-image-data", "loaders-text"],
+        None,
     )?;
 
-    append_menu(&container, &document, "Input", vec!["input-pointer-lock"])?;
+    append_menu(&container, &document, "Input", &vec!["input-pointer-lock"], None)?;
 
-    let mut webgl_menu = vec![
+    let mut webgl_menu_common = vec![
         "webgl-simple",
         "webgl-texture",
         "webgl-multi-texture",
@@ -82,23 +76,17 @@ pub fn build_menu(document: &Document) -> Result<web_sys::Node, JsValue> {
         "webgl-texture_cube",
     ];
 
-    cfg_if! {
-        if #[cfg(feature = "webgl_2")] {
-            fn concat_more_menus(menus:&mut Vec<&str>) {
-                menus.push("webgl-ubos");
-                menus.push("webgl-texture_3d");
-            }
-        } else {
-            fn concat_more_menus(menus:&mut Vec<&str>) {
-            }
-        }
-    }
+    let mut webgl_menu_1 = webgl_menu_common.clone(); 
+    let mut webgl_menu_2 = webgl_menu_common.clone();
+    webgl_menu_2.extend(vec![
+        "webgl-ubos",
+        "webgl-texture_3d"
+    ]);
 
-    concat_more_menus(&mut webgl_menu);
+    append_menu(&container, &document, "WebGl 1", &webgl_menu_1, Some("?webgl=1"))?;
+    append_menu(&container, &document, "WebGl 2", &webgl_menu_2, Some("?webgl=2"))?;
 
-    append_menu(&container, &document, get_webgl_title(), webgl_menu)?;
-
-    append_menu(&container, &document, "Audio", vec!["audio-player"])?;
+    append_menu(&container, &document, "Audio", &vec!["audio-player"], None)?;
 
     Ok(container)
 }
@@ -122,7 +110,8 @@ fn append_menu(
     container: &Node,
     document: &Document,
     label: &str,
-    menu_routes: Vec<&str>,
+    menu_routes: &[&str],
+    menu_suffix: Option<&str>
 ) -> Result<(), JsValue> {
     let menu_element: Element = document.create_element("div")?.into();
     menu_element.set_class_name("menu");
@@ -136,7 +125,12 @@ fn append_menu(
 
     for menu_route in menu_routes.into_iter() {
         if let Some(menu) = MENU_LOOKUP.get(menu_route) {
-            let item = create_menu_item(&menu_route, &menu, document)?;
+            let href = match menu_suffix {
+                None => format!("{}", menu_route),
+                Some(suffix) => format!("{}{}", menu_route, suffix)
+            };
+
+            let item = create_menu_item(&href, &menu, document)?;
             menu_list.append_child(&item)?;
         }
     }

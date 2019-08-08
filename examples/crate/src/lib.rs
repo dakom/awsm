@@ -9,12 +9,6 @@ use cfg_if::cfg_if;
 use log::{info, Level};
 use wasm_bindgen::prelude::*;
 
-#[cfg(feature = "webgl_1")]
-pub type WebGlRenderer = WebGl1Renderer;
-
-#[cfg(feature = "webgl_2")]
-pub type WebGlRenderer = WebGl2Renderer;
-
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
 #[cfg(feature = "wee_alloc")]

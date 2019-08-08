@@ -1,7 +1,6 @@
 use crate::router::get_static_href;
-use crate::scenes::webgl::common::datatypes::*;
-use crate::scenes::webgl::common::{create_and_assign_unit_quad_buffer, start_webgl};
-use crate::WebGlRenderer;
+use crate::scenes::webgl::common::*;
+use crate::start_webgl;
 use awsm::loaders::fetch;
 use awsm::tick::{Timestamp, TimestampLoop};
 use awsm::webgl::{
@@ -40,93 +39,166 @@ impl State {
         }
     }
 }
-pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
+pub fn start(
+    window: Window,
+    document: Document,
+    body: HtmlElement,
+    version: WebGlVersion,
+) -> Result<(), JsValue> {
     let state = Rc::new(RefCell::new(State::new()));
 
-    let on_resize = {
-        let state = Rc::clone(&state);
-        move |width: u32, height: u32| {
-            let mut state = state.borrow_mut();
-            state.camera_width = width.into();
-            state.camera_height = height.into();
+    start_webgl!(
+        version,
+        window,
+        document,
+        body,
+        {
+            let state = Rc::clone(&state);
+            move |webgl_renderer, on_ready| {
+                let webgl_renderer_clone = Rc::clone(&webgl_renderer);
 
-            reposition(&mut state, width, height);
+                let mut webgl_renderer = webgl_renderer.borrow_mut();
+
+                let program_id = webgl_renderer.compile_program(
+                    include_str!("shaders/multi-texture-vertex.glsl"),
+                    include_str!("shaders/multi-texture-fragment.glsl"),
+                )?;
+
+                state.borrow_mut().program_id = Some(program_id);
+
+                let _buffer_id = create_and_assign_unit_quad_buffer(&mut webgl_renderer)?;
+
+                let texture_id = webgl_renderer.create_texture()?;
+                state.borrow_mut().texture1_id = Some(texture_id);
+
+                let texture_id = webgl_renderer.create_texture()?;
+                state.borrow_mut().texture2_id = Some(texture_id);
+
+                let future = async move {
+                    let mut webgl_renderer = webgl_renderer_clone.borrow_mut();
+                    let mut state_obj = state.borrow_mut();
+
+                    //let href2 = get_static_href("smiley.svg");
+                    let img_1 = fetch::image(&get_static_href("smiley.svg")).await?;
+                    let img_2 = fetch::image(&get_static_href("photo.jpg")).await?;
+
+                    //they're the same height
+                    state_obj.area = Area {
+                        width: img_1.natural_width().into(),
+                        height: img_1.natural_height().into(),
+                    };
+
+                    info!(
+                        "image size: {}x{}",
+                        state_obj.area.width, state_obj.area.height
+                    );
+
+                    let (width, height) = webgl_renderer.current_size();
+
+                    reposition(&mut state_obj, width, height);
+
+                    webgl_renderer.assign_simple_texture(
+                        state_obj.texture1_id.unwrap(),
+                        TextureTarget::Texture2d,
+                        &SimpleTextureOptions {
+                            pixel_format: PixelFormat::Rgba,
+                            ..SimpleTextureOptions::default()
+                        },
+                        &WebGlTextureSource::ImageElement(&img_1),
+                    )?;
+
+                    webgl_renderer.assign_simple_texture(
+                        state_obj.texture2_id.unwrap(),
+                        TextureTarget::Texture2d,
+                        &SimpleTextureOptions {
+                            pixel_format: PixelFormat::Rgba,
+                            ..SimpleTextureOptions::default()
+                        },
+                        &WebGlTextureSource::ImageElement(&img_2),
+                    )?;
+
+                    on_ready();
+                    Ok(JsValue::null())
+                };
+
+                //we don't handle errors here because they are exceptions
+                //hope you're running in an environment where uncaught rejects/exceptions are reported!
+                future_to_promise(future);
+
+                Ok(())
+            }
+        },
+        {
+            let state = Rc::clone(&state);
+            move |width: u32, height: u32| {
+                let mut state = state.borrow_mut();
+                state.camera_width = width.into();
+                state.camera_height = height.into();
+
+                reposition(&mut state, width, height);
+            }
+        },
+        {
+            let state = Rc::clone(&state);
+            move |time, webgl_renderer| {
+                let state = state.borrow();
+                let State {
+                    pos,
+                    area,
+                    camera_width,
+                    camera_height,
+                    program_id,
+                    texture1_id,
+                    texture2_id,
+                } = *state;
+
+                webgl_renderer
+                    .activate_program(program_id.unwrap())
+                    .unwrap();
+
+                //enable textures
+                webgl_renderer
+                    .activate_texture_for_sampler(texture1_id.unwrap(), "u_sampler_smiley")
+                    .unwrap();
+                webgl_renderer
+                    .activate_texture_for_sampler(texture2_id.unwrap(), "u_sampler_bridge")
+                    .unwrap();
+
+                //Build our matrices (must cast to f32)
+                let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(
+                    area.width as f32,
+                    area.height as f32,
+                    0.0f32,
+                ));
+                let projection_mat = Matrix4::new_orthographic(
+                    0.0,
+                    camera_width as f32,
+                    0.0,
+                    camera_height as f32,
+                    0.0,
+                    1.0,
+                );
+                let model_mat =
+                    Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, 0.0));
+                let mvp_mat = projection_mat * model_mat;
+
+                //Upload them to the GPU
+                webgl_renderer
+                    .upload_uniform_mat_4("u_size", &scaling_mat.as_slice())
+                    .unwrap();
+                webgl_renderer
+                    .upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice())
+                    .unwrap();
+
+                //draw!
+                webgl_renderer.clear(&[
+                    ClearBufferMask::ColorBufferBit,
+                    ClearBufferMask::DepthBufferBit,
+                ]);
+                webgl_renderer.draw_arrays(BeginMode::TriangleStrip, 0, 4);
+            }
         }
-    };
-
-    let webgl_renderer = start_webgl(window, document, body, on_resize)?;
-    let webgl_renderer_clone = Rc::clone(&webgl_renderer);
-
-    let mut webgl_renderer = webgl_renderer.borrow_mut();
-
-    let program_id = webgl_renderer.compile_program(
-        include_str!("shaders/multi-texture-vertex.glsl"),
-        include_str!("shaders/multi-texture-fragment.glsl"),
-    )?;
-
-    state.borrow_mut().program_id = Some(program_id);
-
-    let _buffer_id = create_and_assign_unit_quad_buffer(&mut webgl_renderer)?;
-
-    let texture_id = webgl_renderer.create_texture()?;
-    state.borrow_mut().texture1_id = Some(texture_id);
-
-    let texture_id = webgl_renderer.create_texture()?;
-    state.borrow_mut().texture2_id = Some(texture_id);
-
-    let future = async move {
-        let mut webgl_renderer = webgl_renderer_clone.borrow_mut();
-        let mut state_obj = state.borrow_mut();
-
-        //let href2 = get_static_href("smiley.svg");
-        let img_1 = fetch::image(&get_static_href("smiley.svg")).await?;
-        let img_2 = fetch::image(&get_static_href("photo.jpg")).await?;
-
-        //they're the same height
-        state_obj.area = Area {
-            width: img_1.natural_width().into(),
-            height: img_1.natural_height().into(),
-        };
-
-        info!(
-            "image size: {}x{}",
-            state_obj.area.width, state_obj.area.height
-        );
-
-        let (width, height) = webgl_renderer.current_size();
-
-        reposition(&mut state_obj, width, height);
-
-        webgl_renderer.assign_simple_texture(
-            state_obj.texture1_id.unwrap(),
-            TextureTarget::Texture2d,
-            &SimpleTextureOptions {
-                pixel_format: PixelFormat::Rgba,
-                ..SimpleTextureOptions::default()
-            },
-            &WebGlTextureSource::ImageElement(&img_1),
-        )?;
-
-        webgl_renderer.assign_simple_texture(
-            state_obj.texture2_id.unwrap(),
-            TextureTarget::Texture2d,
-            &SimpleTextureOptions {
-                pixel_format: PixelFormat::Rgba,
-                ..SimpleTextureOptions::default()
-            },
-            &WebGlTextureSource::ImageElement(&img_2),
-        )?;
-
-        render(&state_obj, &mut webgl_renderer).unwrap();
-
-        Ok(JsValue::null())
-    };
-
-    //we don't handle errors here because they are exceptions
-    //hope you're running in an environment where uncaught rejects/exceptions are reported!
-    future_to_promise(future);
-
-    Ok(())
+    )
 }
 
 fn reposition(state: &mut State, width: u32, height: u32) {
@@ -135,51 +207,7 @@ fn reposition(state: &mut State, width: u32, height: u32) {
         ((height as f64) - state.area.height) / 2.0,
     );
 }
-
-fn render(state: &State, webgl_renderer: &mut WebGlRenderer) -> Result<(), JsValue> {
-    let State {
-        pos,
-        area,
-        camera_width,
-        camera_height,
-        program_id,
-        texture1_id,
-        texture2_id,
-    } = state;
-
-    webgl_renderer.activate_program(program_id.unwrap())?;
-
-    //enable textures
-    webgl_renderer.activate_texture_for_sampler(texture1_id.unwrap(), "u_sampler_smiley")?;
-    webgl_renderer.activate_texture_for_sampler(texture2_id.unwrap(), "u_sampler_bridge")?;
-
-    //Build our matrices (must cast to f32)
-    let scaling_mat = Matrix4::new_nonuniform_scaling(&Vector3::new(
-        area.width as f32,
-        area.height as f32,
-        0.0f32,
-    ));
-    let projection_mat = Matrix4::new_orthographic(
-        0.0,
-        *camera_width as f32,
-        0.0,
-        *camera_height as f32,
-        0.0,
-        1.0,
-    );
-    let model_mat = Matrix4::new_translation(&Vector3::new(pos.x as f32, pos.y as f32, 0.0));
-    let mvp_mat = projection_mat * model_mat;
-
-    //Upload them to the GPU
-    webgl_renderer.upload_uniform_mat_4("u_size", &scaling_mat.as_slice())?;
-    webgl_renderer.upload_uniform_mat_4("u_modelViewProjection", &mvp_mat.as_slice())?;
-
-    //draw!
-    webgl_renderer.clear(&[
-        ClearBufferMask::ColorBufferBit,
-        ClearBufferMask::DepthBufferBit,
-    ]);
-    webgl_renderer.draw_arrays(BeginMode::TriangleStrip, 0, 4);
-
-    Ok(())
+/*
+   fn render(state: &State, webgl_renderer: &mut WebGlRenderer) -> Result<(), JsValue> {
 }
+*/

@@ -1,11 +1,10 @@
-use crate::scenes::webgl::common::datatypes::*;
-use crate::scenes::webgl::common::{create_unit_box_buffers, start_webgl, N_BOX_ELEMENTS};
-use crate::WebGlRenderer;
+use crate::scenes::webgl::common::*;
+use crate::start_webgl;
 use awsm::errors::Error;
 use awsm::tick::{Timestamp, TimestampLoop};
 use awsm::webgl::{
     AttributeOptions, BeginMode, BufferData, BufferTarget, BufferUsage, ClearBufferMask, DataType,
-    GlToggle, Id, VertexArray,
+    GlToggle, Id, VertexArray, WebGl2Renderer,
 };
 use log::info;
 use nalgebra::{Isometry3, Matrix4, Perspective3, Point3, Vector3};
@@ -53,80 +52,128 @@ impl State {
 pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
     let state = Rc::new(RefCell::new(State::new()));
 
-    let on_resize = {
-        let state = Rc::clone(&state);
-        move |width: u32, height: u32| {
-            let mut state = state.borrow_mut();
-            state.camera_width = width.into();
-            state.camera_height = height.into();
-        }
-    };
+    start_webgl_2(
+        window,
+        document,
+        body,
+        {
+            let state = Rc::clone(&state);
+            move |webgl_renderer, on_ready| {
+                let webgl_renderer_clone = Rc::clone(&webgl_renderer);
 
-    let webgl_renderer = start_webgl(window, document, body, on_resize)?;
-    let webgl_renderer_clone = Rc::clone(&webgl_renderer);
+                let mut webgl_renderer = webgl_renderer.borrow_mut();
 
-    let mut webgl_renderer = webgl_renderer.borrow_mut();
+                //simple test that the global registery works
+                //camera will be bound at 1 (due to being registered)
+                //model will be bound at 3 (due to not being registered
+                webgl_renderer.register_global_uniform_buffer("dog");
+                webgl_renderer.register_global_uniform_buffer("camera");
+                webgl_renderer.register_global_uniform_buffer("chair");
 
-    //simple test that the global registery works
-    //camera will be bound at 1 (due to being registered)
-    //model will be bound at 3 (due to not being registered
-    webgl_renderer.register_global_uniform_buffer("dog");
-    webgl_renderer.register_global_uniform_buffer("camera");
-    webgl_renderer.register_global_uniform_buffer("chair");
+                let program_id = webgl_renderer.compile_program(
+                    include_str!("shaders/ubos-vertex.glsl"),
+                    include_str!("shaders/ubos-fragment.glsl"),
+                )?;
 
-    let program_id = webgl_renderer.compile_program(
-        include_str!("shaders/ubos-vertex.glsl"),
-        include_str!("shaders/ubos-fragment.glsl"),
-    )?;
+                let mut state_obj = state.borrow_mut();
 
-    let mut state_obj = state.borrow_mut();
+                state_obj.program_id = Some(program_id);
 
-    state_obj.program_id = Some(program_id);
+                let vao_id = webgl_renderer.create_vertex_array()?;
 
-    let vao_id = webgl_renderer.create_vertex_array()?;
+                let (geom_id, colors_id, elements_id) =
+                    create_unit_box_buffers(&mut webgl_renderer)?;
 
-    let (geom_id, colors_id, elements_id) = create_unit_box_buffers(&mut webgl_renderer)?;
+                let camera_buffer_id = webgl_renderer.create_buffer()?;
+                state_obj.camera_buffer_id = Some(camera_buffer_id);
 
-    let camera_buffer_id = webgl_renderer.create_buffer()?;
-    state_obj.camera_buffer_id = Some(camera_buffer_id);
+                let model_buffer_id = webgl_renderer.create_buffer()?;
+                state_obj.model_buffer_id = Some(model_buffer_id);
 
-    let model_buffer_id = webgl_renderer.create_buffer()?;
-    state_obj.model_buffer_id = Some(model_buffer_id);
+                set_model_buffer(&mut state_obj, &webgl_renderer)?;
 
-    set_model_buffer(&mut state_obj, &webgl_renderer)?;
+                let scale_buffer_id = webgl_renderer.create_buffer()?;
+                state_obj.scale_buffer_id = Some(scale_buffer_id);
 
-    let scale_buffer_id = webgl_renderer.create_buffer()?;
-    state_obj.scale_buffer_id = Some(scale_buffer_id);
+                set_initial_scale_buffer(scale_buffer_id, &webgl_renderer)?;
 
-    set_initial_scale_buffer(scale_buffer_id, &webgl_renderer)?;
+                webgl_renderer.assign_vertex_array(
+                    vao_id,
+                    Some(elements_id),
+                    &vec![
+                        VertexArray {
+                            attribute_name: "a_vertex",
+                            buffer_id: geom_id,
+                            opts: &AttributeOptions::new(3, DataType::Float),
+                        },
+                        VertexArray {
+                            attribute_name: "a_color",
+                            buffer_id: colors_id,
+                            opts: &AttributeOptions::new(3, DataType::Float),
+                        },
+                    ],
+                )?;
 
-    webgl_renderer.assign_vertex_array(
-        vao_id,
-        Some(elements_id),
-        &vec![
-            VertexArray {
-                attribute_name: "a_vertex",
-                buffer_id: geom_id,
-                opts: &AttributeOptions::new(3, DataType::Float),
-            },
-            VertexArray {
-                attribute_name: "a_color",
-                buffer_id: colors_id,
-                opts: &AttributeOptions::new(3, DataType::Float),
-            },
-        ],
-    )?;
+                state_obj.vao_id = Some(vao_id);
 
-    state_obj.vao_id = Some(vao_id);
+                on_ready();
+                Ok(())
+            }
+        },
+        {
+            let state = Rc::clone(&state);
+            move |width: u32, height: u32| {
+                let mut state = state.borrow_mut();
+                state.camera_width = width.into();
+                state.camera_height = height.into();
+            }
+        },
+        {
+            let state = Rc::clone(&state);
+            move |time, webgl_renderer| {
+                let mut state = state.borrow_mut();
 
-    render(&state_obj, &mut webgl_renderer).unwrap();
+                webgl_renderer
+                    .activate_program(state.program_id.unwrap())
+                    .unwrap();
 
-    Ok(())
+                webgl_renderer.toggle(GlToggle::DepthTest, true);
+
+                //will partially upload (but fully activate) the buffer
+                update_scale_buffer(&mut state, webgl_renderer).unwrap();
+
+                //will upload and activate buffer
+                update_camera_buffer(&mut state, webgl_renderer).unwrap();
+
+                //Model just needs to be activated so that it pulls from the buffer (which was set at init time)
+                webgl_renderer
+                    .activate_uniform_buffer(state.model_buffer_id.unwrap(), "model")
+                    .unwrap();
+
+                //activate VAO's
+                webgl_renderer
+                    .activate_vertex_array(state.vao_id.unwrap())
+                    .unwrap();
+
+                //draw!
+                webgl_renderer.clear(&[
+                    ClearBufferMask::ColorBufferBit,
+                    ClearBufferMask::DepthBufferBit,
+                ]);
+                webgl_renderer.draw_elements(
+                    BeginMode::Triangles,
+                    N_BOX_ELEMENTS,
+                    DataType::UnsignedByte,
+                    0,
+                );
+            }
+        },
+    )
 }
 
 fn set_initial_scale_buffer(
     scale_buffer_id: Id,
-    webgl_renderer: &WebGlRenderer,
+    webgl_renderer: &WebGl2Renderer,
 ) -> Result<(), Error> {
     //Upload them to the GPU as a UBO
     let scale: [f32; 3] = [1.0; 3];
@@ -142,7 +189,7 @@ fn set_initial_scale_buffer(
     )
 }
 
-fn update_scale_buffer(state: &State, webgl_renderer: &WebGlRenderer) -> Result<(), Error> {
+fn update_scale_buffer(state: &State, webgl_renderer: &WebGl2Renderer) -> Result<(), Error> {
     let mut scale_y: [f32; 3] = [0.0, 3.0, 0.0];
 
     webgl_renderer.upload_buffer_sub_to_uniform_buffer_f32(
@@ -153,7 +200,7 @@ fn update_scale_buffer(state: &State, webgl_renderer: &WebGlRenderer) -> Result<
     )
 }
 
-fn set_model_buffer(state: &State, webgl_renderer: &WebGlRenderer) -> Result<(), Error> {
+fn set_model_buffer(state: &State, webgl_renderer: &WebGl2Renderer) -> Result<(), Error> {
     let State {
         pos,
         volume,
@@ -189,7 +236,7 @@ fn set_model_buffer(state: &State, webgl_renderer: &WebGlRenderer) -> Result<(),
     )
 }
 
-fn update_camera_buffer(state: &State, webgl_renderer: &WebGlRenderer) -> Result<(), Error> {
+fn update_camera_buffer(state: &State, webgl_renderer: &WebGl2Renderer) -> Result<(), Error> {
     // Our camera looks toward the point (1.0, 0.0, 0.0).
     // It is located at (0.0, 0.0, 1.0).
     let eye = Point3::new(1000.0, 500.0, 1000.0);
@@ -214,36 +261,4 @@ fn update_camera_buffer(state: &State, webgl_renderer: &WebGlRenderer) -> Result
         &camera,
         BufferUsage::DynamicDraw,
     )
-}
-
-fn render(state: &State, webgl_renderer: &mut WebGlRenderer) -> Result<(), JsValue> {
-    webgl_renderer.activate_program(state.program_id.unwrap())?;
-
-    webgl_renderer.toggle(GlToggle::DepthTest, true);
-
-    //will partially upload (but fully activate) the buffer
-    update_scale_buffer(state, webgl_renderer)?;
-
-    //will upload and activate buffer
-    update_camera_buffer(state, webgl_renderer)?;
-
-    //Model just needs to be activated so that it pulls from the buffer (which was set at init time)
-    webgl_renderer.activate_uniform_buffer(state.model_buffer_id.unwrap(), "model")?;
-
-    //activate VAO's
-    webgl_renderer.activate_vertex_array(state.vao_id.unwrap())?;
-
-    //draw!
-    webgl_renderer.clear(&[
-        ClearBufferMask::ColorBufferBit,
-        ClearBufferMask::DepthBufferBit,
-    ]);
-    webgl_renderer.draw_elements(
-        BeginMode::Triangles,
-        N_BOX_ELEMENTS,
-        DataType::UnsignedByte,
-        0,
-    );
-
-    Ok(())
 }

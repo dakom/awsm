@@ -1,4 +1,5 @@
 use super::funcs::FuncSettings;
+use super::misc::MiscSettings;
 use super::toggles::ToggleFlags;
 use super::{
     get_webgl_context_1, get_webgl_context_2, BufferTarget, GlQuery, Id, ProgramInfo, TextureInfo,
@@ -56,8 +57,8 @@ pub struct WebGlRenderer<T: WebGlCommon> {
     pub(super) toggle_flags: ToggleFlags,
 
     pub(super) func_settings: FuncSettings,
+    pub(super) misc_settings: MiscSettings,
 
-    pub(super) depth_mask: bool,
 }
 
 impl<T: WebGlCommon> WebGlRenderer<T> {
@@ -114,7 +115,8 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
                 ..FuncSettings::default()
             },
 
-            depth_mask: true,
+            misc_settings: MiscSettings::default()
+
         })
     }
 }

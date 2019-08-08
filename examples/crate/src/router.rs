@@ -28,6 +28,28 @@ pub fn start_router(window: web_sys::Window, document: web_sys::Document) -> Res
         links.append_child(&source_link)?;
     }
 
+    let search = window.location().search()?;
+
+    let webgl_version = if pathname.contains("webgl-") {
+        let query_value = get_query_value(&window, "webgl").and_then(|s| {
+            if s == "1" {
+                Some(webgl::common::WebGlVersion::One)
+            } else if s == "2" {
+                Some(webgl::common::WebGlVersion::Two)
+            } else {
+                None
+            }
+        });
+
+        match query_value {
+            Some(value) => Ok(value),
+            None => Err(JsValue::from_str("Unable to get webgl version")),
+        }
+    } else {
+        //not passed along, but just in case..
+        Ok(webgl::common::WebGlVersion::Two)
+    }?;
+
     match pathname {
         "" => {
             let menu = menu::build_menu(&document)?;
@@ -44,40 +66,44 @@ pub fn start_router(window: web_sys::Window, document: web_sys::Document) -> Res
 
         "input-pointer-lock" => input::pointer_lock::start(window, document, body),
 
-        "webgl-simple" => webgl::simple::start(window, document, body),
-
-        "webgl-texture" => webgl::texture::start(window, document, body),
-
-        "webgl-multi-texture" => webgl::multi_texture::start(window, document, body),
-
-        "webgl-blending" => webgl::blending::start(window, document, body),
-
-        "webgl-elements" => webgl::elements::start(window, document, body),
-
-        "webgl-instancing" => webgl::instancing::start(window, document, body),
-
-        "webgl-vaos" => webgl::vaos::start(window, document, body),
-        "webgl-texture_cube" => webgl::texture_cube::start(window, document, body),
-        "webgl-ubos" => start_additional_menu(&pathname, window, document, body),
-        "webgl-texture_3d" => start_additional_menu(&pathname, window, document, body),
+        "webgl-simple" => webgl::simple::start(window, document, body, webgl_version),
+        "webgl-texture" => webgl::texture::start(window, document, body, webgl_version),
+        "webgl-multi-texture" => webgl::multi_texture::start(window, document, body, webgl_version),
+        "webgl-blending" => webgl::blending::start(window, document, body, webgl_version),
+        "webgl-elements" => webgl::elements::start(window, document, body, webgl_version),
+        "webgl-instancing" => webgl::instancing::start(window, document, body, webgl_version),
+        "webgl-vaos" => webgl::vaos::start(window, document, body, webgl_version),
+        "webgl-texture_cube" => webgl::texture_cube::start(window, document, body, webgl_version),
+        "webgl-ubos" => webgl::ubos::start(window, document, body),
+        "webgl-texture_3d" => webgl::texture_3d::start(window, document, body),
         "audio-player" => audio::player::start(window, document, body),
         _ => unknown_route(&pathname, window, document, body),
     }
 }
 
-cfg_if! {
-    if #[cfg(feature = "webgl_2")] {
-        fn start_additional_menu(pathname:&str, window:web_sys::Window, document:web_sys::Document, body:web_sys::HtmlElement) -> Result<(), JsValue> {
-            match pathname {
-                "webgl-ubos" => webgl::ubos::start(window, document, body),
-                "webgl-texture_3d" => webgl::texture_3d::start(window, document, body),
-                _ => unknown_route(&pathname, window, document, body)
-            }
-        }
-    } else {
-        fn start_additional_menu(pathname:&str, window:web_sys::Window, document:web_sys::Document, body:web_sys::HtmlElement) -> Result<(), JsValue> {
-            match pathname {
-                _ => unknown_route(&pathname, window, document, body)
+fn get_query_value(window: &web_sys::Window, key: &str) -> Option<String> {
+    let search = match window.location().search() {
+        Ok(value) => value,
+        Err(_) => "".to_owned(),
+    };
+
+    let needle = format!("{}=", key);
+
+    match search.find(&needle) {
+        None => None,
+        Some(offset_start) => {
+            let offset_start = offset_start + key.len() + 1;
+            let value = &search[offset_start..];
+            let value = value.trim();
+            match value
+                .chars()
+                .position(|c| !c.is_alphanumeric() && c != '-' && c != '_')
+            {
+                None => Some(value.to_owned()),
+                Some(offset_end) => {
+                    let value = &value[..offset_end];
+                    Some(value.to_owned())
+                }
             }
         }
     }
@@ -97,45 +123,14 @@ fn unknown_route(
 
     Ok(())
 }
-//Production deploys separate webgl1 vs webgl2 builds into their own directory
-//Dev is one at a time in the root
-cfg_if! {
-    if #[cfg(debug_assertions)] {
-        pub fn get_home_href() -> &'static str {
-            "/"
-        }
-    } else if #[cfg(feature = "webgl_1")] {
-        pub fn get_home_href() -> &'static str {
-            "/webgl1/"
-        }
-    } else if #[cfg(feature = "webgl_2")] {
-        pub fn get_home_href() -> &'static str {
-            "/webgl2/"
-        }
-    } else {
-        pub fn get_home_href() -> &'static str {
-            "/"
-        }
-    }
+
+pub fn get_home_href() -> &'static str {
+    "/"
 }
 
-//Just basic stripping of urls to account for the difference in dev vs production
-//giving it unicode might go wonky
 fn get_root(input: &str) -> &str {
-    let strip_matched = |prefix: &str| -> Option<&str> {
-        input
-            .find(prefix)
-            .map(|len| input.split_at(len + prefix.len() - 1).1)
-    };
-
-    let stripped = strip_matched("webgl1/")
-        .or(strip_matched("webgl2/"))
-        .or(Some(input))
-        .unwrap();
-
-    stripped.trim_matches('/')
+    input.trim_matches('/')
 }
-
 pub fn get_static_href(path: &str) -> String {
     format!("/media/{}", path)
 }
@@ -169,24 +164,4 @@ fn create_source_link(href: &str, document: &Document) -> Result<HtmlElement, Js
     let anchor = anchor.unchecked_into::<HtmlElement>();
 
     Ok(anchor)
-}
-
-#[test]
-fn routes() {
-    //get_root
-    assert_eq!(get_root("/foo"), "foo");
-    assert_eq!(get_root("/foo/bar/"), "foo/bar");
-    assert_eq!(get_root("/"), "");
-    assert_eq!(get_root("/webgl1/foo"), "foo");
-    assert_eq!(get_root("/webgl1/foo/bar/"), "foo/bar");
-    assert_eq!(get_root("/webgl1/"), "");
-    assert_eq!(get_root("/webgl2/foo"), "foo");
-    assert_eq!(get_root("/webgl2/foo/bar/"), "foo/bar");
-    assert_eq!(get_root("/webgl2/"), "");
-    assert_eq!(get_root("/media/file.jpg"), "media/file.jpg");
-    //get_static
-    assert_eq!(
-        get_static_href("images/smiley.svg"),
-        "/media/images/smiley.svg"
-    );
 }

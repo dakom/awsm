@@ -1,7 +1,7 @@
 [package]
 name = "awsm"
 edition = "2018"
-version = "0.0.10"
+version = "0.0.11"
 authors = ["David Komer <david.komer@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -20,7 +20,11 @@ lto = true
 opt-level = 's'
 
 [features]
-default = ["data", "audio", "image", "video", "canvas", "input", "loaders", "tick", "window", "webgl"]
+default = ["core"]
+# Engine
+engine = []
+# Core
+core = ["data", "audio", "image", "video", "canvas", "input", "loaders", "tick", "window", "webgl"]
 data = []
 audio = [
     # audio
