@@ -28,10 +28,8 @@ ul {
 	list-style: none;	
 }
 
-.github-banner {
-    position: absolute;
-    top: 0;
-    right: 0;
+.github-fork-ribbon.right-bottom:before {
+            background-color: #f80;
 }
 
 .app {
