@@ -7,7 +7,9 @@ install:
   - cargo install wasm-bindgen-cli
 
 script:
+  - cd crates
+  - cd web
   - cargo test
-  - cd examples/crate
-  - cargo test
+  - cd ../../examples
+  - cd examples/web/crate
   - cargo test
