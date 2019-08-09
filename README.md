@@ -1,12 +1,12 @@
 [![Build Status](https://travis-ci.org/dakom/awsm.svg?branch=master)](https://travis-ci.org/dakom/awsm)
 
-## Demos: [[Feature Tests]](https://awsm.netlify.com/) - [[Bunnymark]](https://dakom.github.io/rust-bunnymark/)
+## [Live Feature Tests](https://awsm.netlify.com/)
 
 ## About
 
 awsm is a work-in-progress 3d game engine for the web, built in Rust and WebGL2. It's fast (or will be, hopefully).
 
-It's similar to [Amethyst](https://amethyst.rs/) and other game engines that use an Entity Component System and glTF - with the major difference being that awsm is focused _solely_ on the web.
+It's similar in concept to [amethyst](https://amethyst.rs/) and other game engines that use an Entity Component System and glTF - with the major difference being that awsm is focused _solely_ on the web.
 
 ## Architecture
 
@@ -27,3 +27,7 @@ Nothing yet! Only split awsm_web out which is what used to be here ;) Check back
 As a way to self-motivate getting over the learning curve, I thought it might help to livestream the coding+learning sessions, and also archive them in a playlist for a look-back.
 
 On twitch: https://www.twitch.tv/dakomz
+
+## Additional Demos
+
+* [Bunnymark](https://dakom.github.io/rust-bunnymark/)
