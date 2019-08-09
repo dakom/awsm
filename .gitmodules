@@ -1,6 +1,1 @@
-[submodule "examples/site/remote/environments"]
-	path = examples/site/remote/environments
-	url = https://github.com/ux3d/glTF-Sample-Environments.git
-[submodule "examples/site/remote/models"]
-	path = examples/site/remote/models
-	url = https://github.com/KhronosGroup/glTF-Sample-Models.git
+
