@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/dakom/awsm.svg?branch=master)](https://travis-ci.org/dakom/awsm)
 
-## Demos: [Feature Tests](https://awsm.netlify.com/) - [Bunnymark](https://dakom.github.io/rust-bunnymark/)
+## Demos: [[Feature Tests]](https://awsm.netlify.com/) - [[Bunnymark]](https://dakom.github.io/rust-bunnymark/)
 
 ## About
 
