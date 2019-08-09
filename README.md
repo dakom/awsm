@@ -2,7 +2,7 @@
 
 ## About
 
-awsm is a 3d game engine for the web, built in Rust and WebGL2. It's fast.
+awsm is a work-in-progress 3d game engine for the web, built in Rust and WebGL2. It's fast (or will be, hopefully).
 
 Conceptually, it's similar to [Amethyst](https://amethyst.rs/) and other game engines that use an Entity Component System and glTF - with the major difference being that awsm is focused _solely_ on the web. This means it can conceptually be lighter, faster, and more ergonomic in this niche. That's the idea anyway... 
 
