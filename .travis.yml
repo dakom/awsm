@@ -10,6 +10,6 @@ script:
   - cd crates
   - cd web
   - cargo test
-  - cd ../../examples
+  - cd ../..
   - cd examples/web/crate
   - cargo test
