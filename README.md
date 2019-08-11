@@ -6,17 +6,19 @@
 
 awsm is a work-in-progress 3d game engine for the web, built in Rust and WebGL2. It's fast (or will be, hopefully).
 
-It's similar in concept to [amethyst](https://amethyst.rs/) and other game engines that use an Entity Component System and glTF - with the major difference being that awsm is focused _solely_ on the web.
+It is planned to be similar in concept to [amethyst](https://amethyst.rs/) and other game engines that use an Entity Component System and glTF - with the major difference being that awsm is focused _solely_ on the web.
 
 ## Architecture
 
 awsm is split into two crates:
 
-* [awsm](crates/engine) - the engine itself
+* [awsm_web](crates/web) (very far along) - generic helpers for wasm on the web. Intended to be used independently, even for lightweight feature-specific needs.
+[CRATES.IO](https://crates.io/crates/awsm_web) - [DOCS](https://docs.rs/awsm_web)
+
+
+* [awsm](crates/engine) (r&d / pre-production) - the engine itself
 [CRATES.IO](https://crates.io/crates/awsm) - [DOCS](https://docs.rs/awsm)
 
-* [awsm_web](crates/web) - generic helpers for wasm on the web. Intended to be used independently, even for lightweight feature-specific needs.
-[CRATES.IO](https://crates.io/crates/awsm_web) - [DOCS](https://docs.rs/awsm_web)
 
 ## Status
 
