@@ -12,34 +12,34 @@ lto = true
 opt-level = 's'
 
 [dependencies]
-nalgebra = "0.18.0"
-wasm-bindgen = "0.2.48"
-js-sys = "0.3.25"
-wasm-bindgen-futures= { version = "0.3.25", features = ["futures_0_3"] }
-futures-preview = { version = "=0.3.0-alpha.16", features = ["async-await", "nightly"] }
+nalgebra = "^0.18.1"
+wasm-bindgen = "^0.2.50"
+js-sys = "^0.3.27"
+wasm-bindgen-futures= { version = "^0.3.27", features = ["futures_0_3"] }
+futures-preview = { version = "=0.3.0-alpha.18", features = ["async-await", "nightly"] }
 gloo-events = { git = "https://github.com/rustwasm/gloo" }
-lazy_static = "1.3.0"
-lut_parser = "2.1.1"
+lazy_static = "^1.4.0"
+lut_parser = "^2.1.1"
 awsm_web = { path = "../../../crates/web" }
 
 # logging is only enabled for debug builds
-cfg-if = "0.1"
-log = "0.4"
-console_log = { version = "0.1", optional = true }
+cfg-if = "^0.1.9"
+log = "^0.4.8"
+console_log = { version = "^0.1.2", optional = true }
  
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
-console_error_panic_hook = { version = "0.1.5", optional = true }
+console_error_panic_hook = { version = "^0.1.6", optional = true }
 
 # `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
 # compared to the default allocator's ~10K. It is slower than the default
 # allocator, however.
-wee_alloc = { version = "0.4.2", optional = true }
+wee_alloc = { version = "^0.4.5", optional = true }
 
 [dependencies.web-sys]
-version = "0.3.25"
+version = "^0.3.27"
 features = [
     "console",
     "MouseEvent",

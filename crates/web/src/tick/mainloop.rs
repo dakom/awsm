@@ -257,7 +257,7 @@ impl MainLoop {
         /// collection every time the main loop runs.
         let mut end_panic = false;
 
-        let raf_loop = RafLoop::start(move |timestamp| {
+        let raf_loop = RafLoop::start_with_fallback_timestep(opts.simulation_timestep, move |timestamp| {
             if !running {
                 // Render the initial state before any updates occur.
                 draw(1.0);

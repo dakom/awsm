@@ -20,3 +20,5 @@ pub mod tick;
 pub mod webgl;
 #[cfg(feature = "window")]
 pub mod window;
+#[cfg(feature = "global")]
+pub mod global;
