@@ -1,6 +1,5 @@
 #![feature(async_await)]
-//these are used in enough places that
-//it makes no sense to put them behind features
+//these aren't worth putting behind features
 pub mod errors;
 
 //each of these can be enabled/disabled as needed
@@ -18,7 +17,9 @@ pub mod loaders;
 pub mod tick;
 #[cfg(feature = "webgl")]
 pub mod webgl;
+
 #[cfg(feature = "window")]
 pub mod window;
-#[cfg(feature = "global")]
+
+#[cfg(all(feature = "window", feature="workers"))]
 pub mod global;

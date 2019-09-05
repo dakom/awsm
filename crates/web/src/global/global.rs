@@ -3,17 +3,58 @@ use wasm_bindgen::JsCast;
 use web_sys::Window;
 use web_sys::WorkerGlobalScope;
 
-pub enum WindowOrWorker {
+pub enum GlobalSelf {
     Window(Window),
     Worker(WorkerGlobalScope)
 }
 
-pub fn get_window_or_worker() -> Result<WindowOrWorker, Error> {
-    if let Ok(window) = js_sys::global().dyn_into::<Window>() {
-        return Ok(WindowOrWorker::Window(window));
-    } else if let Ok(worker) = js_sys::global().dyn_into::<WorkerGlobalScope>() {
-        return Ok(WindowOrWorker::Worker(worker));
-    }
+#[derive(Copy,Clone)]
+pub enum GlobalSelfPreference {
+    Window,
+    Worker
+}
+pub fn get_global_self (preference:Option<GlobalSelfPreference>) -> Result<GlobalSelf, Error> {
 
-    Err(Error::from(NativeError::WindowOrWorker))
+    let preference = preference.unwrap_or(GlobalSelfPreference::Window);
+
+    match preference {
+        GlobalSelfPreference::Window => {
+            match get_window() {
+                Some(res) => Ok(res),
+                None => {
+                    match get_worker() {
+                        Some(res) => Ok(res),
+                        None => Err(Error::from(NativeError::GlobalSelf))
+                    }
+                }
+            }
+        },
+
+        GlobalSelfPreference::Worker => {
+            match get_worker() {
+                Some(res) => Ok(res),
+                None => {
+                    match get_window() {
+                        Some(res) => Ok(res),
+                        None => Err(Error::from(NativeError::GlobalSelf))
+                    }
+                }
+            }
+        },
+    }
+    
+}
+
+
+fn get_window() -> Option<GlobalSelf> {
+    js_sys::global().dyn_into::<Window>()
+        .ok()
+        .map(GlobalSelf::Window)
+}
+
+
+fn get_worker() -> Option<GlobalSelf> {
+    js_sys::global().dyn_into::<WorkerGlobalScope>()
+        .ok()
+        .map(GlobalSelf::Worker)
 }

@@ -1,7 +1,7 @@
 [package]
 name = "awsm_web"
 edition = "2018"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["David Komer <david.komer@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -20,7 +20,7 @@ lto = true
 opt-level = 's'
 
 [features]
-default = ["data", "audio", "image", "video", "canvas", "input", "loaders", "tick", "global", "window", "worker", "webgl"]
+default = ["data", "audio", "image", "video", "canvas", "input", "loaders", "tick", "window", "workers", "webgl"]
 data = []
 audio = [
     # audio
@@ -71,21 +71,18 @@ loaders = [
     "wasm-bindgen-futures",
 ]
 tick = [
-    "global"
-]
-
-global = [
     "window",
-    "worker"
+    "workers"
 ]
 
-worker = [
+workers = [
     "web-sys/WorkerGlobalScope"
 ]
 
 window= [
     "web-sys/Window",
 ]
+
 webgl = [
     "canvas", 
     "image",

@@ -2,7 +2,7 @@
 //! https://github.com/rustwasm/wasm-bindgen/blob/master/examples/request-animation-frame/src/lib.rs
 
 use crate::errors::Error;
-use crate::global::{get_window_or_worker, WindowOrWorker};
+use crate::global::{get_global_self, GlobalSelf, GlobalSelfPreference};
 use log::info;
 use std::cell::Cell;
 use std::cell::RefCell;
@@ -50,15 +50,15 @@ struct WorkerRafState {
 
 impl RafLoop {
     /// Kick off a rAF loop. It will be cancelled when dropped
-    pub fn start_with_fallback_timestep<F>(fallback_timestep: f64, mut on_tick: F) -> Result<Self, Error>
+    pub fn start_with_fallback_timestep<F>(global_self_preference: Option<GlobalSelfPreference>, fallback_timestep: f64, mut on_tick: F) -> Result<Self, Error>
     where
         F: (FnMut(f64) -> ()) + 'static,
     {
         //Use a window or worker with fallback method of simulated timestep for requestAnimationFrame
-        let window_or_worker = get_window_or_worker()?; 
+        let global_self = get_global_self (global_self_preference)?; 
         let mut raf_id = Rc::new(Cell::new(None as Option<i32>));
-        match window_or_worker {
-            WindowOrWorker::Window(window) => {
+        match global_self {
+            GlobalSelf::Window(window) => {
 
                 let f = Rc::new(RefCell::new(None));
                 let g = f.clone();
@@ -87,7 +87,7 @@ impl RafLoop {
                 raf_id.set(request_animation_frame(&state.window, g.borrow().as_ref().unwrap()));
                 Ok(Self { raf_state: RafState::Window(Rc::clone(&raf_state)), raf_id})
             },
-            WindowOrWorker::Worker(worker) => {
+            GlobalSelf::Worker(worker) => {
                 let raf_state = WorkerRafState{ worker, timestep: fallback_timestep, last_timestamp: get_now_for_worker()};
                 let raf_state = Rc::new(RefCell::new(raf_state));
                 
@@ -133,7 +133,7 @@ impl RafLoop {
     where
         F: (FnMut(f64) -> ()) + 'static,
     {
-        Self::start_with_fallback_timestep(1000.0 / 16.0, on_tick)
+        Self::start_with_fallback_timestep(None, 1000.0 / 16.0, on_tick)
     }
 }
 

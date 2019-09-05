@@ -1,16 +1,13 @@
 use super::RafLoop;
 use crate::errors::Error;
-use crate::window::get_window;
-use log::info;
-use std::cell::Cell;
-use std::cell::RefCell;
-use std::rc::Rc;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::Window;
+use crate::global::{GlobalSelfPreference};
 
 ///Options for start_main_loop()
 pub struct MainLoopOptions {
+    /// The preference for global self. Pass Some(GlobalSelfPreference::Worker) when using in a worker
+    /// Default will be window
+    pub global_self_preference:Option<GlobalSelfPreference>,
+
     /// The amount of time (in milliseconds) to simulate each time update()
     /// runs. See `MainLoop.setSimulationTimestep()` for details.
     pub simulation_timestep: f64,
@@ -35,10 +32,20 @@ pub struct MainLoopOptions {
 impl Default for MainLoopOptions {
     fn default() -> Self {
         Self {
+            global_self_preference: None,
             simulation_timestep: 1000.0 / 60.0,
             fps_alpha: 0.9,
             fps_update_interval: 1000.0,
             min_frame_delay: 0.0,
+        }
+    }
+}
+
+impl MainLoopOptions {
+    pub fn default_worker() -> Self {
+        Self{
+            global_self_preference: Some(GlobalSelfPreference::Worker),
+            ..Self::default()
         }
     }
 }
@@ -257,7 +264,7 @@ impl MainLoop {
         /// collection every time the main loop runs.
         let mut end_panic = false;
 
-        let raf_loop = RafLoop::start_with_fallback_timestep(opts.simulation_timestep, move |timestamp| {
+        let raf_loop = RafLoop::start_with_fallback_timestep(opts.global_self_preference, opts.simulation_timestep, move |timestamp| {
             if !running {
                 // Render the initial state before any updates occur.
                 draw(1.0);
