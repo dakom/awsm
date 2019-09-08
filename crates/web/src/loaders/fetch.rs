@@ -12,13 +12,21 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::futures_0_3::JsFuture;
 use web_sys::{
-    AudioBuffer, AudioContext, Blob, BlobPropertyBag, HtmlImageElement, Request, Response, Url,
+    Blob, BlobPropertyBag, Request, Response, Url,
 };
 
+#[cfg(feature = "image")]
+use web_sys::{ HtmlImageElement };
+
+#[cfg(feature = "audio")]
+use web_sys::{ AudioBuffer, AudioContext };
+
+#[cfg(feature = "image")]
 pub fn image(url: &str) -> impl Future<Output = Result<HtmlImageElement, Error>> {
     Image::new(url)
 }
 
+#[cfg(feature = "image")]
 pub fn image_blob(blob: &Blob) -> impl Future<Output = Result<HtmlImageElement, Error>> {
     match Url::create_object_url_with_blob(&blob) {
         Ok(url) => future::ok(url),
@@ -27,6 +35,7 @@ pub fn image_blob(blob: &Blob) -> impl Future<Output = Result<HtmlImageElement, 
     .and_then(|url| image(&url))
 }
 
+#[cfg(feature = "image")]
 pub fn image_u8<T: AsRef<[u8]>>(
     data: T,
     mime_type: &str,
@@ -44,6 +53,7 @@ pub fn image_u8<T: AsRef<[u8]>>(
     .and_then(|blob| image_blob(&blob))
 }
 
+#[cfg(feature = "image")]
 pub fn image_u16<T: AsRef<[u16]>>(
     data: T,
     mime_type: &str,
@@ -61,6 +71,7 @@ pub fn image_u16<T: AsRef<[u16]>>(
     .and_then(|blob| image_blob(&blob))
 }
 
+#[cfg(feature = "image")]
 pub fn image_u32<T: AsRef<[u32]>>(
     data: T,
     mime_type: &str,
@@ -78,6 +89,7 @@ pub fn image_u32<T: AsRef<[u32]>>(
     .and_then(|blob| image_blob(&blob))
 }
 
+#[cfg(feature = "image")]
 pub fn image_i8<T: AsRef<[i8]>>(
     data: T,
     mime_type: &str,
@@ -95,6 +107,7 @@ pub fn image_i8<T: AsRef<[i8]>>(
     .and_then(|blob| image_blob(&blob))
 }
 
+#[cfg(feature = "image")]
 pub fn image_i16<T: AsRef<[i16]>>(
     data: T,
     mime_type: &str,
@@ -112,6 +125,7 @@ pub fn image_i16<T: AsRef<[i16]>>(
     .and_then(|blob| image_blob(&blob))
 }
 
+#[cfg(feature = "image")]
 pub fn image_i32<T: AsRef<[i32]>>(
     data: T,
     mime_type: &str,
@@ -129,6 +143,7 @@ pub fn image_i32<T: AsRef<[i32]>>(
     .and_then(|blob| image_blob(&blob))
 }
 
+#[cfg(feature = "image")]
 pub fn image_f32<T: AsRef<[f32]>>(
     data: T,
     mime_type: &str,
@@ -146,6 +161,7 @@ pub fn image_f32<T: AsRef<[f32]>>(
     .and_then(|blob| image_blob(&blob))
 }
 
+#[cfg(feature = "image")]
 pub fn image_f64<T: AsRef<[f64]>>(
     data: T,
     mime_type: &str,
@@ -164,6 +180,8 @@ pub fn image_f64<T: AsRef<[f64]>>(
 }
 
 //Audio
+
+#[cfg(feature = "audio")]
 pub fn audio<'a>(
     url: &str,
     ctx: &'a AudioContext,
@@ -171,6 +189,7 @@ pub fn audio<'a>(
     array_buffer(&url).and_then(move |buf| audio_buffer(&buf, &ctx))
 }
 
+#[cfg(feature = "audio")]
 pub fn audio_buffer<'a>(
     array_buffer: &ArrayBuffer,
     ctx: &AudioContext,
@@ -187,6 +206,7 @@ pub fn audio_buffer<'a>(
 }
 
 //convenince helpers for loading slices, vecs, etc.
+#[cfg(feature = "audio")]
 pub fn audio_u8<T: AsRef<[u8]>>(
     data: T,
     ctx: &AudioContext,
@@ -195,6 +215,7 @@ pub fn audio_u8<T: AsRef<[u8]>>(
     audio_buffer(&array_buffer, &ctx)
 }
 
+#[cfg(feature = "audio")]
 pub fn audio_u16<T: AsRef<[u16]>>(
     data: T,
     ctx: &AudioContext,
@@ -202,6 +223,7 @@ pub fn audio_u16<T: AsRef<[u16]>>(
     let array_buffer: ArrayBuffer = TypedData::new(data.as_ref()).into();
     audio_buffer(&array_buffer, &ctx)
 }
+#[cfg(feature = "audio")]
 pub fn audio_u32<T: AsRef<[u32]>>(
     data: T,
     ctx: &AudioContext,
@@ -209,6 +231,7 @@ pub fn audio_u32<T: AsRef<[u32]>>(
     let array_buffer: ArrayBuffer = TypedData::new(data.as_ref()).into();
     audio_buffer(&array_buffer, &ctx)
 }
+#[cfg(feature = "audio")]
 pub fn audio_i8<T: AsRef<[i8]>>(
     data: T,
     ctx: &AudioContext,
@@ -216,6 +239,7 @@ pub fn audio_i8<T: AsRef<[i8]>>(
     let array_buffer: ArrayBuffer = TypedData::new(data.as_ref()).into();
     audio_buffer(&array_buffer, &ctx)
 }
+#[cfg(feature = "audio")]
 pub fn audio_i16<T: AsRef<[i16]>>(
     data: T,
     ctx: &AudioContext,
@@ -223,6 +247,7 @@ pub fn audio_i16<T: AsRef<[i16]>>(
     let array_buffer: ArrayBuffer = TypedData::new(data.as_ref()).into();
     audio_buffer(&array_buffer, &ctx)
 }
+#[cfg(feature = "audio")]
 pub fn audio_i32<T: AsRef<[i32]>>(
     data: T,
     ctx: &AudioContext,
@@ -230,6 +255,7 @@ pub fn audio_i32<T: AsRef<[i32]>>(
     let array_buffer: ArrayBuffer = TypedData::new(data.as_ref()).into();
     audio_buffer(&array_buffer, &ctx)
 }
+#[cfg(feature = "audio")]
 pub fn audio_f32<T: AsRef<[f32]>>(
     data: T,
     ctx: &AudioContext,
@@ -237,6 +263,7 @@ pub fn audio_f32<T: AsRef<[f32]>>(
     let array_buffer: ArrayBuffer = TypedData::new(data.as_ref()).into();
     audio_buffer(&array_buffer, &ctx)
 }
+#[cfg(feature = "audio")]
 pub fn audio_f64<T: AsRef<[f64]>>(
     data: T,
     ctx: &AudioContext,
@@ -264,6 +291,7 @@ pub fn text(url: &str) -> impl Future<Output = Result<String, Error>> {
     }
 }
 
+//pure data
 pub fn array_buffer(url: &str) -> impl Future<Output = Result<ArrayBuffer, Error>> {
     let req = Request::new_with_str(url);
 
