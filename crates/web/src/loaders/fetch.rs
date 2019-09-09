@@ -1,4 +1,7 @@
+
+#[cfg(feature = "image")]
 use super::image::Image;
+
 use crate::data::TypedData;
 use crate::data::*;
 use crate::errors::{Error, NativeError};

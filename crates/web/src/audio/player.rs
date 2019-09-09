@@ -1,11 +1,7 @@
-use crate::errors::{Error, NativeError};
-use js_sys::Object;
-use log::info;
-use std::cell::{Cell, RefCell};
-use std::rc::Rc;
+use crate::errors::{Error};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{AudioBuffer, AudioBufferSourceNode, AudioContext, AudioNode, Element, Event};
+use web_sys::{AudioBuffer, AudioBufferSourceNode, AudioContext};
 
 pub struct AudioPlayer {
     pub node: AudioBufferSourceNode,
