@@ -1,13 +1,10 @@
 use super::RafLoop;
 use crate::errors::Error;
 use crate::global::{GlobalSelfPreference};
+use log::{info};
 
 ///Options for start_main_loop()
 pub struct MainLoopOptions {
-    /// The preference for global self. Pass Some(GlobalSelfPreference::Worker) when using in a worker
-    /// Default will be window
-    pub global_self_preference:Option<GlobalSelfPreference>,
-
     /// The amount of time (in milliseconds) to simulate each time update()
     /// runs. See `MainLoop.setSimulationTimestep()` for details.
     pub simulation_timestep: f64,
@@ -32,20 +29,10 @@ pub struct MainLoopOptions {
 impl Default for MainLoopOptions {
     fn default() -> Self {
         Self {
-            global_self_preference: None,
             simulation_timestep: 1000.0 / 60.0,
             fps_alpha: 0.9,
             fps_update_interval: 1000.0,
             min_frame_delay: 0.0,
-        }
-    }
-}
-
-impl MainLoopOptions {
-    pub fn default_worker() -> Self {
-        Self{
-            global_self_preference: Some(GlobalSelfPreference::Worker),
-            ..Self::default()
         }
     }
 }
@@ -211,77 +198,116 @@ impl MainLoopOptions {
 ///   be noticeable before a panic occurs. To help the application catch up
 ///   after a panic caused by a spiral of death, the same steps can be taken
 ///   that are suggested above if the FPS drops too low.
-pub struct MainLoop {
-    raf_loop: RafLoop,
+pub struct MainLoop <B,U,D,E> 
+where
+    B: FnMut(f64, f64) -> () + 'static,
+    U: FnMut(f64) -> () + 'static,
+    D: FnMut(f64) -> () + 'static,
+    E: FnMut(f64, bool) -> () + 'static,
+{
+    begin: B,
+    update: U,
+    draw: D,
+    end: E,
+
+    /// user-configurable options
+    opts: MainLoopOptions,
+
+    /// Whether the main loop is running.
+    running: bool,
+
+    /// The cumulative amount of in-app time that hasn't been simulated yet.
+    /// See the comments inside animate() for details.
+    frame_delta: f64,
+
+    /// The timestamp in milliseconds of the last time the main loop was run.
+    /// Used to compute the time elapsed between frames.
+    last_frame_time_ms: f64,
+
+    /// An exponential moving average of the frames per second.
+    fps: f64,
+
+    /// The timestamp (in milliseconds) of the last time the `fps` moving
+    /// average was updated.
+    last_fps_update: f64,
+
+    /// The number of frames delivered since the last time the `fps` moving
+    /// average was updated (i.e. since `lastFpsUpdate`).
+    frames_since_last_fps_update: u32,
+
+    /// The number of times update() is called in a given frame. This is only
+    /// relevant inside of animate(), but a reference is held externally so that
+    /// this variable is not marked for garbage collection every time the main
+    /// loop runs.
+    num_update_steps: u32,
+
+    /// Whether the simulation has fallen too far behind real time.
+    /// Specifically, `panic` will be set to `true` if too many updates occur in
+    /// one frame. This is only relevant inside of animate(), but a reference is
+    /// held externally so that this variable is not marked for garbage
+    /// collection every time the main loop runs.
+    end_panic: bool,
 }
 
-impl MainLoop {
-    pub fn start<B, U, D, E>(
-        mut opts: MainLoopOptions,
-        mut begin: B,
-        mut update: U,
-        mut draw: D,
-        mut end: E,
-    ) -> Result<MainLoop, Error>
-    where
-        B: FnMut(f64, f64) -> () + 'static,
-        U: FnMut(f64) -> () + 'static,
-        D: FnMut(f64) -> () + 'static,
-        E: FnMut(f64, bool) -> () + 'static,
+
+impl <B,U,D,E> Drop for MainLoop<B,U,D,E> 
+where
+    B: FnMut(f64, f64) -> () + 'static,
+    U: FnMut(f64) -> () + 'static,
+    D: FnMut(f64) -> () + 'static,
+    E: FnMut(f64, bool) -> () + 'static,
+{
+    fn drop(&mut self) {
+        #[cfg(feature = "debug_log")]
+        info!("Main Loop Dropped (but not whatever was passed into the closure!)");
+    }
+}
+
+impl <B,U,D,E> MainLoop <B,U,D,E> 
+where
+    B: FnMut(f64, f64) -> () + 'static,
+    U: FnMut(f64) -> () + 'static,
+    D: FnMut(f64) -> () + 'static,
+    E: FnMut(f64, bool) -> () + 'static,
+{
+    pub fn new(opts: MainLoopOptions, begin: B, update: U, draw: D, end: E) -> Self 
     {
-        // Whether the main loop is running.
-        let mut running = false;
+        Self{
+            begin,
+            update,
+            draw,
+            end,
+            opts,
+            running: false,
+            frame_delta: 0.0,
+            last_frame_time_ms: 0.0,
+            fps: 60.0,
+            last_fps_update: 0.0,
+            frames_since_last_fps_update: 0,
+            num_update_steps: 0,
+            end_panic: false
+        } 
 
-        /// The cumulative amount of in-app time that hasn't been simulated yet.
-        /// See the comments inside animate() for details.
-        let mut frame_delta = 0.0f64;
+    }
 
-        /// The timestamp in milliseconds of the last time the main loop was run.
-        /// Used to compute the time elapsed between frames.
-        let mut last_frame_time_ms = 0.0f64;
-
-        /// An exponential moving average of the frames per second.
-        let mut fps = 60.0f64;
-
-        /// The timestamp (in milliseconds) of the last time the `fps` moving
-        /// average was updated.
-        let mut last_fps_update = 0.0f64;
-
-        /// The number of frames delivered since the last time the `fps` moving
-        /// average was updated (i.e. since `lastFpsUpdate`).
-        let mut frames_since_last_fps_update = 0u32;
-
-        /// The number of times update() is called in a given frame. This is only
-        /// relevant inside of animate(), but a reference is held externally so that
-        /// this variable is not marked for garbage collection every time the main
-        /// loop runs.
-        let mut num_update_steps = 0u32;
-
-        /// Whether the simulation has fallen too far behind real time.
-        /// Specifically, `panic` will be set to `true` if too many updates occur in
-        /// one frame. This is only relevant inside of animate(), but a reference is
-        /// held externally so that this variable is not marked for garbage
-        /// collection every time the main loop runs.
-        let mut end_panic = false;
-
-        let raf_loop = RafLoop::start_with_fallback_timestep(opts.global_self_preference, opts.simulation_timestep, move |timestamp| {
-            if !running {
+    pub fn tick(&mut self, timestamp: f64) {
+            if !self.running {
                 // Render the initial state before any updates occur.
-                draw(1.0);
+                (self.draw)(1.0);
 
                 // Reset variables that are used for tracking time so that we
                 // don't simulate time passed while the application was paused.
-                last_frame_time_ms = timestamp;
-                last_fps_update = timestamp;
-                frames_since_last_fps_update = 0;
+                self.last_frame_time_ms = timestamp;
+                self.last_fps_update = timestamp;
+                self.frames_since_last_fps_update = 0;
 
                 // The application isn't considered "running" until the
                 // application starts drawing.
-                running = true;
+                self.running = true;
             } else {
                 // Throttle the frame rate (if minFrameDelay is set to a non-zero value by
                 // `MainLoop.setMaxAllowedFPS()`).
-                if timestamp < (last_frame_time_ms + opts.min_frame_delay) {
+                if timestamp < (self.last_frame_time_ms + self.opts.min_frame_delay) {
                     return;
                 }
 
@@ -290,37 +316,37 @@ impl MainLoop {
                 // not-yet-simulated time (as opposed to just the time elapsed since the
                 // last frame) because not all actually elapsed time is guaranteed to be
                 // simulated each frame. See the comments below for details.
-                frame_delta += timestamp - last_frame_time_ms;
-                last_frame_time_ms = timestamp;
+                self.frame_delta += timestamp - self.last_frame_time_ms;
+                self.last_frame_time_ms = timestamp;
 
                 // Run any updates that are not dependent on time in the simulation. See
                 // `MainLoop.setBegin()` for additional details on how to use this.
-                begin(timestamp, frame_delta);
+                (self.begin)(timestamp, self.frame_delta);
 
                 // Update the estimate of the frame rate, `fps`. Approximately every
                 // second, the number of frames that occurred in that second are included
                 // in an exponential moving average of all frames per second. This means
                 // that more recent seconds affect the estimated frame rate more than older
                 // seconds.
-                if timestamp > (last_fps_update + opts.fps_update_interval) {
+                if timestamp > (self.last_fps_update + self.opts.fps_update_interval) {
                     // Compute the new exponential moving average.
-                    fps =
+                    self.fps =
                             // Divide the number of frames since the last FPS update by the
                             // amount of time that has passed to get the mean frames per second
                             // over that period. This is necessary because slightly more than a
                             // second has likely passed since the last update.
-                            opts.fps_alpha * (frames_since_last_fps_update as f64) * 1000.0 / (timestamp - last_fps_update) + (1.0 - opts.fps_alpha) * fps;
+                            self.opts.fps_alpha * (self.frames_since_last_fps_update as f64) * 1000.0 / (timestamp - self.last_fps_update) + (1.0 - self.opts.fps_alpha) * self.fps;
 
                     // Reset the frame counter and last-updated timestamp since their
                     // latest values have now been incorporated into the FPS estimate.
-                    last_fps_update = timestamp;
-                    frames_since_last_fps_update = 0;
+                    self.last_fps_update = timestamp;
+                    self.frames_since_last_fps_update = 0;
                 }
                 // Count the current frame in the next frames-per-second update. This
                 // happens after the previous section because the previous section
                 // calculates the frames that occur up until `timestamp`, and `timestamp`
                 // refers to a time just before the current frame was delivered.
-                frames_since_last_fps_update += 1;
+                self.frames_since_last_fps_update += 1;
 
                 /*
                  * A naive way to move an object along its X-axis might be to write a main
@@ -381,11 +407,11 @@ impl MainLoop {
                  * - https://gamealchemist.wordpress.com/2013/03/16/thoughts-on-the-javascript-game-loop/
                  * - https://developer.mozilla.org/en-US/docs/Games/Anatomy
                  */
-                num_update_steps = 0;
+                self.num_update_steps = 0;
 
-                while frame_delta >= opts.simulation_timestep {
-                    update(opts.simulation_timestep);
-                    frame_delta -= opts.simulation_timestep;
+                while self.frame_delta >= self.opts.simulation_timestep {
+                    (self.update)(self.opts.simulation_timestep);
+                    self.frame_delta -= self.opts.simulation_timestep;
 
                     /*
                      * Sanity check: bail if we run the loop too many times.
@@ -411,9 +437,9 @@ impl MainLoop {
                      * to get out of sync with their peers, but if the updates are taking
                      * this long already, they're probably already out of sync.
                      */
-                    num_update_steps += 1;
-                    if num_update_steps >= 240 {
-                        end_panic = true;
+                    self.num_update_steps += 1;
+                    if self.num_update_steps >= 240 {
+                        self.end_panic = true;
                         break;
                     }
 
@@ -435,17 +461,14 @@ impl MainLoop {
                      *
                      * See `MainLoop.setDraw()` for details about draw() itself.
                      */
-                    draw(frame_delta / opts.simulation_timestep);
+                    (self.draw)(self.frame_delta / self.opts.simulation_timestep);
 
                     // Run any updates that are not dependent on time in the simulation. See
                     // `MainLoop.setEnd()` for additional details on how to use this.
-                    end(fps, end_panic);
+                    (self.end)(self.fps, self.end_panic);
 
-                    end_panic = false;
+                    self.end_panic = false;
                 }
             }
-        })?;
-
-        Ok(Self { raf_loop })
     }
 }

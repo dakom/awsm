@@ -13,6 +13,11 @@ pub enum GlobalSelfPreference {
     Window,
     Worker
 }
+
+/**
+ * returns the global self, trying the preference first and if that fails, the other
+ * default preference is window, which means if that fails it'll try worker
+ */
 pub fn get_global_self (preference:Option<GlobalSelfPreference>) -> Result<GlobalSelf, Error> {
 
     let preference = preference.unwrap_or(GlobalSelfPreference::Window);

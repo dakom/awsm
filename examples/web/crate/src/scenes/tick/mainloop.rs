@@ -1,5 +1,5 @@
 use awsm_web::tick;
-use awsm_web::tick::{MainLoop, MainLoopOptions};
+use awsm_web::tick::{MainLoop, MainLoopOptions, RafLoop};
 use log::info;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -34,7 +34,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
 
     //Closure needs to take ownership since it occurs past the JS boundry and is 'static
     //but we need to assign the value of cancel from outside the closure
-    let main_loop: Rc<RefCell<Option<MainLoop>>> = Rc::new(RefCell::new(None));
+    let raf_loop: Rc<RefCell<Option<RafLoop>>> = Rc::new(RefCell::new(None));
 
     //callbacks
     let begin = move |time, delta| {
@@ -43,7 +43,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
     };
 
     let update = {
-        let main_loop = main_loop.clone();
+        let raf_loop = raf_loop.clone();
         move |delta| {
             elapsed += delta;
             let elapsed = (elapsed / 1000.0).round() as u64;
@@ -56,7 +56,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
             update_div.set_text_content(Some(&my_str.as_str()));
 
             if elapsed > MAX {
-                main_loop.borrow_mut().take();
+                raf_loop.borrow_mut().take();
                 header.set_text_content(Some("ticker stopped!"));
             }
         }
@@ -71,8 +71,14 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
         fps_div.set_text_content(Some(&my_str.as_str()));
     };
 
-    let _main_loop = MainLoop::start(MainLoopOptions::default(), begin, update, draw, end)?;
-    *main_loop.borrow_mut() = Some(_main_loop);
+    let _raf_loop = RafLoop::start({
+        let mut main_loop = MainLoop::new(MainLoopOptions::default(), begin, update, draw, end);
+        move |ts| {
+            main_loop.tick(ts);
+        }
+    })?;
+
+    *raf_loop.borrow_mut() = Some(_raf_loop);
 
     Ok(())
 }

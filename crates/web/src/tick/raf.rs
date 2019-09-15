@@ -30,7 +30,9 @@ impl Drop for RafLoop {
             }
             self.raf_id.set(None);
         }
-        info!("DROPPED");
+
+        #[cfg(feature = "debug_log")]
+        info!("Raf Loop Dropped (but not whatever was passed into the Closure!");
     }
 }
 
@@ -57,6 +59,7 @@ impl RafLoop {
         //Use a window or worker with fallback method of simulated timestep for requestAnimationFrame
         let global_self = get_global_self (global_self_preference)?; 
         let mut raf_id = Rc::new(Cell::new(None as Option<i32>));
+
         match global_self {
             GlobalSelf::Window(window) => {
 
@@ -78,7 +81,7 @@ impl RafLoop {
                                 raf_id.set(request_animation_frame(&state.window, f.borrow().as_ref().unwrap()));
                             }
                             on_tick(time);
-                        }
+                        } 
                     }) as Box<dyn FnMut(f64) -> ()>));
                 }
 

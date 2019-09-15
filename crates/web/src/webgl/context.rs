@@ -155,6 +155,8 @@ pub fn get_webgl_context_1(
     canvas: &HtmlCanvasElement,
     opts: Option<&WebGlContextOptions>,
 ) -> Result<WebGlRenderingContext, Error> {
+
+    #[cfg(feature = "debug_log")]
     info!("Webgl version 1");
 
     let context = match opts {
@@ -175,6 +177,7 @@ pub fn get_webgl_context_2(
     canvas: &HtmlCanvasElement,
     opts: Option<&WebGlContextOptions>,
 ) -> Result<WebGl2RenderingContext, Error> {
+    #[cfg(feature = "debug_log")]
     info!("Webgl version 2");
 
     let context = match opts {

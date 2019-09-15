@@ -204,6 +204,8 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
         }
 
         for i in (0..max).filter(|n| !uniforms_in_blocks.contains(n)) {
+
+            #[cfg(feature = "debug_log")]
             info!("getting uniform cache info for uniform #{} ", i);
             let (name, type_) = self
                 .gl
@@ -214,6 +216,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
 
             match entry {
                 Entry::Occupied(_) => {
+                    #[cfg(feature = "debug_log")]
                     info!("skipping uniform cache for [{}] (already exists)", &name);
                 }
                 Entry::Vacant(entry) => {
@@ -221,6 +224,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
                         .gl
                         .awsm_get_uniform_location(&program_info.program, &name)?;
                     entry.insert(loc);
+                    #[cfg(feature = "debug_log")]
                     info!("caching uniform [{}]", &name);
                     match type_ {
                         //Just the sampler types from UniformDataType
@@ -286,6 +290,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
 
             match entry {
                 Entry::Occupied(_) => {
+                    #[cfg(feature = "debug_log")]
                     info!("skipping attribute cache for [{}] (already exists)", &name);
                 }
                 Entry::Vacant(entry) => {
@@ -293,6 +298,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
                         .gl
                         .awsm_get_attribute_location(&program_info.program, &name)?;
                     entry.insert(loc);
+                    #[cfg(feature = "debug_log")]
                     info!("caching attribute [{}] at location [{}]", &name, loc);
                 }
             }
@@ -405,6 +411,8 @@ impl WebGlRenderer<WebGl2RenderingContext> {
 
                 match entry {
                     Entry::Occupied(_) => {
+
+                        #[cfg(feature = "debug_log")]
                         info!(
                             "skipping uniform buffer cache for [{}] (already exists)",
                             &name
@@ -412,6 +420,7 @@ impl WebGlRenderer<WebGl2RenderingContext> {
                     }
                     Entry::Vacant(entry) => {
                         entry.insert(bind_point);
+                        #[cfg(feature = "debug_log")]
                         info!(
                             "caching uniform buffer [{}] at index {} and bind point {}",
                             &name, block_index, bind_point
@@ -449,6 +458,7 @@ impl WebGlRenderer<WebGl2RenderingContext> {
                     clone_to_vec_u32(&active_uniform_offsets.into())
                 };
 
+                #[cfg(feature = "debug_log")]
                 info!("{:?}", &offsets);
 
                 for (idx, loc) in active_uniforms.iter().enumerate() {
@@ -462,6 +472,7 @@ impl WebGlRenderer<WebGl2RenderingContext> {
 
                     block_lookup.insert(u_name.clone(), offset);
 
+                    #[cfg(feature = "debug_log")]
                     info!("uniform {} in block {} has offset {}", u_name, name, offset);
                 }
             }

@@ -68,7 +68,9 @@ impl<'a> PointerLock<'a> {
                 if lock_enabled {
                     on_start(&target);
 
-                    info!("lock enabled!");
+                    
+                    #[cfg(feature = "debug_log")]
+                    info!("pointer lock enabled!");
 
                     let move_cb = Closure::wrap(Box::new({
                         let f = Rc::clone(&on_pointer_move);
@@ -176,7 +178,9 @@ impl<'a> Drop for PointerLock<'a> {
                 self.change_cb_webkit.as_ref().unchecked_ref(),
             )
             .unwrap_throw();
-        info!("dropped!");
+
+        #[cfg(feature = "debug_log")]
+        info!("dropped pointer lock!");
     }
 }
 
