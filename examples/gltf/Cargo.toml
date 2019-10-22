@@ -1,0 +1,9 @@
+[profile.release]
+lto = true
+
+[workspace]
+members = [
+    "crates/core",
+    "crates/renderer",
+    "crates/shared"
+]
