@@ -1,5 +1,5 @@
 use crate::router::get_static_href;
-use awsm_web::audio::AudioPlayer;
+use awsm_web::audio::{AudioPlayer, AudioOneShot};
 use awsm_web::loaders::fetch;
 use gloo_events::EventListener;
 use log::info;
@@ -64,8 +64,8 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
         let state = Rc::new(RefCell::new(State::new()));
         render_state(&state.borrow());
 
-        let mut oneshot_player: Option<AudioPlayer> = None;
         let mut bg_player: Option<AudioPlayer> = None;
+        let mut oneshot_player: Option<Rc<RefCell<Option<AudioPlayer>>>> = None;
 
         let handle_loop = {
             let state = Rc::clone(&state);
@@ -79,7 +79,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
                         true => {
                             info!("should be playing loop...");
 
-                            let player = AudioPlayer::start(
+                            let player = AudioPlayer::play(
                                 &ctx,
                                 &bg_loop_buffer,
                                 Some({
@@ -120,7 +120,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
                     match state_obj.oneshot {
                         true => {
                             info!("should be playing oneshot...");
-                            let player = AudioPlayer::start(
+                            let player = AudioPlayer::play_oneshot(
                                 &ctx,
                                 &one_shot_buffer,
                                 Some({
@@ -139,7 +139,9 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
                             oneshot_player = Some(player);
                         }
                         false => {
-                            oneshot_player.take();
+                            if let Some(player) = oneshot_player.take() {
+                                player.borrow_mut().take();
+                            }
                         }
                     }
                 }
