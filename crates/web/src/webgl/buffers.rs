@@ -3,7 +3,8 @@ use crate::errors::{Error, NativeError};
 use std::marker::PhantomData;
 use web_sys::WebGlBuffer;
 use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
-
+use wasm_bindgen::JsCast;
+use log::info;
 /*
  * The direct uniform uploads are written as traits on this newtype wrapper
  * in order to allow working either f32 or u8
@@ -114,8 +115,24 @@ impl_context! {
                     dest_byte_offset as f64,
                     &typed_array,
                     src_offset,
-                    length
+                    length 
                 );
+
+               /* 
+                //https://github.com/rustwasm/wasm-bindgen/issues/1615#issuecomment-521072703
+                info!("{} {}", src_offset, length);
+
+                let buf = wasm_bindgen::memory();
+                let mem = buf.unchecked_ref::<js_sys::WebAssembly::Memory>();
+                self.buffer_sub_data_with_f64_and_array_buffer_view_and_src_offset_and_length(
+                    target as u32,
+                    dest_byte_offset as f64,
+                    &mem.buffer().into(),
+                    (data.as_ref().as_ptr() as u32) + (src_offset * 8),
+                    length * 8
+                    //length * 8
+                );
+                */
             }
             Ok(())
         }
