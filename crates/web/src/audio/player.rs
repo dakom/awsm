@@ -2,7 +2,6 @@ use crate::errors::{Error};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{AudioBuffer, AudioBufferSourceNode, AudioContext};
-use log::{info};
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -74,7 +73,6 @@ impl Drop for AudioPlayer {
         self.node.stop().unwrap();
         self.node.set_onended(None);
         self.cb.take();
-        info!("dropped");
     }
 }
 
