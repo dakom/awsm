@@ -1,0 +1,17 @@
+.ui {
+  position: absolute;
+  z-index: 2;
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+.loading > .text {
+  font-size: xx-large;
+  text-align: center;
+}

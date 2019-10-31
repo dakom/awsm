@@ -1,0 +1,40 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "esnext",
+        "sourceMap": true,
+        "esModuleInterop": true,
+        "moduleResolution": "node",
+        "diagnostics": true,
+        "outDir": "dist",
+        "allowJs": true,
+        "lib": [
+            "esnext",
+            "es6",
+            "es5",
+            "dom"
+        ],
+        "baseUrl": ".",
+        "paths": {
+            "*": [
+                "node_modules/@types/*",
+                "*"
+              ],
+
+            "@events/*": ["./events/*"],
+			"@state/*": ["./state/*"],
+            "@ui/*": ["./ui/*"],
+            "@utils/*": ["./utils/*"],
+            "@config/*": ["./config/*"],
+        },
+    },
+    "include": [
+        "./**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "build",
+        "coverage"
+    ]
+}

@@ -1,5 +1,5 @@
 [package]
-name = "awsm_gltf"
+name = "awsm_renderer"
 edition = "2018"
 version = "0.0.1"
 authors = ["David Komer <david.komer@gmail.com>"]
@@ -22,14 +22,10 @@ opt-level = 's'
 [dependencies]
 web-sys = { version = "^0.3.27", features = ["HtmlCanvasElement"] }
 js-sys = "0.3.27"
-wasm-bindgen = "0.2.50"
 log = "0.4.8"
-rustc-hash = { version = "1.0.1", optional = true }
+shipyard = { git= "https://github.com/leudz/shipyard.git", features = ["proc"], default-features = false}
 serde = { version = "1.0.99", features = ["derive"], optional = true }
-futures-preview = { version = "=0.3.0-alpha.18", features = ["async-await", "nightly"], optional = true }
-beach_map = { version = "0.1.2", optional = true }
-wasm-bindgen-futures= { version = "0.3.27", features = ["futures_0_3"], optional = true }
-serde-wasm-bindgen = { version = "0.1.3", optional = true }
+futures-preview = { version = "=0.3.0-alpha.18", features = ["async-await", "nightly"]}
 awsm_web = { path="../web", version = "0.0.11", features = ["webgl", "loaders"], default-features = false }
 
 [dependencies.gltf]
