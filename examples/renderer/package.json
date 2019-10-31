@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run _rust:build:dev && npm-run-all -p _webpack:start _rust:start",
+    "start": "npm run _rust:build:dev && npm-run-all -p _webpack:start _rust:start _localmedia",
     "clean": "rimraf ./dist && rimraf ./target && npm-run-all -p _rust:core:clean",
     "bundle": "npm run _bundle:ci",
     "bundle:local": "npm run _bundle:ci && npm run _copy:static",
@@ -34,7 +34,9 @@
     "_rust:core:bindgen:release": "wasm-bindgen ./target/wasm32-unknown-unknown/release/my_core.wasm --no-typescript --target no-modules --no-modules-global wasm_core --out-dir ./_static/wasm/core/pkg",
     "_rust:core:opt": "cross-env BINARYEN_CORES=1 wasm-opt -O3 -o ./_static/wasm/core/pkg/my_core_bg.wasm ./_static/wasm/core/pkg/my_core_bg.wasm",
     "//COPY": "",
-    "_copy:static": "cpy * ../dist --cwd=_static && cpy **/* ../../dist/wasm --cwd=_static/wasm --parents && cpy **/* ../../dist/media --cwd=_static/media --parents"
+    "_copy:static": "cpy * ../dist --cwd=_static && cpy **/* ../../dist/wasm --cwd=_static/wasm --parents && cpy **/* ../../dist/media --cwd=_static/media --parents",
+    "//LOCAL MEDIA": "",
+    "_localmedia": "node ./build-utils/local-media-server.js"
   },
   "repository": {
     "type": "git",
@@ -48,9 +50,11 @@
   "homepage": "https://github.com/dakom/my_app#readme",
   "devDependencies": {
     "@types/jest": "^24.0.21",
+    "cors": "^2.8.5",
     "cpy-cli": "^2.0.0",
     "cross-env": "^6.0.3",
     "css-loader": "^3.2.0",
+    "dotenv": "^8.2.0",
     "eslint": "^6.6.0",
     "fork-ts-checker-notifier-webpack-plugin": "^1.0.2",
     "fork-ts-checker-webpack-plugin": "^3.0.1",

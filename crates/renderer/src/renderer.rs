@@ -6,6 +6,7 @@ use awsm_web::webgl::{
     WebGl2Renderer
 };
 use awsm_web::errors::Error;
+use crate::gltf;
 
 pub struct Renderer {
     pub webgl:Rc<RefCell<WebGl2Renderer>>
@@ -30,8 +31,11 @@ impl Renderer {
     pub fn animate(&mut self, _delta:f64) {
     }
 
-    pub fn load_gltf(&mut self, gltf_path:&str) -> impl Future<Output = Result<(), Error>> {
+    pub fn load_gltf(&mut self, url:&str, file_type: Option<gltf::loader::GltfFileType>) -> impl Future<Output = Result<(), Error>> {
+        let url = url.to_owned();
         async {
+            let url = url;
+            let _gltf = gltf::loader::load_gltf(&url, file_type).await?;
             Ok(())
         }
     }

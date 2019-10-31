@@ -33,11 +33,14 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, renderer:Rc<RefCell<Rendere
 
         BridgeEventIndex::LoadGltf =>
         {
-            let gltf_path:String = serde_wasm_bindgen::from_value(evt_data)?;
+            let filepath:String = serde_wasm_bindgen::from_value(evt_data)?;
+
+            //TODO - think about how to accomplish this without simultaneous ownership
+            //maybe only load the gltf async, and then the borrow/gpu uploading will be sync?
             future_to_promise({
                 async move {
-                    info!("loading {}", gltf_path);
-                    let res = renderer.borrow_mut().load_gltf(&gltf_path).await?;
+                    info!("loading {}", filepath);
+                    let res = renderer.borrow_mut().load_gltf(&filepath, None).await?;
                     event_sender.send(BridgeEventIndex::GltfLoaded);
                     Ok(JsValue::null())
                 }
