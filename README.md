@@ -2,7 +2,7 @@
 
 ## About
 
-awsm is a work-in-progress collection of crates for rust-powered wasm. The primary goal is 3d games, simulations, and other high-performance apps.
+awsm is a work-in-progress collection of crates for rust-powered wasm. The primary goal is 3d games, simulations, and other high-performance web apps.
 
 ## Crates 
 
