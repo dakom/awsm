@@ -11,6 +11,11 @@ const paths = {
             default: return `C:\\Users\\david\\Documents\\projects\\khronos\\glTF-Sample-Models\\2.0`
         }
     },
+	david_laptop: (osPlatform) => {
+        switch(osPlatform) {
+            default: return `C:\\Users\\david\\Documents\\github\\khronos\\glTF-Sample-Models\\2.0`
+        }
+    },
 }
 
 const os = require('os');
