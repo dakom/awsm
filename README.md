@@ -17,7 +17,7 @@ awsm is a work-in-progress collection of crates for rust-powered wasm. The prima
 ## Demos
 
 * [per-crate feature tests](https://awsm.netlify.com/)
-* [app boilerplate](https://github.com/dakom/wasm-app-boilerplate)
+* [app boilerplate](https://dakom.github.io/wasm-app-boilerplate/)
 * [bunnymark](https://dakom.github.io/rust-bunnymark/)
 
 ## Live Coding 
