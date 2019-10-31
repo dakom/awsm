@@ -13,11 +13,11 @@ awsm is a work-in-progress collection of crates for rust-powered wasm. The prima
 * [awsm_renderer](crates/renderer) (r&d / pre-production):  a 3d renderer 
 [CRATES.IO](https://crates.io/crates/awsm_renderer) - [DOCS](https://docs.rs/awsm_renderer)
 
-All of the above have [live feature tests](https://awsm.netlify.com/)
 
 ## Demos
 
-* [full app boilerplate](https://github.com/dakom/wasm-app-boilerplate)
+* [per-crate feature tests](https://awsm.netlify.com/)
+* [app boilerplate](https://github.com/dakom/wasm-app-boilerplate)
 * [bunnymark](https://dakom.github.io/rust-bunnymark/)
 
 ## Live Coding 
