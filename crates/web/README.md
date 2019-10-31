@@ -1,8 +1,6 @@
 ## About
 
-awsm_web is mid-level crate for rust-powered wasm, especially gamedev / immersive experience things that need higher performance and/or no GC
-
-Although it's an independant crate, it's primarily used as a building block in the [awsm engine](https://github.com/dakom/awsm).
+awsm_web is primarily used as a building block for other crates in the [awsm](https://github.com/dakom/awsm) ecosystem.
 
 ## Description 
 
@@ -14,7 +12,7 @@ The goal is to keep it very low level and low-cost abstraction that is _almost_ 
 
 The reason for splitting this crate out is so that it can be used independantly (and so it doesn't carry the semver burden of rapidly changing downstream crates). 
 
-Features are therefore used extensively to keep dependencies minimal. The default is to have them all turned on, so make sure to disable them and only use what you need. For example:
+Features are therefore used extensively to keep dependencies minimal. The default is to have them all turned on, so **make sure to disable them and only use what you need**. For example:
 
 ```
 [dependencies.awsm_web]

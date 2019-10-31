@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 /*
 pub mod errors;
 pub mod gltf;

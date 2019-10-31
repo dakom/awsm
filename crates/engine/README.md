@@ -1,6 +1,5 @@
 ## About
 
-awsm is a work-in-progress 3d game engine for the web, built in Rust and WebGL2. It's fast (or will be, hopefully).
+This crate will probably be deprecated in favor of standalone modules... not much was done here yet anyway ;)
 
-
-See [the top-level repo](https://github.com/dakom/awsm) for more details.
+TBD
