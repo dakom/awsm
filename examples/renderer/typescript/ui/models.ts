@@ -2,6 +2,7 @@ import {samples_path} from "@utils/path";
 import dat from "dat.gui";
 import {debug_settings} from "@config/config";
 import {BridgeEvent, send_bridge_event} from "@events/events"
+import { set_state } from "@state/state";
 
 export const init_models_menu = () => {
     fetch(samples_path("model-index.json"))
@@ -21,6 +22,7 @@ export const init_models_menu = () => {
                 const gltf_path = samples_path(`${model_name}/${variant_name}`);
 
                 console.log("model index is", model_idx, "variant index is", variant_idx);
+                set_state("loading");
                 send_bridge_event([BridgeEvent.LoadGltf, `${gltf_path}/${variant_value}`]);
             }
 

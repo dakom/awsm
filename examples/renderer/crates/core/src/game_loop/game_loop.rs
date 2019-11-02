@@ -26,7 +26,8 @@ impl GameLoop {
             let renderer = Rc::clone(&renderer);
             move |interpolation| {
                 let mut renderer = renderer.borrow_mut();
-                renderer.render(Some(interpolation));
+
+                renderer.render(true, Some(interpolation));
             }
         };
 

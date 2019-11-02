@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::*;
 use log::{info};
 use std::convert::TryInto;
 use awsm_renderer::Renderer;
+use awsm_renderer::gltf::{load_gltf};
 use super::events::*;
 use super::event_sender::EventSender;
 use super::{BridgeEventIndex};
@@ -39,8 +40,8 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, renderer:Rc<RefCell<Rendere
             //maybe only load the gltf async, and then the borrow/gpu uploading will be sync?
             future_to_promise({
                 async move {
-                    info!("loading {}", filepath);
-                    let res = renderer.borrow_mut().load_gltf(&filepath, None).await?;
+                    let resource = load_gltf(&filepath, None).await?;
+                    renderer.borrow_mut().add_gltf(&resource);
                     event_sender.send(BridgeEventIndex::GltfLoaded);
                     Ok(JsValue::null())
                 }

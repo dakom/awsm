@@ -9,7 +9,13 @@ export const init_ui = () => {
 
 export const render_ui = () => {
     const ui = get_state() === "loading" ? loading() : null;
-    render(ui, ui_dom_element);
+    render(
+        html`
+            <div class="ui">
+                ${ui}
+            </div>
+        `, ui_dom_element
+    );
 }
 
 const loading = () => html`

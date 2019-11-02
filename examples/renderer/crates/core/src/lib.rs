@@ -57,7 +57,9 @@ pub fn run(canvas:HtmlCanvasElement, window_width: u32, window_height: u32, send
             ..WebGlContextOptions::default()
     }))?;
     let webgl = WebGl2Renderer::new(webgl)?;
-    
+
+    webgl.gl.clear_color(0.5, 0.5, 0.5, 1.0);
+
     let renderer = Renderer::new(Rc::new(RefCell::new(webgl)), window_width, window_height);
     let renderer = Rc::new(RefCell::new(renderer));
 
