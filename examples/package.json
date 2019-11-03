@@ -7,8 +7,8 @@
     "scripts": {
         "//LOCAL VERSIONS OF THINGS": "",
         "clean": "rimraf ./dist && npm run _clean",
-        "deploy:local": "npm run clean && npm run bundle:local && npm run _deploy:netlify",
-        "bundle:local": "npm run _bundle:all && npm run _copy:local",
+        "deploy:local": "npm run bundle:local && npm run _deploy:netlify",
+        "bundle:local": "npm run clean && npm run _bundle:all:local && npm run _copy:local",
         "_clean": "npm-run-all -p _clean:web _clean:renderer",
         "_clean:web": "cd web-demo && npm run clean",
         "_clean:renderer": "cd renderer-demo && npm run clean",

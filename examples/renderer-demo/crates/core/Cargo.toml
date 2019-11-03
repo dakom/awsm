@@ -18,7 +18,7 @@ serde = { version = "1.0.99", features = ["derive"] }
 serde-wasm-bindgen = "0.1.3"
 num-traits = "0.2.8"
 num-derive = "0.2.5"
-wee_alloc = "0.4.5"
+wee_alloc = {version = "0.4.5", optional = true}
 awsm_renderer = { path="../../../../crates/renderer", version = "0.0.1"}
 awsm_web = { version = "0.0.11", features = ["tick"], default-features = false }
 wasm-bindgen-futures= { version = "0.3.27", features = ["futures_0_3"] }
@@ -39,5 +39,5 @@ web-sys = { version = "^0.3.27", features = [
 
 [features]
 # TODO - remove these when we can really use dev feature (see https://users.rust-lang.org/t/dependencies-based-on-profile/32386/4)
-default = ["console_log", "console_error_panic_hook"]
-dev = ["console_log", "console_error_panic_hook"]
+default = ["wee_alloc"]
+dev = ["wee_alloc", "console_log", "console_error_panic_hook"]
