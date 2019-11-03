@@ -1,5 +1,5 @@
-#![feature(async_await)]
-//pub mod gltf;
+pub mod gltf;
+pub mod errors;
 mod renderer;
 
 pub use awsm_web::*;

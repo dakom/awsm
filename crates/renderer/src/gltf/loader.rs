@@ -1,5 +1,5 @@
 use web_sys::{HtmlImageElement};
-use awsm::loaders::{fetch};
+use awsm_web::loaders::{fetch};
 use crate::errors::{Error, NativeError};
 use gltf::{Gltf, Document, buffer, image, Error as GltfError};
 use futures::{Future};
@@ -33,11 +33,20 @@ pub enum GltfFileType {
     Draco //TODO
 }
 
+pub fn get_type_from_filename(url:&str) -> Option<GltfFileType> {
+    //todo - look for .gltf, .glb, etc.
+    Some(GltfFileType::Json)
+}
 
-pub fn load_gltf(url:&str, file_type: GltfFileType) -> impl Future<Output = Result<GltfResource, Error>> {
+pub fn load_gltf(url:&str, file_type: Option<GltfFileType>) -> impl Future<Output = Result<GltfResource, Error>> {
 
     let future = {
         let url = url.to_owned();
+        let file_type = match file_type {
+            Some(file_type) => file_type,
+            None => get_type_from_filename(&url).unwrap_or(GltfFileType::Json)
+        };
+
         async move {
             let Gltf { document, blob } = match file_type {
                 GltfFileType::Json => { 

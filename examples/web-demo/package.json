@@ -1,0 +1,35 @@
+{
+    "author": "David Komer <david.komer@gmail.com>",
+    "name": "awsm",
+    "version": "0.1.0",
+    "repository": "https://github.com/dakom/awsm",
+    "license": "(MIT OR Apache-2.0)",
+    "scripts": {
+        "clean": "rimraf ./dist && rimraf ./crate/pkg && rimraf ./crate/target && rimraf ../target",
+        "//start": "npm run _start:warnings-off",
+        "start": "npm run _start:warnings-on",
+        "bundle:local": "npm run clean && npm run _rust:build:release:app && npm run _copy:static:basic && npm run _copy:static:app",
+        "bundle:ci": "npm run _rust:build:release:app",
+        "_start:warnings-off": "npm run _rust:build:dev:warnings-off && npm-run-all -p _dev:browsersync _dev:watchrust:warnings-off",
+        "_start:warnings-on": "npm run _rust:build:dev:warnings-on && npm-run-all -p _dev:browsersync _dev:watchrust:warnings-on",
+        "_dev:browsersync": "browser-sync start --server \"_static\" --single --serveStatic \"crate\" --files \"crate/pkg/**/*.wasm\"",
+        "_dev:watchrust:warnings-off": "watchexec -w ../../crates/web/src -w crate/src npm run _rust:build:dev:warnings-off",
+        "_dev:watchrust:warnings-on": "watchexec -w ../../crates/web/src -w crate/src npm run _rust:build:dev:warnings-on",
+        "_copy:static:basic": "cpy **/* ../../dist/media --cwd=_static/media --parents && cpy _redirects ../dist --cwd=_static && cpy *.css ../dist --cwd=_static",
+        "_copy:static:app": "cpy **/* ../../dist/pkg --cwd=crate/pkg && cpy **/*.css ../dist --cwd=_static --parents && cpy index.html ../dist --cwd=_static",
+        "_rust:build:release:app": "cargo +nightly build --target wasm32-unknown-unknown --release --manifest-path crate/Cargo.toml && npm run _rust:bindgen:release && npm run _rust:opt",
+        "_rust:bindgen:release": "wasm-bindgen crate/target/wasm32-unknown-unknown/release/awsm_examples.wasm --target web --out-dir crate/pkg",
+        "_rust:opt": "wasm-opt -Os -o ./crate/pkg/awsm_examples_bg.wasm ./crate/pkg/awsm_examples_bg.wasm",
+        "_rust:build:dev:warnings-off": "cross-env RUSTFLAGS=\"-A warnings\" cargo +nightly build --features dev --target wasm32-unknown-unknown --manifest-path crate/Cargo.toml && npm run _rust:bindgen:dev",
+        "_rust:build:dev:warnings-on": "cargo +nightly build --features dev --target wasm32-unknown-unknown --manifest-path crate/Cargo.toml && npm run _rust:bindgen:dev",
+        "_rust:bindgen:dev": "wasm-bindgen crate/target/wasm32-unknown-unknown/debug/awsm_examples.wasm --target web --out-dir crate/pkg"
+    },
+    "devDependencies": {
+        "browser-sync": "^2.26.7",
+        "cpy": "^7.2.0",
+        "cpy-cli": "^2.0.0",
+        "cross-env": "^5.2.0",
+        "npm-run-all": "^4.1.5",
+        "rimraf": "^2.6.3"
+    }
+}

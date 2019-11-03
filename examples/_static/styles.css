@@ -1,0 +1,57 @@
+/* Global */
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+html,body {
+	padding: 0;
+	margin: 0;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 0;
+    margin: 0;
+}
+
+a {
+	text-decoration: none;
+}
+
+ul {
+	list-style: none;	
+}
+
+.github-fork-ribbon.right-top:before {
+            background-color: #f80;
+}
+
+.app {
+    margin-top: 100px;
+    text-align: center;
+}
+.center-links {
+    margin-top: 50px;
+    display: block;
+    text-align: center;
+}
+.button {
+	cursor: pointer;
+	margin: 10px;
+	background-color: #0583F2;
+	color: white;
+	text-align: center;
+	padding: 1em 2em;
+	border-radius: 5px;
+	font-weight: bold;
+}
+
+.button:hover {
+	background-color: #F27405;
+}
