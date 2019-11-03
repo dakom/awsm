@@ -18,11 +18,6 @@ jobs:
       uses: dakom/actions-path@master
       with:
         path: ${{github.workspace}}/binaryen
-    - name: echo path 
-      run: echo $PATH
-    - name: check wasm-opt
-      working-directory: examples
-      run: wasm-opt --help
     - name: install node
       uses: actions/setup-node@v1
     - name: install rust nightly
@@ -40,8 +35,7 @@ jobs:
       working-directory: examples
       run: npm run bundle:ci
     - name: list debug
-      working-directory: examples
-      run: ls -la dist
+      run: ls -la examples 
     - name: upload artifacts
       uses: actions/upload-artifact@master
       with:
