@@ -37,6 +37,12 @@ jobs:
     - name: list debug
       working-directory: examples
       run: ls -la
+    - name: list debug 2
+      working-directory: examples/renderer-demo
+      run: ls -la
+    - name: list debug 3
+      working-directory: examples/web-demo
+      run: ls -la
     - name: upload artifacts
       uses: actions/upload-artifact@master
       with:

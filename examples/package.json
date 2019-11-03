@@ -20,7 +20,7 @@
         "_bundle:renderer": "cd renderer-demo && npm run bundle",
         "_copy:all": "npm-run-all -p _copy:web _copy:renderer _copy:static",
         "_copy:web": "cpy **/* ../../dist/web-demo --cwd=web-demo/dist --parents",
-        "_copy:renderer": "cpy **/* ../../dist/renderer-demo --cwd=web-demo/dist --parents",
+        "_copy:renderer": "cpy **/* ../../dist/renderer-demo --cwd=renderer-demo/dist --parents",
         "_copy:static": "cpy **/* ../dist --cwd=_static --parents",
         "_deploy:netlify": "netlify deploy --prod --dir=dist --site=c6d71941-94ea-494c-a5f6-429f4b8feb9e"
     },
