@@ -38,11 +38,10 @@ jobs:
       working-directory: examples
       run: ls -la
     - name: upload artifacts
-      working-directory: examples
       uses: actions/upload-artifact@master
       with:
         name: dist 
-        path: dist 
+        path: examples/dist 
 
   deploy:
     runs-on: ubuntu-latest
