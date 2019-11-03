@@ -18,14 +18,11 @@ jobs:
       uses: dakom/actions-path@master
       with:
         path: "$HOME/binaryen"
-    - name: show path for debug
-      run: echo $PATH
+    - name: check wasm-opt
+      working-directory: examples
+      run: wasm-opt --help
     - name: install node
       uses: actions/setup-node@v1
-    - name: change to examples directory 
-      run: cd examples
-    - name: install npm deps in main folder
-      run: npm ci
     - name: install rust nightly
       run: rustup toolchain install nightly
     - name: make nightly the default
@@ -34,15 +31,20 @@ jobs:
       run: rustup target add wasm32-unknown-unknown
     - name: install wasm-bindgen
       run: cargo install wasm-bindgen-cli
+    - name: install npm deps in main folder
+      working-directory: examples
+      run: npm ci
     - name: bundle
+      working-directory: examples
       run: npm run bundle:ci
     - name: list debug
+      working-directory: examples
       run: ls -la dist
     - name: upload artifacts
       uses: actions/upload-artifact@master
       with:
         name: dist 
-        path: dist 
+        path: examples/dist 
 
   deploy:
     runs-on: ubuntu-latest
