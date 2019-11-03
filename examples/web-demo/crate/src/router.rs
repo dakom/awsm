@@ -165,7 +165,7 @@ cfg_if! {
         }
     } else { 
         pub fn get_home_href() -> &'static str {
-            "/web/"
+            "/web-demo/"
         }
     } 
 }
@@ -177,7 +177,7 @@ cfg_if! {
         }
     } else { 
         pub fn get_static_href(path: &str) -> String {
-            format!("/web/media/{}", path)
+            format!("/web-demo/media/{}", path)
         }
     } 
 }
@@ -191,7 +191,7 @@ fn get_root(input: &str) -> &str {
             .map(|len| input.split_at(len + prefix.len() - 1).1)
     };
 
-    let stripped = strip_matched("web/")
+    let stripped = strip_matched("web-demo/")
         .or(Some(input))
         .unwrap();
 
