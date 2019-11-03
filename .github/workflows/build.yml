@@ -37,19 +37,13 @@ jobs:
     - name: create dist directory
       working-directory: examples
       run: mkdir dist
-    - name: WTF 
-      working-directory: examples/web-demo
-      run: ls -la 
-    - name: WTF 2
-      working-directory: examples/web-demo
-      run: ls -la ./dist
     - name: copy web demo stuff
       working-directory: examples/web-demo
-      run: cp -R ./_static/* ./dist/ && cp -R ./crate/pkg ./dist/
+      run: mkdir ./dist && cp -R ./_static/* ./dist/ && cp -R ./crate/pkg ./dist/
     - name: copy renderer demo stuff
       working-directory: examples/renderer-demo
       run: cp -R ./_static/* ./dist/
-    - name: copy stuff
+    - name: copy all the stuff
       working-directory: examples
       run: cp -R ./web-demo/dist ./dist/web-demo && cp -R ./renderer-demo/dist ./dist/renderer-demo && cp -R ./_static/* ./dist/
     - name: list debug
