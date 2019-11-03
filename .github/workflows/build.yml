@@ -17,11 +17,9 @@ jobs:
     - name: add binaryen to path
       uses: dakom/actions-path@master
       with:
-        path: ${{GITHUB_WORKSPACE}}/binaryen
+        path: ${{github.workspace}}/binaryen
     - name: echo path 
       run: echo $PATH
-    - name: check wasm-opt direct
-      run: $GITHUB_WORKSPACE/binaryen/wasm-opt --help
     - name: check wasm-opt
       working-directory: examples
       run: wasm-opt --help
