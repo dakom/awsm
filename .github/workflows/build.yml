@@ -35,10 +35,10 @@ jobs:
       working-directory: examples
       run: npm run bundle:ci
     - name: list debug
-      run: ls -la examples 
-    - name: list debug 2
+      working-directory: examples
       run: ls -la
     - name: upload artifacts
+      working-directory: examples
       uses: actions/upload-artifact@master
       with:
         name: dist 
