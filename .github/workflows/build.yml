@@ -31,6 +31,9 @@ jobs:
     - name: install npm deps in main folder
       working-directory: examples
       run: npm ci
+    - name: create dist directory
+      working-directory: examples
+      run: mkdir dist
     - name: bundle
       working-directory: examples
       run: npm run bundle:ci
