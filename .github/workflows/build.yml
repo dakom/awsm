@@ -31,9 +31,6 @@ jobs:
     - name: install npm deps in main folder
       working-directory: examples
       run: npm ci
-    - name: create dist folder
-      run: mkdir dist
-      working-directory: examples
     - name: bundle
       working-directory: examples
       run: npm run bundle:ci
@@ -56,11 +53,9 @@ jobs:
       uses: actions/download-artifact@master
       with:
         name: dist 
-        path: dist
-    - name: list debug
-      run: ls -la dist
+        path: examples/dist
     - name: deploy to gh_pages
       uses: maxheld83/ghpages@master
       env:
-        BUILD_DIR: "dist/"
+        BUILD_DIR: "examples/dist/"
         GH_PAT: ${{ secrets.GH_PAT }}
