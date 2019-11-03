@@ -6,8 +6,8 @@
     "license": "(MIT OR Apache-2.0)",
     "scripts": {
         "clean": "rimraf ./dist && npm run _clean",
-        "deploy": "npm run clean && mkdir dist && npm run bundle && npm run _deploy:netlify",
-		"bundle:ci": "npm run _install && npm run bundle",
+        "deploy:local": "npm run clean && mkdir dist && npm run bundle && npm run _deploy:netlify",
+		"bundle:ci": "npm run clean && mkdir dist && npm run _install && npm run bundle",
         "bundle": "npm run _bundle:all && npm run _copy:all",
         "_clean": "npm-run-all -p _clean:web _clean:renderer",
         "_clean:web": "cd web-demo && npm run clean",
