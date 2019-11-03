@@ -6,8 +6,7 @@
   "scripts": {
     "start": "npm run _rust:build:dev && npm-run-all -p _webpack:start _rust:start _localmedia",
     "clean": "rimraf ./dist && rimraf ./target && npm-run-all -p _rust:core:clean",
-    "bundle": "npm run _bundle:ci",
-    "bundle:local": "npm run _bundle:ci && npm run _copy:static",
+    "bundle": "npm run _bundle:ci && npm run _copy:static",
     "test": "npm-run-all -p _typescript:test _rust:core:test",
     "//CI": "",
     "_bundle:ci": "npm run clean && npm run _rust:release && npm run _webpack:release",
@@ -34,7 +33,7 @@
     "_rust:core:bindgen:release": "wasm-bindgen ./target/wasm32-unknown-unknown/release/my_core.wasm --no-typescript --target no-modules --no-modules-global wasm_core --out-dir ./_static/wasm/core/pkg",
     "_rust:core:opt": "cross-env BINARYEN_CORES=1 wasm-opt -O3 -o ./_static/wasm/core/pkg/my_core_bg.wasm ./_static/wasm/core/pkg/my_core_bg.wasm",
     "//COPY": "",
-    "_copy:static": "cpy * ../dist --cwd=_static && cpy **/* ../../dist/wasm --cwd=_static/wasm --parents && cpy **/* ../../dist/media --cwd=_static/media --parents",
+    "_copy:static": "cpy * ../dist --cwd=_static && cpy **/* ../../dist/wasm --cwd=_static/wasm --parents",
     "//LOCAL MEDIA": "",
     "_localmedia": "node ./build-utils/local-media-server.js"
   },
