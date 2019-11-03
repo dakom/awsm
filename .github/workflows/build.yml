@@ -36,11 +36,13 @@ jobs:
       run: npm run bundle:ci
     - name: list debug
       run: ls -la examples 
+    - name: list debug 2
+      run: ls -la
     - name: upload artifacts
       uses: actions/upload-artifact@master
       with:
         name: dist 
-        path: examples/dist 
+        path: dist 
 
   deploy:
     runs-on: ubuntu-latest
