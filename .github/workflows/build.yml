@@ -31,11 +31,15 @@ jobs:
     - name: install npm deps in main folder
       working-directory: examples
       run: npm ci
-    - name: create dist directory
-      run: mkdir examples/dist
     - name: bundle
       working-directory: examples
       run: npm run bundle:ci
+    - name: create dist directory
+      working-directory: examples
+      run: mkdir dist
+    - name: copy stuff
+      working-directory: examples
+      run: cp -R ./web-demo/dist ./dist/web-demo && cp -R ./renderer-demo/dist ./dist/renderer-demo && cp -R ./_static/* ./dist/
     - name: list debug
       run: ls -la examples/dist
     - name: upload artifacts
