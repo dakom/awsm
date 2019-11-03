@@ -17,12 +17,14 @@ jobs:
     - name: add binaryen to path
       uses: dakom/actions-path@master
       with:
-        path: "./binaryen"
+        path: "$HOME/binaryen"
     - name: show path for debug
       run: echo $PATH
     - name: install node
       uses: actions/setup-node@v1
-    - name: install npm deps
+    - name: change to examples directory 
+      run: cd examples
+    - name: install npm deps in main folder
       run: npm ci
     - name: install rust nightly
       run: rustup toolchain install nightly
@@ -32,10 +34,8 @@ jobs:
       run: rustup target add wasm32-unknown-unknown
     - name: install wasm-bindgen
       run: cargo install wasm-bindgen-cli
-    - name: change to examples directory 
-      run: cd examples 
     - name: bundle
-      run: npm run bundle
+      run: npm run bundle:ci
     - name: list debug
       run: ls -la dist
     - name: upload artifacts
