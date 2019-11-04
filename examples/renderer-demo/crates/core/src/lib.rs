@@ -27,6 +27,8 @@ cfg_if! {
         fn init_log() {
             use console_log;
             console_log::init_with_level(Level::Trace).expect("error initializing log");
+
+            info!("log initiated");
         }
     } else {
         fn init_log() {}

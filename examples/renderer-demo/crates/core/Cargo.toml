@@ -39,5 +39,5 @@ web-sys = { version = "^0.3.27", features = [
 
 [features]
 # TODO - remove these when we can really use dev feature (see https://users.rust-lang.org/t/dependencies-based-on-profile/32386/4)
-default = ["wee_alloc"]
+default = ["wee_alloc", "console_log", "console_error_panic_hook"]
 dev = ["wee_alloc", "console_log", "console_error_panic_hook"]
