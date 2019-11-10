@@ -12,6 +12,7 @@ use awsm_web::webgl::{
 use awsm_web::errors::Error;
 use crate::gltf::GltfResource;
 use crate::gltf::renderer as gltf_renderer;
+use crate::components::register_components;
 use log::info;
 use shipyard::*;
 
@@ -32,6 +33,11 @@ impl Renderer {
         };
 
         let mut ret = Self{webgl, world};
+
+        {
+            let mut world = ret.world.borrow_mut();
+            register_components(&mut world);
+        }
 
         ret.resize(width, height);
 
@@ -62,9 +68,11 @@ impl Renderer {
 
     pub fn upload_gltf(&mut self, resource:&GltfResource) -> Result<(), Error> {
         let mut webgl = self.webgl.borrow_mut();
+        let mut world = self.world.borrow_mut();
         let GltfResource {gltf, buffers, images} = resource;
 
-        gltf_renderer::buffer_view::upload_buffer_views(&mut webgl, &gltf, buffers)?;
+        let mut buffer_ids = gltf_renderer::buffer_view::upload_buffer_views(&mut webgl, &gltf, buffers)?;
+        gltf_renderer::accessors::populate_accessors(&mut webgl, &mut world, &gltf, &mut buffer_ids);
         //gltf_renderer::accessors::upload_accessors(&mut webgl, &gltf, buffers)?;
         info!("adding data to gltf for {} nodes", gltf.nodes().len());
 

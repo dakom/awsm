@@ -150,9 +150,9 @@ impl_context! {
 }
 
 pub struct BufferData<T, U> {
-    values: T,
-    target: BufferTarget,
-    usage: BufferUsage,
+    pub values: T,
+    pub target: BufferTarget,
+    pub usage: BufferUsage,
     phantom: PhantomData<U>,
 }
 
@@ -208,10 +208,10 @@ impl<T: AsRef<[u8]>> BufferDataImpl for BufferData<T, u8> {
 ///so the default is 0 for offset and length is calculated from the slice
 ///WebGl1 only supports a src_offset of 0
 pub struct BufferSubData<T, U> {
-    values: T,
-    target: BufferTarget,
-    offset: u32,
-    length: u32,
+    pub values: T,
+    pub target: BufferTarget,
+    pub offset: u32,
+    pub length: u32,
     phantom: PhantomData<U>,
 }
 

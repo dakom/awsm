@@ -20,9 +20,12 @@ use shipyard::*;
 pub fn get_buffer_view_data <'a>(view:&View, buffers:&'a Vec<Vec<u8>>) -> &'a [u8] {
     let byte_offset = view.offset();
     let byte_length = view.length();
+    let byte_end = byte_offset + byte_length;
     let full_buffer_data = &buffers[view.buffer().index()];
 
-    &full_buffer_data[byte_offset..byte_length]
+    info!("target length {} start {} end {}", full_buffer_data.len(), byte_offset, byte_end);
+
+    &full_buffer_data[byte_offset..byte_end]
 }
 
 pub fn upload_buffer_views(webgl:&mut WebGl2Renderer, gltf:&Document, buffers:&Vec<Vec<u8>>) -> Result<Vec<Id>, Error> {
@@ -58,14 +61,16 @@ pub fn upload_buffer_views(webgl:&mut WebGl2Renderer, gltf:&Document, buffers:&V
         .map(|view| {
             //See: https://github.com/dakom/pure3d-typescript/blob/master/src/lib/internal/gltf/gltf-parse/Gltf-Parse-Data-Attributes.ts
             let buffer_id = webgl.create_buffer()?;
-            let data = get_buffer_view_data(&view, buffers);
-            let target = get_target(view.index());
+            let data = BufferData::new(
+                get_buffer_view_data(&view, buffers),
+                get_target(view.index()),
+                BufferUsage::StaticDraw
+            );
 
-            let data = BufferData::new(data, target, BufferUsage::StaticDraw);
+            info!("uploaded buffer... target {}", if data.target == BufferTarget::ElementArrayBuffer { "elements" } else { "array" });
 
             webgl.upload_buffer(buffer_id, data)?;
 
-            info!("uploaded buffer... target {}", if target == BufferTarget::ElementArrayBuffer { "elements" } else { "array" });
 
             Ok(buffer_id)
         })
