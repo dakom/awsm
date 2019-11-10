@@ -41,7 +41,13 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, renderer:Rc<RefCell<Rendere
             future_to_promise({
                 async move {
                     let resource = load_gltf(&filepath, None).await?;
-                    renderer.borrow_mut().add_gltf(&resource);
+                    let mut renderer = renderer.borrow_mut();
+
+                    //maybe upload_gltf should return entity list so it can be mixed in... 
+                    renderer.upload_gltf(&resource);
+
+                    renderer.set_scene_from_gltf(&resource.gltf);
+
                     event_sender.send(BridgeEventIndex::GltfLoaded);
                     Ok(JsValue::null())
                 }

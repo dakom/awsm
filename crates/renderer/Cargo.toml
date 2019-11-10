@@ -31,6 +31,7 @@ awsm_web = { path="../web", version = "0.0.11", features = ["webgl", "loaders"],
 
 [dependencies.gltf]
 # path = "../../../gltf"
-version = "0.14"
+# version = "0.14"
+git = "https://github.com/gltf-rs/gltf"
 features = ["import", "utils", "names", "extras", "names", "KHR_lights_punctual", "KHR_materials_pbrSpecularGlossiness"]
 default-features = false 

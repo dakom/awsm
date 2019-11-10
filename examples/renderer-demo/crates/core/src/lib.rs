@@ -62,7 +62,7 @@ pub fn run(canvas:HtmlCanvasElement, window_width: u32, window_height: u32, send
 
     webgl.gl.clear_color(0.5, 0.5, 0.5, 1.0);
 
-    let renderer = Renderer::new(Rc::new(RefCell::new(webgl)), window_width, window_height);
+    let renderer = Renderer::new(Rc::new(RefCell::new(webgl)), None, window_width, window_height);
     let renderer = Rc::new(RefCell::new(renderer));
 
     let game_loop = Box::new({

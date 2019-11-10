@@ -27,7 +27,8 @@ impl GameLoop {
             move |interpolation| {
                 let mut renderer = renderer.borrow_mut();
 
-                renderer.render(true, Some(interpolation));
+                renderer.clear();
+                renderer.render(Some(interpolation));
             }
         };
 
