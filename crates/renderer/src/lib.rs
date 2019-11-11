@@ -1,3 +1,5 @@
+ #![feature(option_result_contains)]
+
 pub mod gltf;
 pub mod errors;
 mod renderer;

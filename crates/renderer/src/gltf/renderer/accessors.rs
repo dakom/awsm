@@ -49,8 +49,12 @@ fn component_size(type_:DataType) -> usize {
     }
 }
 
+fn element_byte_size(accessor:&gltf::accessor::Accessor) -> usize {
+    dim_size(accessor.dimensions()) * component_size(accessor.data_type())
+}
+
 fn get_byte_length(accessor:&gltf::accessor::Accessor) -> usize {
-    accessor.count() * dim_size(accessor.dimensions()) * component_size(accessor.data_type())
+    accessor.count() * element_byte_size(accessor) 
 }
 
 fn get_byte_offset(view:&gltf::buffer::View, accessor:&gltf::accessor::Accessor) -> usize {
@@ -62,7 +66,7 @@ fn get_byte_stride_len(view:&gltf::buffer::View, accessor:&gltf::accessor::Acces
     match view.stride() {
         None => 0,
         Some(stride) => {
-            stride * dim_size(accessor.dimensions()) * component_size(accessor.data_type())
+            stride * element_byte_size(accessor) 
         }
     }
 }
@@ -88,14 +92,28 @@ struct BaseAccessorInfo {
     buffer_id: Id,
 }
 
+//TODO - implement getting typed data
+// https://github.com/dakom/pure3d-typescript/blob/master/src/lib/internal/gltf/gltf-parse/Gltf-Parse-Data-Typed.ts
+// https://users.rust-lang.org/t/return-new-vec-or-slice/34542
+fn get_accessor_data<'a> (accessor:&gltf::accessor::Accessor, buffers:&'a Vec<Vec<u8>>) -> AccessorData<'a> {
+
+    //TODO - remove the temp Some wrapper
+    //https://github.com/gltf-rs/gltf/issues/266
+    match Some(accessor.view()) {
+        Some(view) {
+        },
+        None {
+            let n_values = accessor.count() * dim_size(accessor.dimensions());
+        }
+    }
+}
+
 fn make_accessor_info(webgl:&mut WebGl2Renderer, accessor:&gltf::accessor::Accessor, buffer_view_ids:&mut Vec<Id>) -> Result<AccessorInfo, Error> {
     let accessor_id = accessor.index();
 
     let byte_len = get_byte_length(&accessor);
     //TODO - remove the temp Some wrapper
     //https://github.com/gltf-rs/gltf/issues/266
-
-    //TODO - fill out sparse
     match Some(accessor.view()) {
         None => {
             if accessor.sparse().is_none() {
@@ -103,7 +121,9 @@ fn make_accessor_info(webgl:&mut WebGl2Renderer, accessor:&gltf::accessor::Acces
             }
 
             let buffer_id = webgl.create_buffer()?;
+            let data = get_accessor_data(accessor)?;
             //TODO - create and fill buffer with 0's
+
 
             Ok(AccessorInfo{
                 base: BaseAccessorInfo{
@@ -132,6 +152,37 @@ fn make_accessor_info(webgl:&mut WebGl2Renderer, accessor:&gltf::accessor::Acces
             })
         }
     }
+}
+
+fn accessor_is_attribute(gltf:&Document, accessor:&gltf::accessor::Accessor) -> bool {
+    let accessor_id = accessor.index();
+
+    gltf.nodes().any(|node| {
+        if let Some(mesh) = node.mesh() {
+            mesh.primitives().any(|primitive| {
+
+                if primitive.indices().map(|acc| acc.index()).contains(&accessor_id) {
+                    return true;
+                }
+                if primitive.attributes().any(|(_, attribute_accessor)| {
+                    attribute_accessor.index() == accessor_id
+                }) {
+                    return true;
+                }
+                if primitive.morph_targets().any(|morph_target| {
+                    morph_target.positions().map(|acc| acc.index()).contains(&accessor_id) 
+                        || morph_target.normals().map(|acc| acc.index()).contains(&accessor_id) 
+                        || morph_target.tangents().map(|acc| acc.index()).contains(&accessor_id)
+                }) {
+                    return true;
+                }
+
+                false
+            })
+        } else {
+            false
+        }
+    })
 }
 pub fn populate_accessors(webgl:&mut WebGl2Renderer, world:&mut World, gltf:&Document, buffer_view_ids:&mut Vec<Id>) -> Result<(), Error> {
     //https://github.com/dakom/pure3d-typescript/blob/master/src/lib/internal/gltf/gltf-parse/Gltf-Parse-Data-Attributes.ts
