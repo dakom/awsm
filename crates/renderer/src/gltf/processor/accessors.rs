@@ -16,6 +16,7 @@ use gltf::{Document};
 use gltf::accessor::{Dimensions, DataType};
 use log::info;
 use shipyard::*;
+use std::borrow::Cow;
 
 pub struct Accessor {
     buffer_id: Id
@@ -49,6 +50,7 @@ fn component_size(type_:DataType) -> usize {
     }
 }
 
+/*
 fn element_byte_size(accessor:&gltf::accessor::Accessor) -> usize {
     dim_size(accessor.dimensions()) * component_size(accessor.data_type())
 }
@@ -95,14 +97,22 @@ struct BaseAccessorInfo {
 //TODO - implement getting typed data
 // https://github.com/dakom/pure3d-typescript/blob/master/src/lib/internal/gltf/gltf-parse/Gltf-Parse-Data-Typed.ts
 // https://users.rust-lang.org/t/return-new-vec-or-slice/34542
-fn get_accessor_data<'a> (accessor:&gltf::accessor::Accessor, buffers:&'a Vec<Vec<u8>>) -> AccessorData<'a> {
+fn get_accessor_data<'a> (accessor:&gltf::accessor::Accessor, buffers:&'a Vec<Vec<u8>>) -> Cow<'a, [u8]> {
 
     //TODO - remove the temp Some wrapper
     //https://github.com/gltf-rs/gltf/issues/266
     match Some(accessor.view()) {
-        Some(view) {
+        Some(view) => {
+            let byte_offset = get_byte_offset(&view, accessor);
+            let byte_len = get_byte_length(accessor);
+            let byte_end = byte_offset + byte_len;
+            let full_buffer_data = &buffers[view.buffer().index()];
+
+            //info!("target length {} start {} end {}", full_buffer_data.len(), byte_offset, byte_end);
+
+            Cow::Borrowed(&full_buffer_data[byte_offset..byte_end])
         },
-        None {
+        None => {
             let n_values = accessor.count() * dim_size(accessor.dimensions());
         }
     }
@@ -154,6 +164,7 @@ fn make_accessor_info(webgl:&mut WebGl2Renderer, accessor:&gltf::accessor::Acces
     }
 }
 
+*/
 fn accessor_is_attribute(gltf:&Document, accessor:&gltf::accessor::Accessor) -> bool {
     let accessor_id = accessor.index();
 
@@ -184,16 +195,14 @@ fn accessor_is_attribute(gltf:&Document, accessor:&gltf::accessor::Accessor) -> 
         }
     })
 }
-pub fn populate_accessors(webgl:&mut WebGl2Renderer, world:&mut World, gltf:&Document, buffer_view_ids:&mut Vec<Id>) -> Result<(), Error> {
+pub fn populate_accessors(webgl:&mut WebGl2Renderer, world:&mut World, gltf:&Document, buffer_view_ids:&mut Vec<Id>, buffers:&Vec<Vec<u8>>) -> Result<(), Error> {
     //https://github.com/dakom/pure3d-typescript/blob/master/src/lib/internal/gltf/gltf-parse/Gltf-Parse-Data-Attributes.ts
     //https://github.com/dakom/pure3d-typescript/blob/master/src/lib/internal/gltf/gltf-parse/Gltf-Parse-Data-Info.ts
 
     for accessor in gltf.accessors() {
         let accessor_id = accessor.index();
 
-        let info = make_accessor_info(webgl, &accessor, buffer_view_ids)?;
-
-        info!("got accessor {:?}", info);
+        info!("got accessor id {}", accessor_id);
 
         match accessor.sparse() {
             Some(sparse) => {

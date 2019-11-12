@@ -9,11 +9,12 @@ use awsm_web::webgl::{
     BufferTarget,
     BufferUsage
 };
-use awsm_web::errors::Error;
+use crate::errors::{Error, NativeError};
 use crate::gltf::GltfResource;
-use crate::gltf::renderer as gltf_renderer;
 use crate::components::register_components;
 use log::info;
+use crate::gltf::processor::{ProcessState, process_scene};
+
 use shipyard::*;
 
 pub struct Renderer {
@@ -66,15 +67,62 @@ impl Renderer {
         let mut webgl = self.webgl.borrow_mut();
     }
 
-    pub fn upload_gltf(&mut self, resource:&GltfResource) -> Result<(), Error> {
+    //The scene will be determined by the following in order of preference
+    //1. scene in argument
+    //2. default scene set in gltf
+    //3. first in scenes array
+    //if none of these exist, it's an error (not supporting gltf as asset library atm)
+    pub fn upload_gltf(&mut self, resource:&GltfResource, scene:Option<gltf::scene::Scene>) -> Result<(), Error> {
         let mut webgl = self.webgl.borrow_mut();
         let mut world = self.world.borrow_mut();
-        let GltfResource {gltf, buffers, images} = resource;
 
-        let mut buffer_ids = gltf_renderer::buffer_view::upload_buffer_views(&mut webgl, &gltf, buffers)?;
-        gltf_renderer::accessors::populate_accessors(&mut webgl, &mut world, &gltf, &mut buffer_ids);
+        let scene = 
+            scene.or(
+                resource.gltf.default_scene().or(
+                    resource.gltf.scenes().next()
+                )
+        ).ok_or(NativeError::SceneMissing)?;
+
+        process_scene(
+            ProcessState{
+                resource,
+                webgl: &mut webgl,
+                world: &mut world
+            }, 
+            &scene
+        )?;
+
+
+
+            /*
+            if let Some(mesh) = node.mesh() {
+                mesh.primitives().any(|primitive| {
+
+                    if primitive.indices().map(|acc| acc.index()).contains(&accessor_id) {
+                        return true;
+                    }
+                    if primitive.attributes().any(|(_, attribute_accessor)| {
+                        attribute_accessor.index() == accessor_id
+                    }) {
+                        return true;
+                    }
+                    if primitive.morph_targets().any(|morph_target| {
+                        morph_target.positions().map(|acc| acc.index()).contains(&accessor_id) 
+                            || morph_target.normals().map(|acc| acc.index()).contains(&accessor_id) 
+                            || morph_target.tangents().map(|acc| acc.index()).contains(&accessor_id)
+                    }) {
+                        return true;
+                    }
+
+                    false
+                })
+            } else {
+                false
+            }
+            */
+        //let mut buffer_ids = gltf_renderer::buffer_view::upload_buffer_views(&mut webgl, &gltf, &buffers)?;
+        //gltf_renderer::accessors::populate_accessors(&mut webgl, &mut world, &gltf, &mut buffer_ids, &buffers);
         //gltf_renderer::accessors::upload_accessors(&mut webgl, &gltf, buffers)?;
-        info!("adding data to gltf for {} nodes", gltf.nodes().len());
 
         Ok(())
     }

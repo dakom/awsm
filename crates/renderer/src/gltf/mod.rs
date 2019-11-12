@@ -1,4 +1,4 @@
 mod loader;
-pub(crate) mod renderer;
+pub(crate) mod processor;
 
 pub use self::loader::*;

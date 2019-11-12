@@ -44,7 +44,7 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, renderer:Rc<RefCell<Rendere
                     let mut renderer = renderer.borrow_mut();
 
                     //maybe upload_gltf should return entity list so it can be mixed in... 
-                    renderer.upload_gltf(&resource);
+                    renderer.upload_gltf(&resource, None)?;
 
                     renderer.set_scene_from_gltf(&resource.gltf);
 
