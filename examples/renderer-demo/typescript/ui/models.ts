@@ -21,7 +21,7 @@ export const init_models_menu = () => {
 
                 const gltf_path = samples_path(`${model_name}/${variant_name}`);
 
-                console.log("model index is", model_idx, "variant index is", variant_idx);
+                //console.log("model index is", model_idx, "variant index is", variant_idx);
                 set_state("loading");
                 send_bridge_event([BridgeEvent.LoadGltf, `${gltf_path}/${variant_value}`]);
             }

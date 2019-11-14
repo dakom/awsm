@@ -83,14 +83,7 @@ impl Renderer {
                 )
         ).ok_or(NativeError::SceneMissing)?;
 
-        process_scene(
-            ProcessState{
-                resource,
-                webgl: &mut webgl,
-                world: &mut world
-            }, 
-            &scene
-        )?;
+        process_scene(ProcessState::new(resource,&mut world,&mut webgl), &scene)?;
 
 
 

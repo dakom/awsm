@@ -13,7 +13,8 @@ pub enum NativeError {
     Internal,
     GltfLoader,
     SceneMissing,
-    AccessorSparse,
+    AccessorView,
+    Wip,
     NodeMissing(usize),
 }
 
@@ -64,7 +65,8 @@ impl NativeError {
             NativeError::Internal => "internal error",
             NativeError::GltfLoader => "unable to load gltf",
             NativeError::SceneMissing=> "no such scene",
-            NativeError::AccessorSparse => "accessor must either be sparse or have a buffer view",
+            NativeError::AccessorView => "non-sparse accessor must have a buffer view",
+            NativeError::Wip => "Work In Progress",
             NativeError::NodeMissing(_) => "missing node",
         }
     }

@@ -1,37 +1,6 @@
-use std::rc::Rc;
-use std::cell::RefCell;
-use futures::future::{self, FutureExt, TryFutureExt};
-use futures::Future;
-use awsm_web::webgl::{
-    Id,
-    WebGl2Renderer,
-    ClearBufferMask,
-    BufferData,
-    BufferTarget,
-    BufferUsage
-};
-use crate::errors::{Error, NativeError};
-use crate::gltf::GltfResource;
-use gltf::{Document};
 use gltf::accessor::{Dimensions, DataType};
-use log::info;
-use shipyard::*;
-use std::borrow::Cow;
 
-pub struct Accessor {
-    buffer_id: Id
-}
-
-#[derive(Clone)]
-pub enum Keyword {
-    Loop,
-    Continue,
-    Break,
-    Fn,
-    Extern,
-}
-
-fn dim_size(type_:Dimensions) -> usize {
+pub fn get_accessor_dim_size(type_:Dimensions) -> usize {
     match type_ {
         Dimensions::Scalar => 1,
         Dimensions::Vec2 => 2,
@@ -42,11 +11,23 @@ fn dim_size(type_:Dimensions) -> usize {
     }
 }
 
-fn component_size(type_:DataType) -> usize {
+pub fn get_accessor_data_size(type_:DataType) -> u8 {
     match type_ {
         DataType::I8 | DataType::U8 => 1, //BYTE | UNSIGNED_BYTE
         DataType::I16 | DataType::U16 => 2, //SHORT | UNSIGNED_SHORT
         DataType::U32 | DataType::F32 => 4, //UNSIGNED_INT| FLOAT 
+    }
+}
+
+pub fn get_accessor_webgl_data_type(gltf_type:DataType) -> awsm_web::webgl::DataType {
+
+    match gltf_type {
+        DataType::I8 => awsm_web::webgl::DataType::Byte,
+        DataType::U8 => awsm_web::webgl::DataType::UnsignedByte,
+        DataType::I16 => awsm_web::webgl::DataType::Short, 
+        DataType::U16 => awsm_web::webgl::DataType::UnsignedShort, 
+        DataType::U32 => awsm_web::webgl::DataType::UnsignedInt, 
+        DataType::F32 => awsm_web::webgl::DataType::Float, 
     }
 }
 
@@ -165,55 +146,3 @@ fn make_accessor_info(webgl:&mut WebGl2Renderer, accessor:&gltf::accessor::Acces
 }
 
 */
-fn accessor_is_attribute(gltf:&Document, accessor:&gltf::accessor::Accessor) -> bool {
-    let accessor_id = accessor.index();
-
-    gltf.nodes().any(|node| {
-        if let Some(mesh) = node.mesh() {
-            mesh.primitives().any(|primitive| {
-
-                if primitive.indices().map(|acc| acc.index()).contains(&accessor_id) {
-                    return true;
-                }
-                if primitive.attributes().any(|(_, attribute_accessor)| {
-                    attribute_accessor.index() == accessor_id
-                }) {
-                    return true;
-                }
-                if primitive.morph_targets().any(|morph_target| {
-                    morph_target.positions().map(|acc| acc.index()).contains(&accessor_id) 
-                        || morph_target.normals().map(|acc| acc.index()).contains(&accessor_id) 
-                        || morph_target.tangents().map(|acc| acc.index()).contains(&accessor_id)
-                }) {
-                    return true;
-                }
-
-                false
-            })
-        } else {
-            false
-        }
-    })
-}
-pub fn populate_accessors(webgl:&mut WebGl2Renderer, world:&mut World, gltf:&Document, buffer_view_ids:&mut Vec<Id>, buffers:&Vec<Vec<u8>>) -> Result<(), Error> {
-    //https://github.com/dakom/pure3d-typescript/blob/master/src/lib/internal/gltf/gltf-parse/Gltf-Parse-Data-Attributes.ts
-    //https://github.com/dakom/pure3d-typescript/blob/master/src/lib/internal/gltf/gltf-parse/Gltf-Parse-Data-Info.ts
-
-    for accessor in gltf.accessors() {
-        let accessor_id = accessor.index();
-
-        info!("got accessor id {}", accessor_id);
-
-        match accessor.sparse() {
-            Some(sparse) => {
-                //TODO - handle sparse
-                //Maybe GLTF_PARSE_getAccessorTypedData  ?
-            },
-            None => {
-                //TODO - handle non-sparse
-            }
-        };
-    }
-
-    Ok(())
-}

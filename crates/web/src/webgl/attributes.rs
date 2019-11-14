@@ -6,10 +6,10 @@ use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
 //ATTRIBUTES
 
 pub struct AttributeOptions {
-    pub size: i32,
+    pub size: u8, //according to spec, must be 1,2,3,4
     pub data_type: DataType,
     pub normalized: bool,
-    pub stride: i32,
+    pub stride: u8, //according to spec, can't be larger than 255
     // the WebIDL spec says this is actually a GLintptr or a long long
     // Rust provides functions for either u32 or f64 - and most likely
     // the f64 flavor is to allow the full Number range of JS, i.e. 52 bits
@@ -22,7 +22,7 @@ pub struct AttributeOptions {
 }
 
 impl AttributeOptions {
-    pub fn new(size: i32, data_type: DataType) -> AttributeOptions {
+    pub fn new(size: u8, data_type: DataType) -> AttributeOptions {
         AttributeOptions {
             size,
             data_type,
@@ -51,7 +51,7 @@ macro_rules! impl_context {
             }
 
             fn awsm_activate_attribute(&self, loc:u32, opts:&AttributeOptions) {
-                self.vertex_attrib_pointer_with_f64(loc, opts.size, opts.data_type as u32, opts.normalized, opts.stride, opts.offset as f64);
+                self.vertex_attrib_pointer_with_f64(loc, opts.size as i32, opts.data_type as u32, opts.normalized, opts.stride as i32, opts.offset as f64);
                 self.enable_vertex_attrib_array(loc);
             }
 
