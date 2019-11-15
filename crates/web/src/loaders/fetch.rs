@@ -6,6 +6,7 @@ use crate::data::TypedData;
 use crate::data::*;
 use crate::errors::{Error, NativeError};
 use crate::window::get_window;
+//Don't know why awsm_web needs FutureExt but awsm_renderer doesn't...
 use futures::future::{self, FutureExt, TryFutureExt};
 use futures::Future;
 use js_sys::{Array, ArrayBuffer, Promise};
