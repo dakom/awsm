@@ -1,17 +1,12 @@
 use super::funcs::FuncSettings;
 use super::misc::MiscSettings;
 use super::toggles::ToggleFlags;
-use super::{
-    get_webgl_context_1, get_webgl_context_2, BufferTarget, GlQuery, Id, ProgramInfo, TextureInfo,
-    TextureTarget, WebGlCommon, WebGlContextOptions,
-};
-use crate::data::clone_to_vec_f32;
+use super::{ BufferTarget, GlQuery, Id, ProgramInfo, TextureInfo, WebGlCommon };
 use crate::errors::Error;
 use beach_map::{BeachMap, DefaultVersion};
 use rustc_hash::FxHashMap;
 use std::cell::Cell;
-use wasm_bindgen::prelude::JsValue;
-use web_sys::{HtmlCanvasElement, WebGlBuffer, WebGlTexture, WebGlVertexArrayObject};
+use web_sys::{HtmlCanvasElement, WebGlBuffer, WebGlVertexArrayObject};
 use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
 
 pub type WebGl1Renderer = WebGlRenderer<WebGlRenderingContext>;

@@ -1,6 +1,4 @@
-use crate::errors::{Error, NativeError};
 use js_sys::Object;
-use log::info;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -8,8 +6,8 @@ use wasm_bindgen::JsCast;
 use web_sys::{Document, Element, Event, EventTarget, MouseEvent};
 
 pub struct PointerLock<'a> {
-    trigger: &'a EventTarget,
-    target: &'a EventTarget,
+    pub trigger: &'a EventTarget,
+    pub target: &'a EventTarget,
     click_cb: Closure<dyn FnMut(&Event)>,
     change_cb: Closure<dyn FnMut(&Event)>,
     change_cb_moz: Closure<dyn FnMut(&Event)>,
@@ -58,7 +56,7 @@ impl<'a> PointerLock<'a> {
 
             let mut listener: Option<Closure<dyn FnMut(&Event)>> = None;
 
-            Rc::new(RefCell::new(move |initial_evt: &Event| {
+            Rc::new(RefCell::new(move |_initial_evt: &Event| {
                 let lock_enabled = match document.pointer_lock_element() {
                     None => false,
                     Some(element) => elements_are_equal(&element, &target),
@@ -70,7 +68,7 @@ impl<'a> PointerLock<'a> {
 
                     
                     #[cfg(feature = "debug_log")]
-                    info!("pointer lock enabled!");
+                    log::info!("pointer lock enabled!");
 
                     let move_cb = Closure::wrap(Box::new({
                         let f = Rc::clone(&on_pointer_move);
@@ -180,7 +178,7 @@ impl<'a> Drop for PointerLock<'a> {
             .unwrap_throw();
 
         #[cfg(feature = "debug_log")]
-        info!("dropped pointer lock!");
+        log::info!("dropped pointer lock!");
     }
 }
 

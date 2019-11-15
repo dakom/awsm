@@ -3,12 +3,7 @@ use super::{
     TextureParameterName, TextureTarget, TextureUnit, TextureWrapMode, TextureWrapTarget,
     WebGlCommon, WebGlRenderer, WebGlSpecific,
 };
-use crate::data::TypedData;
 use crate::errors::{Error, NativeError};
-use js_sys::Object;
-use log::info;
-use std::marker::PhantomData;
-use wasm_bindgen::prelude::JsValue;
 use web_sys::{
     HtmlCanvasElement, HtmlImageElement, HtmlVideoElement, ImageBitmap, ImageData, WebGlTexture,
 };
@@ -262,7 +257,7 @@ impl_context! {
             let cube_face_u32 = get_cube_face_u32(bind_target, opts.cube_face)?;
 
             match src {
-                WebGlTextureSource::ArrayBufferView(buffer_view, width, height, depth) => {
+                WebGlTextureSource::ArrayBufferView(buffer_view, width, height, _depth) => {
                     match bind_target {
                         TextureTarget::Texture2d => {
                             self.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(

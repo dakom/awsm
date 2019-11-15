@@ -1,14 +1,12 @@
 use super::id::Id;
 use super::{
-    GlQuery, ProgramQuery, ShaderQuery, ShaderType, UniformBlockActiveQuery, UniformBlockQuery,
+    ProgramQuery, ShaderQuery, ShaderType, UniformBlockActiveQuery, UniformBlockQuery,
     WebGlCommon, WebGlRenderer,
 };
-use crate::data::{clone_to_vec_f32, clone_to_vec_u32};
+use crate::data::{clone_to_vec_u32};
 use crate::errors::{Error, NativeError};
-use log::info;
 use rustc_hash::FxHashMap;
 use std::collections::hash_map::Entry;
-use wasm_bindgen::prelude::JsValue;
 use web_sys::{WebGl2RenderingContext, WebGlActiveInfo, WebGlRenderingContext};
 use web_sys::{WebGlProgram, WebGlShader, WebGlUniformLocation};
 
@@ -206,7 +204,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
         for i in (0..max).filter(|n| !uniforms_in_blocks.contains(n)) {
 
             #[cfg(feature = "debug_log")]
-            info!("getting uniform cache info for uniform #{} ", i);
+            log::info!("getting uniform cache info for uniform #{} ", i);
             let (name, type_) = self
                 .gl
                 .awsm_get_active_uniform(&program_info.program, i)
@@ -217,7 +215,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
             match entry {
                 Entry::Occupied(_) => {
                     #[cfg(feature = "debug_log")]
-                    info!("skipping uniform cache for [{}] (already exists)", &name);
+                    log::info!("skipping uniform cache for [{}] (already exists)", &name);
                 }
                 Entry::Vacant(entry) => {
                     let loc = self
@@ -225,7 +223,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
                         .awsm_get_uniform_location(&program_info.program, &name)?;
                     entry.insert(loc);
                     #[cfg(feature = "debug_log")]
-                    info!("caching uniform [{}]", &name);
+                    log::info!("caching uniform [{}]", &name);
                     match type_ {
                         //Just the sampler types from UniformDataType
                         //matching on enums with casting seems to be a pain point
@@ -291,7 +289,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
             match entry {
                 Entry::Occupied(_) => {
                     #[cfg(feature = "debug_log")]
-                    info!("skipping attribute cache for [{}] (already exists)", &name);
+                    log::info!("skipping attribute cache for [{}] (already exists)", &name);
                 }
                 Entry::Vacant(entry) => {
                     let loc = self
@@ -299,7 +297,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
                         .awsm_get_attribute_location(&program_info.program, &name)?;
                     entry.insert(loc);
                     #[cfg(feature = "debug_log")]
-                    info!("caching attribute [{}] at location [{}]", &name, loc);
+                    log::info!("caching attribute [{}] at location [{}]", &name, loc);
                 }
             }
         }
@@ -413,7 +411,7 @@ impl WebGlRenderer<WebGl2RenderingContext> {
                     Entry::Occupied(_) => {
 
                         #[cfg(feature = "debug_log")]
-                        info!(
+                        log::info!(
                             "skipping uniform buffer cache for [{}] (already exists)",
                             &name
                         );
@@ -421,7 +419,7 @@ impl WebGlRenderer<WebGl2RenderingContext> {
                     Entry::Vacant(entry) => {
                         entry.insert(bind_point);
                         #[cfg(feature = "debug_log")]
-                        info!(
+                        log::info!(
                             "caching uniform buffer [{}] at index {} and bind point {}",
                             &name, block_index, bind_point
                         );
@@ -430,7 +428,7 @@ impl WebGlRenderer<WebGl2RenderingContext> {
 
                 //Need to keep a list of the uniforms that are in blocks,
                 //so they don't get double-cached
-                let mut active_uniforms: Vec<u32> = self
+                let active_uniforms: Vec<u32> = self
                     .gl
                     .get_active_uniform_block_parameter(
                         &program,
@@ -459,10 +457,10 @@ impl WebGlRenderer<WebGl2RenderingContext> {
                 };
 
                 #[cfg(feature = "debug_log")]
-                info!("{:?}", &offsets);
+                log::info!("{:?}", &offsets);
 
                 for (idx, loc) in active_uniforms.iter().enumerate() {
-                    let (u_name, u_type_, u_size) = self
+                    let (u_name, _u_type_, _u_size) = self
                         .gl
                         .get_active_uniform(&program_info.program, *loc)
                         .map(|info| (info.name(), info.type_(), info.size()))
@@ -473,7 +471,7 @@ impl WebGlRenderer<WebGl2RenderingContext> {
                     block_lookup.insert(u_name.clone(), offset);
 
                     #[cfg(feature = "debug_log")]
-                    info!("uniform {} in block {} has offset {}", u_name, name, offset);
+                    log::info!("uniform {} in block {} has offset {}", u_name, name, offset);
                 }
             }
         }

@@ -3,8 +3,6 @@ use crate::errors::{Error, NativeError};
 use std::marker::PhantomData;
 use web_sys::WebGlBuffer;
 use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
-use wasm_bindgen::JsCast;
-use log::info;
 /*
  * The direct uniform uploads are written as traits on this newtype wrapper
  * in order to allow working either f32 or u8
@@ -83,7 +81,7 @@ macro_rules! impl_context {
 
 impl_context! {
     WebGlRenderingContext{
-        fn awsm_upload_buffer_vf32_sub<T: AsRef<[f32]>>(&self, target:BufferTarget, dest_byte_offset:u32, src_offset:u32, length: u32, data:T) -> Result<(), Error> {
+        fn awsm_upload_buffer_vf32_sub<T: AsRef<[f32]>>(&self, target:BufferTarget, dest_byte_offset:u32, src_offset:u32, _length: u32, data:T) -> Result<(), Error> {
             if src_offset != 0 {
                 Err(Error::from(NativeError::WebGlBufferSourceOneNonZero))
             } else {
@@ -96,7 +94,7 @@ impl_context! {
         }
 
 
-        fn awsm_upload_buffer_vu8_sub<T: AsRef<[u8]>>(&self, target:BufferTarget, dest_byte_offset:u32, src_offset:u32, length: u32, data:T) -> Result<(), Error> {
+        fn awsm_upload_buffer_vu8_sub<T: AsRef<[u8]>>(&self, target:BufferTarget, dest_byte_offset:u32, src_offset:u32, _length: u32, data:T) -> Result<(), Error> {
             if src_offset != 0 {
                 Err(Error::from(NativeError::WebGlBufferSourceOneNonZero))
             } else {

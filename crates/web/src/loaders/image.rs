@@ -3,7 +3,6 @@ use crate::window::get_window;
 use futures::channel::oneshot::{channel, Receiver, Sender};
 use futures::task::{Context, Poll};
 use futures::Future;
-use log::info;
 use std::pin::Pin;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;

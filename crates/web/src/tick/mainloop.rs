@@ -1,8 +1,3 @@
-use super::RafLoop;
-use crate::errors::Error;
-use crate::global::{GlobalSelfPreference};
-use log::{info};
-
 ///Options for start_main_loop()
 pub struct MainLoopOptions {
     /// The amount of time (in milliseconds) to simulate each time update()
@@ -259,7 +254,7 @@ where
 {
     fn drop(&mut self) {
         #[cfg(feature = "debug_log")]
-        info!("Main Loop Dropped (but not whatever was passed into the closure!)");
+        log::info!("Main Loop Dropped (but not whatever was passed into the closure!)");
     }
 }
 

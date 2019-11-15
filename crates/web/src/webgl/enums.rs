@@ -362,7 +362,7 @@ pub enum UniformDataType {
     UnsignedIntSampler2dArray = 0x8DD7,
 
     //WEBGL_depth_texture extension
-    UnsignedInt_24_8 = 0x84FA,
+    UnsignedInt24_8 = 0x84FA,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]

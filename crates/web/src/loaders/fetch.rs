@@ -8,11 +8,8 @@ use crate::errors::{Error, NativeError};
 use crate::window::get_window;
 use futures::future::{self, FutureExt, TryFutureExt};
 use futures::Future;
-use js_sys::{Array, ArrayBuffer, Promise, Uint8Array};
-use log::info;
-use std::marker::PhantomData;
+use js_sys::{Array, ArrayBuffer, Promise};
 use wasm_bindgen::JsCast;
-use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::futures_0_3::JsFuture;
 use web_sys::{
     Blob, BlobPropertyBag, Request, Response, Url,

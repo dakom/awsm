@@ -3,7 +3,6 @@
 
 use crate::errors::Error;
 use crate::global::{get_global_self, GlobalSelf, GlobalSelfPreference};
-use log::info;
 use std::cell::Cell;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -32,7 +31,7 @@ impl Drop for RafLoop {
         }
 
         #[cfg(feature = "debug_log")]
-        info!("Raf Loop Dropped (but not whatever was passed into the Closure!");
+        log::info!("Raf Loop Dropped (but not whatever was passed into the Closure!");
     }
 }
 
@@ -58,7 +57,7 @@ impl RafLoop {
     {
         //Use a window or worker with fallback method of simulated timestep for requestAnimationFrame
         let global_self = get_global_self (global_self_preference)?; 
-        let mut raf_id = Rc::new(Cell::new(None as Option<i32>));
+        let raf_id = Rc::new(Cell::new(None as Option<i32>));
 
         match global_self {
             GlobalSelf::Window(window) => {
@@ -77,7 +76,7 @@ impl RafLoop {
                         let id = raf_id.get();
                         if id.is_some() {
                             {
-                                let mut state = raf_state.borrow_mut();
+                                let state = raf_state.borrow_mut();
                                 raf_id.set(request_animation_frame(&state.window, f.borrow().as_ref().unwrap()));
                             }
                             on_tick(time);
@@ -86,7 +85,7 @@ impl RafLoop {
                 }
 
                 //this is just used to create the first invocation
-                let mut state = raf_state.borrow_mut();
+                let state = raf_state.borrow_mut();
                 raf_id.set(request_animation_frame(&state.window, g.borrow().as_ref().unwrap()));
                 Ok(Self { raf_state: RafState::Window(Rc::clone(&raf_state)), raf_id})
             },
@@ -132,7 +131,7 @@ impl RafLoop {
     }
 
 
-    pub fn start<F>(mut on_tick: F) -> Result<Self, Error>
+    pub fn start<F>(on_tick: F) -> Result<Self, Error>
     where
         F: (FnMut(f64) -> ()) + 'static,
     {

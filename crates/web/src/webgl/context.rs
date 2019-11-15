@@ -18,7 +18,6 @@ use super::toggles::PartialWebGlToggle;
 use super::uniforms::PartialWebGlUniforms;
 use super::viewport::PartialWebGlViewport;
 use crate::errors::{Error, NativeError};
-use log::info;
 use serde::Serialize;
 
 pub trait PartialWebGlVersion {
@@ -44,7 +43,7 @@ impl PartialWebGlCanvas for WebGlRenderingContext {
         self.canvas()
             .ok_or(Error::from(NativeError::WebGlCanvas))?
             .dyn_into::<HtmlCanvasElement>()
-            .map_err(|err| Error::from(NativeError::WebGlCanvas))
+            .map_err(|_err| Error::from(NativeError::WebGlCanvas))
     }
 }
 
@@ -53,7 +52,7 @@ impl PartialWebGlCanvas for WebGl2RenderingContext {
         self.canvas()
             .ok_or(Error::from(NativeError::WebGlCanvas))?
             .dyn_into::<HtmlCanvasElement>()
-            .map_err(|err| Error::from(NativeError::WebGlCanvas))
+            .map_err(|_err| Error::from(NativeError::WebGlCanvas))
     }
 }
 pub trait WebGlCommon:
@@ -157,7 +156,7 @@ pub fn get_webgl_context_1(
 ) -> Result<WebGlRenderingContext, Error> {
 
     #[cfg(feature = "debug_log")]
-    info!("Webgl version 1");
+    log::info!("Webgl version 1");
 
     let context = match opts {
         Some(opts) => canvas.get_context_with_context_options("webgl", &opts.to_js_value()),
@@ -178,7 +177,7 @@ pub fn get_webgl_context_2(
     opts: Option<&WebGlContextOptions>,
 ) -> Result<WebGl2RenderingContext, Error> {
     #[cfg(feature = "debug_log")]
-    info!("Webgl version 2");
+    log::info!("Webgl version 2");
 
     let context = match opts {
         Some(opts) => canvas.get_context_with_context_options("webgl2", &opts.to_js_value()),

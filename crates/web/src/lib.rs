@@ -1,4 +1,3 @@
-#![feature(async_await)]
 //these aren't worth putting behind features
 pub mod errors;
 

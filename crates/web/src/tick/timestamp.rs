@@ -12,7 +12,7 @@ pub struct Timestamp {
 }
 
 pub struct TimestampLoop {
-    raf_loop: RafLoop,
+    pub raf_loop: RafLoop,
 }
 
 impl TimestampLoop {

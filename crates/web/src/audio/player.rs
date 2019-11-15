@@ -78,7 +78,7 @@ impl Drop for AudioPlayer {
 
 
 pub struct AudioOneShot {
-    player: Rc<RefCell<Option<AudioPlayer>>>,
+    pub player: Rc<RefCell<Option<AudioPlayer>>>,
 }
 
 impl AudioOneShot {

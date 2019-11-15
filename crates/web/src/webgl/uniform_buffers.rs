@@ -1,6 +1,5 @@
 use super::{
-    BufferData, BufferDataImpl, BufferSubData, BufferSubDataImpl, BufferTarget, BufferUsage, Id,
-    WebGlCommon, WebGlRenderer,
+    BufferData, BufferDataImpl, BufferSubData, BufferSubDataImpl, BufferTarget, BufferUsage, Id, WebGlRenderer,
 };
 use crate::errors::{Error, NativeError};
 use web_sys::WebGl2RenderingContext;
