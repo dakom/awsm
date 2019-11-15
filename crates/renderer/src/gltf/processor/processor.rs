@@ -126,8 +126,7 @@ fn upload_accessor(state:&mut ProcessState, accessor:&gltf::accessor::Accessor, 
 
     match accessor.sparse() {
         Some(sparse) => {
-            //Some wrapper is temporary - see https://github.com/gltf-rs/gltf/issues/266
-            match Some(accessor.view()) {
+            match accessor.view() {
                 Some(view) => {
                     //TODO
                     log::info!("get the typed data from buffer view");
@@ -144,8 +143,7 @@ fn upload_accessor(state:&mut ProcessState, accessor:&gltf::accessor::Accessor, 
             Err(NativeError::Wip.into())
         },
         None => {
-            //Some wrapper is temporary - see https://github.com/gltf-rs/gltf/issues/266
-            let view = Some(accessor.view()).ok_or(Error::from(NativeError::AccessorView))?;
+            let view = accessor.view().ok_or(Error::from(NativeError::AccessorView))?;
             upload_buffer_view(state, &view, target)
         }
     }
