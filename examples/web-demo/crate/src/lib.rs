@@ -1,12 +1,8 @@
-#![feature(async_await)]
-
 mod menu;
 mod router;
 mod scenes;
 
-use awsm_web::webgl::{WebGl1Renderer, WebGl2Renderer};
 use cfg_if::cfg_if;
-use log::{info, Level};
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -20,7 +16,7 @@ cfg_if! {
     if #[cfg(feature = "console_log")] {
         fn init_log() {
             use console_log;
-            console_log::init_with_level(Level::Trace).expect("error initializing log");
+            console_log::init_with_level(log::Level::Trace).expect("error initializing log");
         }
     } else {
         fn init_log() {}
@@ -44,7 +40,7 @@ pub fn run() -> Result<(), JsValue> {
     init_panic();
     init_log();
 
-    info!("logging enabled!");
+    log::info!("logging enabled!");
 
     let window = web_sys::window().expect("should have a Window");
     let document = window.document().expect("should have a Document");

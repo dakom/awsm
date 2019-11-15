@@ -1,7 +1,5 @@
 use crate::scenes::webgl::common::*;
-use crate::start_webgl;
 use awsm_web::errors::Error;
-use awsm_web::tick::{Timestamp, TimestampLoop};
 use awsm_web::webgl::{
     AttributeOptions, BeginMode, BufferData, BufferTarget, BufferUsage, ClearBufferMask, DataType,
     GlToggle, Id, VertexArray, WebGl2Renderer,
@@ -59,7 +57,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         {
             let state = Rc::clone(&state);
             move |webgl_renderer, on_ready| {
-                let webgl_renderer_clone = Rc::clone(&webgl_renderer);
+                let _webgl_renderer_clone = Rc::clone(&webgl_renderer);
 
                 let mut webgl_renderer = webgl_renderer.borrow_mut();
 
@@ -130,7 +128,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         },
         {
             let state = Rc::clone(&state);
-            move |time, webgl_renderer| {
+            move |_time, webgl_renderer| {
                 let mut state = state.borrow_mut();
 
                 webgl_renderer
@@ -190,7 +188,7 @@ fn set_initial_scale_buffer(
 }
 
 fn update_scale_buffer(state: &State, webgl_renderer: &WebGl2Renderer) -> Result<(), Error> {
-    let mut scale_y: [f32; 3] = [0.0, 3.0, 0.0];
+    let scale_y: [f32; 3] = [0.0, 3.0, 0.0];
 
     webgl_renderer.upload_buffer_sub_to_uniform_buffer_f32(
         "u_scale_y",
@@ -204,10 +202,6 @@ fn set_model_buffer(state: &State, webgl_renderer: &WebGl2Renderer) -> Result<()
     let State {
         pos,
         volume,
-        program_id,
-        vao_id,
-        camera_buffer_id,
-        model_buffer_id,
         ..
     } = state;
 

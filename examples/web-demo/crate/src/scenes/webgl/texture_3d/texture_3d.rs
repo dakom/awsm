@@ -1,14 +1,12 @@
 use crate::router::get_static_href;
 use crate::scenes::webgl::common::*;
-use crate::start_webgl;
 use awsm_web::data::TypedData;
 use awsm_web::loaders::fetch;
-use awsm_web::tick::{Timestamp, TimestampLoop};
 use awsm_web::webgl::PartialWebGlTextures;
 use awsm_web::webgl::{
     BeginMode, ClearBufferMask, DataType, Id, PixelFormat, SimpleTextureOptions, TextureMagFilter,
     TextureMinFilter, TextureOptions, TextureTarget, TextureWrapMode, TextureWrapTarget,
-    WebGl2Renderer, WebGlTextureSource,
+    WebGlTextureSource,
 };
 use gloo_events::EventListener;
 use log::info;
@@ -183,7 +181,7 @@ pub fn start(window: Window, document: Document, body: HtmlElement) -> Result<()
         },
         {
             let state = Rc::clone(&state);
-            move |time, webgl_renderer| {
+            move |_time, webgl_renderer| {
                 let state = state.borrow();
 
                 let State {

@@ -1,7 +1,6 @@
 use crate::router::get_static_href;
-use awsm_web::loaders::{fetch, image};
+use awsm_web::loaders::{fetch};
 use gloo_events::EventListener;
-use log::info;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::futures_0_3::future_to_promise;

@@ -2,10 +2,9 @@ use crate::router::get_static_href;
 use crate::scenes::webgl::common::*;
 use crate::start_webgl;
 use awsm_web::loaders::fetch;
-use awsm_web::tick::{Timestamp, TimestampLoop};
 use awsm_web::webgl::{
     BeginMode, BlendFactor, ClearBufferMask, GlToggle, Id, PixelFormat, SimpleTextureOptions,
-    TextureTarget, WebGlCommon, WebGlRenderer, WebGlTextureSource,
+    TextureTarget, WebGlTextureSource,
 };
 use log::info;
 use nalgebra::{Matrix4, Point2, Vector3};
@@ -145,7 +144,7 @@ pub fn start(
         },
         {
             let state = Rc::clone(&state);
-            move |time, webgl_renderer| {
+            move |_time, webgl_renderer| {
                 webgl_renderer.clear(&[
                     ClearBufferMask::ColorBufferBit,
                     ClearBufferMask::DepthBufferBit,

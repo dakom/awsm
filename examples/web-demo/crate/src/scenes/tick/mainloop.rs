@@ -1,6 +1,4 @@
-use awsm_web::tick;
 use awsm_web::tick::{MainLoop, MainLoopOptions, RafLoop};
-use log::info;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;

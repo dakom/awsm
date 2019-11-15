@@ -1,9 +1,9 @@
 use awsm_web::webgl::{
     get_webgl_context_1, get_webgl_context_2, ClearBufferMask, WebGl1Renderer, WebGl2Renderer,
-    WebGlCommon, WebGlContextOptions, WebGlRenderer,
+    WebGlContextOptions,
 };
 
-use awsm_web::tick::{Timestamp, TimestampLoop};
+use awsm_web::tick::{TimestampLoop};
 use awsm_web::window;
 use gloo_events::EventListener;
 use std::cell::RefCell;
@@ -11,7 +11,7 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{
-    Document, HtmlCanvasElement, HtmlElement, WebGl2RenderingContext, WebGlRenderingContext, Window,
+    Document, HtmlCanvasElement, HtmlElement, Window,
 };
 
 //Just call start_webgl! with the version and args
@@ -49,7 +49,7 @@ pub fn start_webgl_1<ResizeCb, SetupCb, TickCb>(
     window: Window,
     document: Document,
     body: HtmlElement,
-    mut setup_cb: SetupCb,
+    setup_cb: SetupCb,
     mut resize_cb: ResizeCb,
     mut tick_cb: TickCb,
 ) -> Result<(), JsValue>
@@ -134,7 +134,7 @@ pub fn start_webgl_2<ResizeCb, SetupCb, TickCb>(
     window: Window,
     document: Document,
     body: HtmlElement,
-    mut setup_cb: SetupCb,
+    setup_cb: SetupCb,
     mut resize_cb: ResizeCb,
     mut tick_cb: TickCb,
 ) -> Result<(), JsValue>

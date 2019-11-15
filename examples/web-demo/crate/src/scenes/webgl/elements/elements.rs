@@ -1,8 +1,5 @@
-use crate::router::get_static_href;
-use crate::scenes::webgl::common::*;
 use crate::scenes::webgl::common::*;
 use crate::start_webgl;
-use awsm_web::tick::{Timestamp, TimestampLoop};
 use awsm_web::webgl::{
     AttributeOptions, BeginMode, BufferTarget, ClearBufferMask, DataType, GlToggle, Id,
 };
@@ -79,7 +76,7 @@ pub fn start(
         },
         {
             let state = Rc::clone(&state);
-            move |time, webgl_renderer| {
+            move |_time, webgl_renderer| {
                 let state = state.borrow();
                 let State {
                     pos,

@@ -28,7 +28,7 @@ pub fn start_router(window: web_sys::Window, document: web_sys::Document) -> Res
         links.append_child(&source_link)?;
     }
 
-    let search = window.location().search()?;
+    let _search = window.location().search()?;
 
     let webgl_version = if pathname.contains("webgl-") {
         let query_value = get_query_value(&window, "webgl").and_then(|s| {

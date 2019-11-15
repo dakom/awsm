@@ -1,4 +1,3 @@
-use cfg_if::cfg_if;
 use lazy_static::*;
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
@@ -70,7 +69,7 @@ pub fn build_menu(document: &Document) -> Result<web_sys::Node, JsValue> {
         None,
     )?;
 
-    let mut webgl_menu_common = vec![
+    let webgl_menu_common = vec![
         "webgl-simple",
         "webgl-texture",
         "webgl-multi-texture",
@@ -81,7 +80,7 @@ pub fn build_menu(document: &Document) -> Result<web_sys::Node, JsValue> {
         "webgl-texture_cube",
     ];
 
-    let mut webgl_menu_1 = webgl_menu_common.clone();
+    let webgl_menu_1 = webgl_menu_common.clone();
     let mut webgl_menu_2 = webgl_menu_common.clone();
     webgl_menu_2.extend(vec!["webgl-ubos", "webgl-texture_3d"]);
 

@@ -1,7 +1,5 @@
 use awsm_web::input::PointerLock;
-use log::info;
 use std::cell::Cell;
-use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;

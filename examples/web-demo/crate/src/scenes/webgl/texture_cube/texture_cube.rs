@@ -3,14 +3,12 @@ use crate::scenes::webgl::common::*;
 use crate::start_webgl;
 use awsm_web::errors::Error;
 use awsm_web::loaders::fetch;
-use awsm_web::tick::{Timestamp, TimestampLoop};
 use awsm_web::webgl::{
-    AttributeOptions, BeginMode, ClearBufferMask, DataType, Id, PixelFormat, SimpleTextureOptions,
+    AttributeOptions, BeginMode, ClearBufferMask, DataType, Id, SimpleTextureOptions,
     TextureCubeFace, TextureTarget, VertexArray, WebGlTextureSource,
 };
-use futures::future::{join_all, try_join_all, Future};
-use log::info;
-use nalgebra::{Isometry3, Matrix4, Perspective3, Point2, Point3, Vector3};
+use futures::future::{try_join_all};
+use nalgebra::{Isometry3, Matrix4, Perspective3, Point3, Vector3};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -85,7 +83,7 @@ pub fn start(
 
                     let images: Vec<HtmlImageElement> = try_join_all(futures).await?;
 
-                    let (width, height) = webgl_renderer.current_size();
+                    let (_width, _height) = webgl_renderer.current_size();
 
                     images
                         .into_iter()
@@ -116,7 +114,7 @@ pub fn start(
 
                     let vao_id = webgl_renderer.create_vertex_array()?;
 
-                    let (geom_id, colors_id, elements_id) =
+                    let (geom_id, _colors_id, elements_id) =
                         create_unit_box_buffers(&mut webgl_renderer)?;
 
                     webgl_renderer.assign_vertex_array(
@@ -152,11 +150,11 @@ pub fn start(
         },
         {
             let state = Rc::clone(&state);
-            move |time, webgl_renderer| {
+            move |_time, webgl_renderer| {
                 let state = state.borrow();
                 let State {
-                    camera_width,
-                    camera_height,
+                    camera_width: _,
+                    camera_height: _,
                     program_id,
                     vao_id,
                     texture_id,

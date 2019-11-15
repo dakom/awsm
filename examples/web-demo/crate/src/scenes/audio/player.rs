@@ -1,9 +1,8 @@
 use crate::router::get_static_href;
-use awsm_web::audio::{AudioPlayer, AudioOneShot};
+use awsm_web::audio::{AudioPlayer};
 use awsm_web::loaders::fetch;
 use gloo_events::EventListener;
 use log::info;
-use std::cell::Cell;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -40,7 +39,7 @@ pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(
         let bg_loop_buffer = fetch::audio(&get_static_href("loop.mp3"), &ctx).await?;
         let one_shot_buffer = fetch::audio(&get_static_href("oneshot.mp3"), &ctx).await?;
 
-        container.remove_child(&loading);
+        container.remove_child(&loading)?;
 
         let play_loop = create_button(&document, &container, "")?;
         let play_oneshot = create_button(&document, &container, "")?;

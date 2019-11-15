@@ -2,7 +2,6 @@ use crate::router::get_static_href;
 use crate::scenes::webgl::common::*;
 use crate::start_webgl;
 use awsm_web::loaders::fetch;
-use awsm_web::tick::{Timestamp, TimestampLoop};
 use awsm_web::webgl::{
     AttributeOptions, BeginMode, BufferData, BufferTarget, BufferUsage, ClearBufferMask, DataType,
     Id, PixelFormat, SimpleTextureOptions, TextureTarget, WebGlTextureSource,

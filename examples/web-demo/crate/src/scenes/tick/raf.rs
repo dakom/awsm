@@ -1,4 +1,3 @@
-use awsm_web::tick;
 use awsm_web::tick::{Timestamp, TimestampLoop};
 use std::cell::RefCell;
 use std::rc::Rc;
