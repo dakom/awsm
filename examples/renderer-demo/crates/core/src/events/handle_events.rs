@@ -8,7 +8,6 @@ use super::event_sender::EventSender;
 use super::{BridgeEventIndex};
 use std::rc::Rc;
 use std::cell::RefCell;
-use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::futures_0_3::future_to_promise;
 //if result is Ok(true) then send the updated state back
 
@@ -36,8 +35,6 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, renderer:Rc<RefCell<Rendere
         {
             let filepath:String = serde_wasm_bindgen::from_value(evt_data)?;
 
-            //TODO - think about how to accomplish this without simultaneous ownership
-            //maybe only load the gltf async, and then the borrow/gpu uploading will be sync?
             future_to_promise({
                 async move {
                     let resource = load_gltf(&filepath, None).await?;

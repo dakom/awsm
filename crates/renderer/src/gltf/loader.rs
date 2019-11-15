@@ -33,7 +33,7 @@ pub enum GltfFileType {
     Draco //TODO
 }
 
-pub fn get_type_from_filename(url:&str) -> Option<GltfFileType> {
+pub fn get_type_from_filename(_url:&str) -> Option<GltfFileType> {
     //todo - look for .gltf, .glb, etc.
     Some(GltfFileType::Json)
 }
@@ -91,7 +91,7 @@ fn get_base_path (url:&str) -> &str {
     }
 }
 
-async fn import_buffer_data<'a>( document: &'a Document, base: &'a str, mut blob: Option<Vec<u8>>) -> Result<Vec<Vec<u8>>, GltfError> {
+async fn import_buffer_data<'a>( document: &'a Document, base: &'a str, blob: Option<Vec<u8>>) -> Result<Vec<Vec<u8>>, GltfError> {
 
     let futures = get_buffer_futures(document, base, blob);
 
@@ -157,7 +157,7 @@ fn get_image_futures<'a>(document:&'a Document, base:&str, buffer_data:&'a [Vec<
         let base = Rc::clone(&base);
         async move {
             match image.source() {
-                image::Source::Uri { uri, mime_type } => {
+                image::Source::Uri { uri, mime_type: _ } => {
 
                     let url = get_url(base.as_ref(), uri)?;
 

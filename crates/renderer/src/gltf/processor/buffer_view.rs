@@ -1,21 +1,4 @@
 use gltf::buffer::View;
-use std::rc::Rc;
-use std::cell::RefCell;
-use futures::future::{self, FutureExt, TryFutureExt};
-use futures::Future;
-use awsm_web::webgl::{
-    WebGl2Renderer,
-    ClearBufferMask,
-    BufferData,
-    BufferTarget,
-    BufferUsage,
-    Id
-};
-use awsm_web::errors::Error;
-use crate::gltf::GltfResource;
-use gltf::{Document};
-use log::info;
-use shipyard::*;
 
 pub fn get_buffer_view_data <'a>(view:&View, buffers:&'a Vec<Vec<u8>>) -> &'a [u8] {
     let byte_offset = view.offset();

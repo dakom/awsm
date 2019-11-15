@@ -1,18 +1,9 @@
 use std::rc::Rc;
 use std::cell::RefCell;
-use futures::future::{self, FutureExt, TryFutureExt};
-use futures::Future;
-use awsm_web::webgl::{
-    WebGl2Renderer,
-    ClearBufferMask,
-    BufferData,
-    BufferTarget,
-    BufferUsage
-};
+use awsm_web::webgl::{ WebGl2Renderer, ClearBufferMask};
 use crate::errors::{Error, NativeError};
 use crate::gltf::GltfResource;
 use crate::components::register_components;
-use log::info;
 use crate::gltf::processor::{ProcessState, process_scene};
 
 use shipyard::*;
@@ -51,7 +42,7 @@ impl Renderer {
     }
 
     pub fn clear(&mut self) {
-        let mut webgl = self.webgl.borrow_mut();
+        let webgl = self.webgl.borrow_mut();
 
         webgl.clear(&[
             ClearBufferMask::ColorBufferBit,
@@ -60,11 +51,11 @@ impl Renderer {
     }
 
     pub fn render(&mut self, _interpolation:Option<f64>) {
-        let mut webgl = self.webgl.borrow_mut();
+        let _webgl = self.webgl.borrow_mut();
     }
 
     pub fn animate(&mut self, _delta:f64) {
-        let mut webgl = self.webgl.borrow_mut();
+        let _webgl = self.webgl.borrow_mut();
     }
 
     //The scene will be determined by the following in order of preference
@@ -120,6 +111,6 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn set_scene_from_gltf(&mut self, gltf:&gltf::Document) {
+    pub fn set_scene_from_gltf(&mut self, _gltf:&gltf::Document) {
     }
 }

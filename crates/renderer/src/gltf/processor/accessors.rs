@@ -1,6 +1,7 @@
-use gltf::accessor::{Dimensions, DataType};
+use gltf::accessor::{DataType};
 
-pub fn get_accessor_dim_size(type_:Dimensions) -> usize {
+/* - will probably need to be used for filling sparse accessors
+pub fn get_accessor_dim_size(type_:gltf::accessor::Dimensions) -> usize {
     match type_ {
         Dimensions::Scalar => 1,
         Dimensions::Vec2 => 2,
@@ -10,6 +11,7 @@ pub fn get_accessor_dim_size(type_:Dimensions) -> usize {
         Dimensions::Mat4 => 16,
     }
 }
+*/
 
 pub fn get_accessor_data_size(type_:DataType) -> u8 {
     match type_ {

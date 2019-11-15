@@ -7,9 +7,8 @@ use awsm_web::webgl::{
     BufferData,
     BufferTarget,
     BufferUsage,
-    VertexArray,
     AttributeOptions,
-    DataType
+    VertexArray
 };
 
 pub struct ProcessState <'a> {
@@ -81,11 +80,11 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
                 gltf::Semantic::Positions => "a_Position",
                 gltf::Semantic::Normals => "a_Normal",
                 gltf::Semantic::Tangents => "a_Tangent",
-                gltf::Semantic::Colors(color) => "colors",
-                gltf::Semantic::TexCoords(coord) => "texcoords",
-                gltf::Semantic::Joints(joints) => "joints",
-                gltf::Semantic::Weights(weights) => "weights",
-                gltf::Semantic::Extras(extras) => "extras",
+                gltf::Semantic::Colors(_color) => "colors",
+                gltf::Semantic::TexCoords(_coord) => "texcoords",
+                gltf::Semantic::Joints(_joints) => "joints",
+                gltf::Semantic::Weights(_weights) => "weights",
+                gltf::Semantic::Extras(_extras) => "extras",
             };
 
             attributes.push((buffer_id, attribute_name, opts));
@@ -99,8 +98,7 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
             3. Probably better to start with hardcoded / inline here and then work backwards
         */
 
-        /*
-        This is actually fine, probably, just need shader enabled first (hopefully)
+        //This is actually fine, probably, just need shader enabled first (hopefully)
         state.webgl.assign_vertex_array( 
             vao_id, 
             elements_id, 
@@ -112,7 +110,6 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
                 }
             }).collect::<Vec<VertexArray>>()
         )?;
-        */
     }
 
     Ok(())
@@ -125,9 +122,9 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
 fn upload_accessor(state:&mut ProcessState, accessor:&gltf::accessor::Accessor, target:BufferTarget) -> Result<Id, Error> {
 
     match accessor.sparse() {
-        Some(sparse) => {
+        Some(_sparse) => {
             match accessor.view() {
-                Some(view) => {
+                Some(_view) => {
                     //TODO
                     log::info!("get the typed data from buffer view");
                 },
@@ -151,10 +148,10 @@ fn upload_accessor(state:&mut ProcessState, accessor:&gltf::accessor::Accessor, 
 
 //Upload the buffer view if and only if there isn't already an id for that specific view
 //In either case, return the Id
-fn upload_buffer_view(state:&mut ProcessState, view:&gltf::buffer::View, target:BufferTarget) -> Result<Id, Error> {
+fn upload_buffer_view(state:&mut ProcessState, view:&gltf::buffer::View, _target:BufferTarget) -> Result<Id, Error> {
 
-    let ProcessState {webgl, world, resource, buffer_view_ids} = state;
-    let GltfResource {gltf, buffers, images} = resource; 
+    let ProcessState {webgl, resource, buffer_view_ids, ..} = state;
+    let GltfResource {buffers, ..} = resource; 
 
     let buffer_view_id = view.index();
 
