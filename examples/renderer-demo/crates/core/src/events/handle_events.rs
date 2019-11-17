@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 use log::{info};
 use std::convert::TryInto;
 use awsm_renderer::Renderer;
-use awsm_renderer::gltf::{load_gltf};
+use awsm_renderer::gltf::loader::{load_gltf};
 use super::events::*;
 use super::event_sender::EventSender;
 use super::{BridgeEventIndex};

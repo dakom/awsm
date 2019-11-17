@@ -1,9 +1,10 @@
 use std::rc::Rc;
 use std::cell::RefCell;
-use awsm_web::webgl::{ WebGl2Renderer, ClearBufferMask};
+use awsm_web::webgl::{ WebGl2Renderer, ClearBufferMask, BeginMode};
 use crate::errors::{Error, NativeError};
-use crate::gltf::GltfResource;
-use crate::components::register_components;
+use crate::gltf::loader::GltfResource;
+use crate::components::{register_components, Primitive};
+use crate::primitives::PrimitiveDraw;
 use crate::gltf::processor::{ProcessState, process_scene};
 
 use shipyard::*;
@@ -51,7 +52,30 @@ impl Renderer {
     }
 
     pub fn render(&mut self, _interpolation:Option<f64>) {
-        let _webgl = self.webgl.borrow_mut();
+        let mut webgl = self.webgl.borrow_mut();
+        let world = self.world.borrow_mut();
+
+        //TODO - add camera... hopefully that'll help seeing something on the screen :\
+
+        world.run::<&Primitive, _>(|primitives| {
+            for primitive in primitives.iter() {
+                let Primitive{shader_id, vao_id, draw_info} = primitive;
+
+                webgl.activate_program(*shader_id).unwrap();
+
+                webgl.activate_vertex_array(*vao_id).unwrap();
+
+                match draw_info {
+                    PrimitiveDraw::Elements(draw_mode, count, data_type, offset) => {
+                        webgl.draw_elements(*draw_mode, *count, *data_type, *offset);
+                        log::info!("draw mode: {}, count: {}, offset: {}", *draw_mode as u32, *count, *offset);
+                    },
+                    PrimitiveDraw::Direct(draw_mode, count, offset) => {
+                        webgl.draw_arrays(*draw_mode, *offset, *count);
+                    }
+                };
+            }
+        });
     }
 
     pub fn animate(&mut self, _delta:f64) {

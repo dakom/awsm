@@ -115,7 +115,7 @@ debug_log = []
 [dependencies]
 web-sys = "0.3.27"
 js-sys = "0.3.27"
-wasm-bindgen = "0.2.53"
+wasm-bindgen = "0.2.54"
 log = "0.4.8"
 rustc-hash = { version = "1.0.1", optional = true }
 serde = { version = "1.0.99", features = ["derive"], optional = true }

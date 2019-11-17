@@ -1,7 +1,22 @@
-use gltf::accessor::{DataType};
+use gltf::accessor::{DataType, Dimensions};
 
-/* - will probably need to be used for filling sparse accessors
-pub fn get_accessor_dim_size(type_:gltf::accessor::Dimensions) -> usize {
+pub struct AccessorInfo {
+    pub dim_size:usize,
+    pub data_size:u8,
+    pub webgl_data_type:awsm_web::webgl::DataType
+}
+
+impl AccessorInfo {
+    pub fn new(accessor:&gltf::accessor::Accessor) -> Self {
+        Self{
+            dim_size: get_accessor_dim_size(accessor.dimensions()),
+            data_size: get_accessor_data_size(accessor.data_type()),
+            webgl_data_type: get_accessor_webgl_data_type(accessor.data_type()),
+        }
+    }
+}
+            
+fn get_accessor_dim_size(type_:gltf::accessor::Dimensions) -> usize {
     match type_ {
         Dimensions::Scalar => 1,
         Dimensions::Vec2 => 2,
@@ -11,9 +26,8 @@ pub fn get_accessor_dim_size(type_:gltf::accessor::Dimensions) -> usize {
         Dimensions::Mat4 => 16,
     }
 }
-*/
 
-pub fn get_accessor_data_size(type_:DataType) -> u8 {
+fn get_accessor_data_size(type_:DataType) -> u8 {
     match type_ {
         DataType::I8 | DataType::U8 => 1, //BYTE | UNSIGNED_BYTE
         DataType::I16 | DataType::U16 => 2, //SHORT | UNSIGNED_SHORT
@@ -21,7 +35,7 @@ pub fn get_accessor_data_size(type_:DataType) -> u8 {
     }
 }
 
-pub fn get_accessor_webgl_data_type(gltf_type:DataType) -> awsm_web::webgl::DataType {
+fn get_accessor_webgl_data_type(gltf_type:DataType) -> awsm_web::webgl::DataType {
 
     match gltf_type {
         DataType::I8 => awsm_web::webgl::DataType::Byte,

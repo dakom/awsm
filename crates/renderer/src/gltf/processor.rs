@@ -1,5 +1,8 @@
 use crate::errors::{Error, NativeError};
 use crate::gltf::loader::{GltfResource};
+use crate::primitives::*;
+use crate::shaders::compile_shader;
+use super::accessors::AccessorInfo;
 use shipyard::*;
 use awsm_web::webgl::{ 
     Id, 
@@ -8,8 +11,10 @@ use awsm_web::webgl::{
     BufferTarget,
     BufferUsage,
     AttributeOptions,
-    VertexArray
+    VertexArray,
+    BeginMode
 };
+use std::convert::TryInto;
 
 pub struct ProcessState <'a> {
     pub resource:&'a GltfResource,
@@ -58,28 +63,21 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
 
     for primitive in mesh.primitives() {
 
-        let vao_id = state.webgl.create_vertex_array()?;
-        let elements_id = match primitive.indices() {
-            Some(accessor) => {
-                let buffer_id = upload_accessor(state, &accessor, BufferTarget::ElementArrayBuffer)?;
-                log::info!("elements data buffer id is {:?} for accessor {}, primitive {}", buffer_id, accessor.index(), primitive.index());
-                Some(buffer_id)
-            },
-            None => None
-        };
 
+        let shader_id = compile_shader(state.webgl)?;
+
+        let vao_id = state.webgl.create_vertex_array()?;
         //Probably some way of making this just one iterator that exists early...
         let mut attributes = Vec::with_capacity(primitive.attributes().len());
 
         for (semantic, accessor) in primitive.attributes() {
             let buffer_id = upload_accessor(state, &accessor, BufferTarget::ArrayBuffer)?;
-            let data_type = super::accessors::get_accessor_webgl_data_type(accessor.data_type());
-            let data_size = super::accessors::get_accessor_data_size(accessor.data_type());
-            let opts = AttributeOptions::new(data_size, data_type);
+            let accessor_info = AccessorInfo::new(&accessor);
+            let opts = AttributeOptions::new(accessor_info.data_size, accessor_info.webgl_data_type);
             let attribute_name = match semantic {
-                gltf::Semantic::Positions => "a_Position",
-                gltf::Semantic::Normals => "a_Normal",
-                gltf::Semantic::Tangents => "a_Tangent",
+                gltf::Semantic::Positions =>  "a_position",
+                gltf::Semantic::Normals => "a_normal",
+                gltf::Semantic::Tangents => "a_tangent",
                 gltf::Semantic::Colors(_color) => "colors",
                 gltf::Semantic::TexCoords(_coord) => "texcoords",
                 gltf::Semantic::Joints(_joints) => "joints",
@@ -87,22 +85,39 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
                 gltf::Semantic::Extras(_extras) => "extras",
             };
 
-            attributes.push((buffer_id, attribute_name, opts));
-            log::info!("attribute {} data buffer id is {:?} for accessor {}, primitive {}", attribute_name, buffer_id, accessor.index(), primitive.index());
+            //log::info!("dimensions for {} is {}", attribute_name, accessor_info.dim_size);
+            log::info!("attribute {} data buffer id is {:?} for accessor {}, primitive {}, count {}", attribute_name, buffer_id, accessor.index(), primitive.index(), accessor.count());
+            if false {
+                attributes.push((buffer_id, attribute_name, accessor_info, opts));
+            }
         }
 
-        /* TODO - compile shader!
+        let draw_mode = get_primitive_mode(&primitive);
+        let (elements_id, draw_info) = match primitive.indices() {
+            Some(accessor) => {
+                let accessor_info = AccessorInfo::new(&accessor);
+                let buffer_id = upload_accessor(state, &accessor, BufferTarget::ElementArrayBuffer)?;
+                log::info!("elements data buffer id is {:?} for accessor {}, primitive {}, count {}", buffer_id, accessor.index(), primitive.index(), accessor.count());
+                (Some(buffer_id), PrimitiveDraw::Elements(draw_mode, accessor.count().try_into().unwrap(), accessor_info.webgl_data_type, accessor.offset().try_into().unwrap()))
+            },
+
+            //TODO
+            None => (None, PrimitiveDraw::Direct(draw_mode, 36, 0))
+        };
+
+
+        /*
             Ideas: 
             1. We have info on the semantics in attributes - could use that here...
             2. Maybe the attributes for this primitive should be changeable at runtime - so these could be a component?
             3. Probably better to start with hardcoded / inline here and then work backwards
         */
 
-        //This is actually fine, probably, just need shader enabled first (hopefully)
+
         state.webgl.assign_vertex_array( 
             vao_id, 
             elements_id, 
-            &attributes.iter().map(|(buffer_id, attribute_name, opts)| {
+            &attributes.iter().map(|(buffer_id, attribute_name, _dim_size, opts)| {
                 VertexArray{
                     attribute_name,
                     buffer_id: *buffer_id,
@@ -110,11 +125,24 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
                 }
             }).collect::<Vec<VertexArray>>()
         )?;
+
+        create_primitive(state.world, Primitive{shader_id, vao_id, draw_info, });
     }
 
     Ok(())
 }
 
+fn get_primitive_mode(primitive:&gltf::mesh::Primitive) -> BeginMode {
+    match primitive.mode() {
+        gltf::mesh::Mode::Points => BeginMode::Points,
+        gltf::mesh::Mode::Lines => BeginMode::Lines,
+        gltf::mesh::Mode::LineLoop => BeginMode::LineLoop,
+        gltf::mesh::Mode::LineStrip => BeginMode::LineStrip,
+        gltf::mesh::Mode::Triangles => BeginMode::Triangles,
+        gltf::mesh::Mode::TriangleStrip => BeginMode::TriangleStrip,
+        gltf::mesh::Mode::TriangleFan => BeginMode::TriangleFan,
+    }
+}
 
 //If the view is non-sparse, upload as-is
 //Otherwise, create new data and upload
@@ -148,7 +176,7 @@ fn upload_accessor(state:&mut ProcessState, accessor:&gltf::accessor::Accessor, 
 
 //Upload the buffer view if and only if there isn't already an id for that specific view
 //In either case, return the Id
-fn upload_buffer_view(state:&mut ProcessState, view:&gltf::buffer::View, _target:BufferTarget) -> Result<Id, Error> {
+fn upload_buffer_view(state:&mut ProcessState, view:&gltf::buffer::View, target:BufferTarget) -> Result<Id, Error> {
 
     let ProcessState {webgl, resource, buffer_view_ids, ..} = state;
     let GltfResource {buffers, ..} = resource; 
@@ -160,9 +188,11 @@ fn upload_buffer_view(state:&mut ProcessState, view:&gltf::buffer::View, _target
         let buffer_id = webgl.create_buffer()?;
         let data = BufferData::new(
             super::buffer_view::get_buffer_view_data(&view, &buffers),
-            BufferTarget::ArrayBuffer,
+            target,
             BufferUsage::StaticDraw
         );
+
+        //log::info!("len {}: {:?}", data.values.len(), &data.values);
 
         webgl.upload_buffer(buffer_id, data)?;
         buffer_view_ids[buffer_view_id] = Some(buffer_id);
