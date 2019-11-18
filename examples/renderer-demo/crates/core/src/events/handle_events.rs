@@ -52,6 +52,17 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, renderer:Rc<RefCell<Rendere
 
         },
 
+        BridgeEventIndex::CameraSettings =>
+        {
+            let camera_settings:CameraSettings = serde_wasm_bindgen::from_value(evt_data)?;
+
+            let camera_style:CameraStyle = camera_settings.style.try_into()?;
+
+            match camera_style {
+                CameraStyle::Orthographic => log::info!("orthographic"),
+                CameraStyle::Perspective => log::info!("perspective"),
+            };
+        },
         _ => 
         {
             info!("unknown event!");

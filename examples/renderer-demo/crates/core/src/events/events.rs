@@ -10,6 +10,7 @@ pub enum BridgeEventIndex {
     WindowSize,
     LoadGltf,
     GltfLoaded,
+    CameraSettings,
 }
 
 //Let's us get a BridgeEvent from the number which is sent from JS
@@ -27,4 +28,25 @@ impl TryFrom<u32> for BridgeEventIndex {
 pub struct WindowSize {
     pub width: u32,
     pub height: u32 
+}
+
+
+#[derive(Serialize, Deserialize)]
+pub struct CameraSettings {
+    pub style: u32,
+}
+
+
+#[derive(FromPrimitive)]
+#[repr(u32)]
+pub enum CameraStyle {
+    Orthographic,
+    Perspective
+}
+impl TryFrom<u32> for CameraStyle {
+    type Error = &'static str;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        FromPrimitive::from_u32(value).ok_or("CameraStyle: outside of range!")
+    }
 }

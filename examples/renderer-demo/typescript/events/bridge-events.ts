@@ -8,14 +8,25 @@ export enum BridgeEvent {
     WindowSize,
     LoadGltf,
     GltfLoaded,
+    CameraSettings
 }
 
 export type ValidBridgeEvents = 
     | [BridgeEvent.WindowSize, WindowSize]
     | BridgeEvent.GltfLoaded
     | [BridgeEvent.LoadGltf, string]
+    | [BridgeEvent.CameraSettings, CameraSettings ]
 
 interface WindowSize{
     width: number;
     height: number;
+}
+
+export interface CameraSettings {
+    style: CameraStyle
+}
+
+export enum CameraStyle {
+    ORTHOGRAPHIC,
+    PERSPECTIVE
 }

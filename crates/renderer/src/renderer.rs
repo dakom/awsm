@@ -68,7 +68,7 @@ impl Renderer {
                 match draw_info {
                     PrimitiveDraw::Elements(draw_mode, count, data_type, offset) => {
                         webgl.draw_elements(*draw_mode, *count, *data_type, *offset);
-                        log::info!("draw mode: {}, count: {}, offset: {}", *draw_mode as u32, *count, *offset);
+                        //log::info!("draw mode: {}, count: {}, offset: {}", *draw_mode as u32, *count, *offset);
                     },
                     PrimitiveDraw::Direct(draw_mode, count, offset) => {
                         webgl.draw_arrays(*draw_mode, *offset, *count);

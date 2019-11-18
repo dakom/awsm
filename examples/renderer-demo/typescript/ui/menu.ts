@@ -1,10 +1,12 @@
 import {samples_path} from "@utils/path";
 import dat from "dat.gui";
 import {debug_settings} from "@config/config";
-import {BridgeEvent, send_bridge_event} from "@events/events"
+import {BridgeEvent, send_bridge_event, CameraStyle} from "@events/events"
 import { set_state } from "@state/state";
 
-export const init_models_menu = () => {
+const gui = new dat.GUI();
+
+export const init_menu = () => {
     fetch(samples_path("model-index.json"))
         .then(x => x.json())
         .then((xs:Array<any>) => {
@@ -31,7 +33,6 @@ export const init_models_menu = () => {
                 variant: variant_name
             }
 
-            const gui = new dat.GUI();
 
             const model_controller = gui.add(opts, "model", model_names);
             let variant_controller;
@@ -58,6 +59,31 @@ export const init_models_menu = () => {
                 reset_variants(model_idx);
             });
 
-            reset_variants(debug_settings.model_idx);
-        });
+            //START WITH INITIAL SETTINGS
+            (() => {
+                reset_variants(debug_settings.model_idx);
+            })();
+        })
+        .then(() => {
+            const opts = {
+                style: "orthographic"
+            }
+            let cameraFolder;
+            const reset_camera = (style) => {
+                if(cameraFolder) {
+                    gui.removeFolder(cameraFolder);
+                }
+                cameraFolder = gui.addFolder("camera");
+                const camera_style = cameraFolder.add(opts, "style", ["orthographic", "perspective"]);
+                cameraFolder.open(); 
+                camera_style.onChange(style => {
+                    reset_camera(style);
+                });
+                send_bridge_event([BridgeEvent.CameraSettings, {
+                    style: style === "orthographic" ? CameraStyle.ORTHOGRAPHIC : CameraStyle.PERSPECTIVE
+                }]) 
+            }
+
+            reset_camera("orthographic");
+        })
     }

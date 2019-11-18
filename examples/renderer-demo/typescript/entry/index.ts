@@ -1,6 +1,6 @@
 import { init_core_sender, send_bridge_event_from_core_to_ts_unchecked, send_bridge_event, BridgeEvent } from "@events/events";
 import {init_ui} from "@ui/ui";
-import {init_models_menu} from "@ui/models";
+import {init_menu} from "@ui/menu";
 import {set_state} from "@state/state";
 import { load_wasm } from "@utils/wasm";
 import { get_window_size } from "@utils/window";
@@ -21,5 +21,5 @@ load_wasm("wasm/core/pkg/my_core", "wasm_core")
         //that event will cause a state transition and then we're off to the races
         init_core_sender(init_core(canvas_dom_element, width, height, send_bridge_event_from_core_to_ts_unchecked));
 
-        init_models_menu();
+        init_menu();
     })
