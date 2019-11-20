@@ -1,9 +1,17 @@
 use shipyard::*;
-pub(crate) use crate::primitives::Primitive;
-pub(crate) use crate::camera::Camera;
-
+pub use crate::primitives::Primitive;
+pub use crate::transform::*;
+pub use crate::camera::*;
+pub use crate::nodes::{Node};
 
 pub fn register_components(world:&mut World) {
+    world.register::<Node>();
     world.register::<Primitive>();
-    world.register::<Camera>();
+    world.register::<CameraView>();
+    world.register::<CameraProjection>();
+    world.register::<Translation>();
+    world.register::<Rotation>();
+    world.register::<Scale>();
+    world.register::<LocalMatrix>();
+    world.register::<WorldMatrix>();
 }

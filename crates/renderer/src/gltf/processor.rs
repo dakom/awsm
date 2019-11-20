@@ -3,6 +3,7 @@ use crate::gltf::loader::{GltfResource};
 use crate::primitives::*;
 use crate::shaders::compile_shader;
 use super::accessors::AccessorInfo;
+use crate::nodes::*;
 use shipyard::*;
 use awsm_web::webgl::{ 
     Id, 
@@ -126,7 +127,7 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
             }).collect::<Vec<VertexArray>>()
         )?;
 
-        create_primitive(state.world, Primitive{shader_id, vao_id, draw_info, });
+        add_node(state.world, NodeData::Primitive(Primitive{shader_id, vao_id, draw_info, }), None, None, None, None);
     }
 
     Ok(())

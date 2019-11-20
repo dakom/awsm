@@ -1,3 +1,3 @@
 mod primitives;
 
-pub(crate) use self::primitives::*;
+pub use self::primitives::*;

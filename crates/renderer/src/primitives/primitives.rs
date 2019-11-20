@@ -14,9 +14,3 @@ pub enum PrimitiveDraw {
     Direct(BeginMode, u32, u32)
 }
 
-
-pub fn create_primitive(world:&mut World, primitive:Primitive) {
-    world.run::<(EntitiesMut, &mut Primitive), _>(|(mut entities, mut primitives)| {
-        entities.add_entity(&mut primitives, primitive);
-    });
-}

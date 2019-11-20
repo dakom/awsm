@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use awsm_web::webgl::{ WebGl2Renderer, ClearBufferMask, BeginMode};
 use crate::errors::{Error, NativeError};
 use crate::gltf::loader::GltfResource;
-use crate::components::{register_components, Primitive};
+use crate::components::*;
 use crate::primitives::PrimitiveDraw;
 use crate::gltf::processor::{ProcessState, process_scene};
 
@@ -15,7 +15,7 @@ pub struct Renderer {
     //There is almost no performance impact since it's only borrowed at the top of the core functions 
     //- not deep in the iterators
     pub webgl:Rc<RefCell<WebGl2Renderer>>,
-    world: Rc<RefCell<World>>
+    pub world: Rc<RefCell<World>>
 }
 
 impl Renderer {
@@ -51,14 +51,56 @@ impl Renderer {
         ]);
     }
 
+    pub fn update_transforms(&mut self) {
+        let mut webgl = self.webgl.borrow_mut();
+        let world = self.world.borrow_mut();
+
+        //Update all the LocalMatrices if translation, rotation, or scale changed
+        //TODO - only update if marked as dirty
+        world.run::<(&Translation, &Rotation, &Scale, &mut LocalMatrix), _>(|(translations, rotations, scales, local_matrices)| {
+            for (translation, rotation, scale, mut local_matrix) in (translations, rotations, scales, local_matrices).iter() {
+                let local_matrix = &mut local_matrix.0;
+                let translation = &translation.0;
+                let rotation = &rotation.0;
+                let scale = &scale.0;
+                local_matrix.from_trs_mut(translation, rotation, scale);
+            }
+        });
+
+        //Update all the WorldMatrices if any ancestor changed 
+        //TODO - only update if marked as dirty
+        world.run::<(&Node, &LocalMatrix, &mut WorldMatrix), _>(|(nodes, local_matrices, world_matrices)| {
+            let mut parent_matrix = Matrix4::default();
+            let mut child_index = 0;
+            for (node, local_matrix, world_matrix) in (nodes, local_matrices, world_matrices).iter() {
+                let local_matrix = &local_matrix.0;
+                let world_matrix = &mut world_matrix.0;
+
+                world_matrix.copy_from(&parent_matrix);
+                world_matrix.mul_mut(local_matrix);
+
+                if child_index == node.n_children {
+                    parent_matrix.copy_from(world_matrix);
+                    child_index = 0;
+                } else {
+                    child_index += 1;
+                }
+            }
+        });
+    }
+
     pub fn render(&mut self, _interpolation:Option<f64>) {
+        self.update_transforms();
+
         let mut webgl = self.webgl.borrow_mut();
         let world = self.world.borrow_mut();
 
         //TODO - add camera... hopefully that'll help seeing something on the screen :\
 
-        world.run::<&Primitive, _>(|primitives| {
-            for primitive in primitives.iter() {
+        log::info!("TODO - get camera view and projection matrix");
+
+        world.run::<(&Primitive, &WorldMatrix), _>(|(primitives, model_matrices)| {
+            for (primitive, model_matrix) in (primitives, model_matrices).iter() {
                 let Primitive{shader_id, vao_id, draw_info} = primitive;
 
                 webgl.activate_program(*shader_id).unwrap();

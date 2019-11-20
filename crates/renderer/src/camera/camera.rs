@@ -1,6 +1,4 @@
-use nalgebra::{Matrix4, Point2, Vector3};
+use crate::transform::{Matrix4};
 
-pub struct Camera {
-    view:Matrix4<f32>,
-    projection:Matrix4<f32>
-}
+pub struct CameraView(pub Matrix4); 
+pub struct CameraProjection(pub Matrix4); 
