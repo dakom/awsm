@@ -21,20 +21,27 @@ pub enum NodeData {
     Primitive(Primitive)
 }
 
+impl Renderer {
+    pub fn add_node(&mut self, data:NodeData, parent:Option<Key>, translation: Option<Vector3>, rotation: Option<Quaternion>, scale: Option<Vector3>) {
+        add_node(&mut self.world.borrow_mut(), data, parent, translation, rotation, scale)
+    }
+}
+
+//Mostly for internal use - but can also be used to share the ECS outside of renderer
 pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation: Option<Vector3>, rotation: Option<Quaternion>, scale: Option<Vector3>) {
     let translation = translation.unwrap_or_default();
     let rotation = rotation.unwrap_or_default();
-    let scale = scale.unwrap_or_default();
+    let scale = scale.unwrap_or(Vector3::new(1.0, 1.0, 1.0));
     let local_matrix = Matrix4::from_trs(&translation, &rotation, &scale);
     let world_matrix = Matrix4::default();
 
     if let Some(parent) = parent {
-        //TODO - re-arrange all the nodes first?
+        //TODO - re-arrange all the nodes?
+        //probably do *not* need to mess with world matrix, just mark dirty and it'll be updated...
     }
 
     match data {
         NodeData::Empty => {
-            let camera_view = local_matrix; //TODO - should be inverse of this, I think?
             world.run::<(
                 EntitiesMut, 
                 &mut Node,
@@ -73,7 +80,7 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
             });
         }
         NodeData::Camera(projection_matrix) => {
-            let camera_view = local_matrix; //TODO - should be inverse of this, I think?
+            let camera_view = local_matrix.clone(); //TODO - should be inverse of this, I think?
             world.run::<(
                 EntitiesMut, 
                 &mut Node,

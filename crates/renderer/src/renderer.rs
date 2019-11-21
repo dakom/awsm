@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use std::cell::RefCell;
-use awsm_web::webgl::{ WebGl2Renderer, ClearBufferMask, BeginMode};
+use awsm_web::webgl::{ WebGl2Renderer, ClearBufferMask, BufferData, BufferTarget, BufferUsage, Id};
 use crate::errors::{Error, NativeError};
 use crate::gltf::loader::GltfResource;
 use crate::components::*;
@@ -15,17 +15,20 @@ pub struct Renderer {
     //There is almost no performance impact since it's only borrowed at the top of the core functions 
     //- not deep in the iterators
     pub webgl:Rc<RefCell<WebGl2Renderer>>,
-    pub world: Rc<RefCell<World>>
+    pub world: Rc<RefCell<World>>,
+
+    camera_buffer_id: Id,
 }
 
 impl Renderer {
-    pub fn new(webgl:Rc<RefCell<WebGl2Renderer>>, world: Option<Rc<RefCell<World>>>, width: u32, height: u32) -> Self {
+    pub fn new(webgl:Rc<RefCell<WebGl2Renderer>>, world: Option<Rc<RefCell<World>>>, width: u32, height: u32) -> Result<Self, Error> {
         let world = match world {
             Some(world) => world,
             None => Rc::new(RefCell::new(World::default()))
         };
 
-        let mut ret = Self{webgl, world};
+        let camera_buffer_id = webgl.borrow_mut().create_buffer()?;
+        let mut ret = Self{webgl, world, camera_buffer_id};
 
         {
             let mut world = ret.world.borrow_mut();
@@ -34,7 +37,7 @@ impl Renderer {
 
         ret.resize(width, height);
 
-        ret
+        Ok(ret)
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
@@ -51,7 +54,29 @@ impl Renderer {
         ]);
     }
 
-    pub fn update_transforms(&mut self) {
+    fn update_camera_ubo(&mut self) {
+        let world = self.world.borrow_mut();
+        let webgl = self.webgl.borrow_mut();
+
+        //TODO - only do if marked as dirty
+        world.run::<(&CameraView, &CameraProjection), _>(|(views, projs)| {
+            if let Some((view, proj)) = (views, projs).iter().next() {
+                let view = &view.0;
+                let projection = &proj.0;
+                
+                let camera = vec![view.to_vec_f32(), projection.to_vec_f32()].concat();
+                webgl.upload_buffer(
+                    self.camera_buffer_id,
+                    BufferData::new(
+                        &camera,
+                        BufferTarget::UniformBuffer,
+                        BufferUsage::DynamicDraw,
+                    ),
+                ).unwrap();
+            }
+        });
+    }
+    fn update_transforms(&mut self) {
         let mut webgl = self.webgl.borrow_mut();
         let world = self.world.borrow_mut();
 
@@ -91,20 +116,17 @@ impl Renderer {
 
     pub fn render(&mut self, _interpolation:Option<f64>) {
         self.update_transforms();
+        self.update_camera_ubo();
 
         let mut webgl = self.webgl.borrow_mut();
         let world = self.world.borrow_mut();
-
-        //TODO - add camera... hopefully that'll help seeing something on the screen :\
-
-        log::info!("TODO - get camera view and projection matrix");
 
         world.run::<(&Primitive, &WorldMatrix), _>(|(primitives, model_matrices)| {
             for (primitive, model_matrix) in (primitives, model_matrices).iter() {
                 let Primitive{shader_id, vao_id, draw_info} = primitive;
 
                 webgl.activate_program(*shader_id).unwrap();
-
+                webgl.activate_uniform_buffer(self.camera_buffer_id, "camera").unwrap();
                 webgl.activate_vertex_array(*vao_id).unwrap();
 
                 match draw_info {

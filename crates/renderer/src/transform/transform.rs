@@ -5,7 +5,7 @@ pub struct LocalMatrix(pub Matrix4);
 pub struct WorldMatrix(pub Matrix4);
 
 #[repr(C)]
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Vector3 {
     x: f64,
     y: f64,
@@ -27,7 +27,7 @@ impl TransformValues for Vector3 {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Quaternion {
     x: f64,
     y: f64,
@@ -51,7 +51,7 @@ impl TransformValues for Quaternion {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Matrix4 (
     f64,
     f64,

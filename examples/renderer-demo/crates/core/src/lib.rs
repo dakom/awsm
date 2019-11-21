@@ -2,6 +2,8 @@
 mod events;
 #[allow(clippy::module_inception)]
 mod game_loop;
+#[allow(clippy::module_inception)]
+mod state;
 
 use cfg_if::cfg_if;
 use log::{info, Level};
@@ -9,7 +11,8 @@ use wasm_bindgen::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::game_loop::GameLoop;
-use crate::events::{handle_event, EventSender};
+use crate::events::*;
+use crate::state::*;
 use awsm_renderer::{ Renderer};
 use awsm_renderer::webgl::{
     get_webgl_context_2, 
@@ -62,14 +65,21 @@ pub fn run(canvas:HtmlCanvasElement, window_width: u32, window_height: u32, send
 
     webgl.gl.clear_color(0.5, 0.5, 0.5, 1.0);
 
-    let renderer = Renderer::new(Rc::new(RefCell::new(webgl)), None, window_width, window_height);
+    let renderer = Renderer::new(Rc::new(RefCell::new(webgl)), None, window_width, window_height)?;
     let renderer = Rc::new(RefCell::new(renderer));
 
     let game_loop = Box::new({
         let renderer = Rc::clone(&renderer);
         GameLoop::new(renderer)?
     });
-        
+
+    let state = Rc::new(RefCell::new(State{
+        camera_style: CameraStyle::Orthographic,
+        window_size: WindowSize{
+            width: window_width,
+            height: window_height
+        }
+    }));
 
     //Create a function which allows JS to send us events ad-hoc
     //We will need to get a handle and forget the Closure
@@ -78,8 +88,9 @@ pub fn run(canvas:HtmlCanvasElement, window_width: u32, window_height: u32, send
         move |evt_type:u32, data:JsValue| {
             let renderer = Rc::clone(&renderer);
             let event_sender = Rc::clone(&event_sender);
+            let state = Rc::clone(&state);
             //The actual handling of events is in this function
-            if let Err(reason) = handle_event(evt_type, data, renderer, event_sender) {
+            if let Err(reason) = handle_event(evt_type, data, state, renderer, event_sender) {
                 info!("Error: {:?}", reason);
             }
         }

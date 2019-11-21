@@ -3,15 +3,19 @@ use log::{info};
 use std::convert::TryInto;
 use awsm_renderer::Renderer;
 use awsm_renderer::gltf::loader::{load_gltf};
+use awsm_renderer::nodes::{NodeData};
 use super::events::*;
 use super::event_sender::EventSender;
 use super::{BridgeEventIndex};
+use crate::state::*;
+use awsm_renderer::transform::{Matrix4, TransformValues};
+
 use std::rc::Rc;
 use std::cell::RefCell;
 use wasm_bindgen_futures::futures_0_3::future_to_promise;
 //if result is Ok(true) then send the updated state back
 
-pub fn handle_event(evt_type:u32, evt_data: JsValue, renderer:Rc<RefCell<Renderer>>, event_sender:Rc<EventSender>) -> Result<(), JsValue> 
+pub fn handle_event(evt_type:u32, evt_data: JsValue, state: Rc<RefCell<State>>, renderer:Rc<RefCell<Renderer>>, event_sender:Rc<EventSender>) -> Result<(), JsValue> 
 {
     let evt_type:BridgeEventIndex = evt_type.try_into()?;
 
@@ -19,16 +23,8 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, renderer:Rc<RefCell<Rendere
         BridgeEventIndex::WindowSize =>
         {
             let window_size:WindowSize = serde_wasm_bindgen::from_value(evt_data)?;
-            renderer.borrow_mut().resize(window_size.width, window_size.height);
-            /*
-
-            world.run::<(&mut WindowSize), _>(|w| {
-                if let Some(w) = w.iter().next() {
-                    w.width = window_size.width;
-                    w.height = window_size.height;
-                }
-            });
-            */
+            state.borrow_mut().window_size = window_size;
+            update_view(state, renderer)?;
         },
 
         BridgeEventIndex::LoadGltf =>
@@ -55,13 +51,10 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, renderer:Rc<RefCell<Rendere
         BridgeEventIndex::CameraSettings =>
         {
             let camera_settings:CameraSettings = serde_wasm_bindgen::from_value(evt_data)?;
-
             let camera_style:CameraStyle = camera_settings.style.try_into()?;
+            state.borrow_mut().camera_style = camera_style;
 
-            match camera_style {
-                CameraStyle::Orthographic => log::info!("orthographic"),
-                CameraStyle::Perspective => log::info!("perspective"),
-            };
+            update_view(state, renderer)?;
         },
         _ => 
         {
@@ -69,5 +62,67 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, renderer:Rc<RefCell<Rendere
         }
     }
 
+    Ok(())
+}
+
+fn update_view(state: Rc<RefCell<State>>, renderer:Rc<RefCell<Renderer>>) -> Result<(), JsValue> {
+
+    let mut renderer = renderer.borrow_mut();
+
+    log::info!("TODO - remove previous camera node, or update instead of add if exists!");
+
+    let state = state.borrow();
+    let WindowSize {width, height} = state.window_size;
+    renderer.resize(width, height);
+    match state.camera_style {
+        CameraStyle::Orthographic => {
+
+            let projection = Matrix4::new_from_slice(nalgebra::Matrix4::new_orthographic(
+                    0.0,
+                    width as f64,
+                    0.0,
+                    height as f64,
+                    0.0,
+                    1000.0,
+            ).as_slice());
+
+            renderer.add_node(NodeData::Camera(projection), None, None, None, None);
+
+            //renderer.add_node();
+            //log::info!("orthographic for window {}x{}", width, height);
+        },
+        CameraStyle::Perspective => log::info!("TODO: perspective"),
+    };
+
+    /* Orthographic example
+        let camera_mat = Matrix4::new_orthographic(
+                    0.0,
+                    camera_width as f32,
+                    0.0,
+                    camera_height as f32,
+                    0.0,
+                    1.0,
+                );
+    */
+
+    /* Perspective example
+        
+        // Our camera looks toward the point (1.0, 0.0, 0.0).
+        // It is located at (0.0, 0.0, 1.0).
+        let eye = Point3::new(1000.0, 500.0, 1000.0);
+        let target = Point3::new(0.0, 0.0, 0.0);
+        let view = Isometry3::look_at_rh(&eye, &target, &Vector3::y()).to_homogeneous();
+
+        // A perspective projection.
+        let projection = Perspective3::new(
+            state.camera_width as f32 / state.camera_height as f32,
+            std::f32::consts::PI / 2.0,
+            1.0,
+            3000.0,
+        )
+        .to_homogeneous();
+
+        let camera = vec![view.as_slice(), projection.as_slice()].concat();
+    */
     Ok(())
 }
