@@ -44,7 +44,6 @@ pub fn process_scene(state:ProcessState, scene:&gltf::scene::Scene) -> Result<()
 
     fn traverse_node_root(state:&mut ProcessState, node:&gltf::Node) -> Result<(), Error> 
     {
-        log::info!("processing node {}", node.index());
         if let Some(mesh) = node.mesh() {
             process_mesh(state, &mesh)?;
         }
@@ -74,7 +73,9 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
         for (semantic, accessor) in primitive.attributes() {
             let buffer_id = upload_accessor(state, &accessor, BufferTarget::ArrayBuffer)?;
             let accessor_info = AccessorInfo::new(&accessor);
-            let opts = AttributeOptions::new(accessor_info.data_size, accessor_info.webgl_data_type);
+            //TODO - figure out wtf this should really be... 
+            //OPTION 1: seems broken let opts = AttributeOptions::new(accessor_info.data_size, accessor_info.webgl_data_type);
+            let opts = AttributeOptions::new(accessor.count().try_into().unwrap(), accessor_info.webgl_data_type);
             let attribute_name = match semantic {
                 gltf::Semantic::Positions =>  "a_position",
                 gltf::Semantic::Normals => "a_normal",
@@ -87,10 +88,8 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
             };
 
             //log::info!("dimensions for {} is {}", attribute_name, accessor_info.dim_size);
-            log::info!("attribute {} data buffer id is {:?} for accessor {}, primitive {}, count {}", attribute_name, buffer_id, accessor.index(), primitive.index(), accessor.count());
-            if false {
-                attributes.push((buffer_id, attribute_name, accessor_info, opts));
-            }
+            //log::info!("attribute {} data buffer id is {:?} for accessor {}, primitive {}, count {}", attribute_name, buffer_id, accessor.index(), primitive.index(), accessor.count());
+            attributes.push((buffer_id, attribute_name, accessor_info, opts));
         }
 
         let draw_mode = get_primitive_mode(&primitive);
@@ -98,7 +97,8 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
             Some(accessor) => {
                 let accessor_info = AccessorInfo::new(&accessor);
                 let buffer_id = upload_accessor(state, &accessor, BufferTarget::ElementArrayBuffer)?;
-                log::info!("elements data buffer id is {:?} for accessor {}, primitive {}, count {}", buffer_id, accessor.index(), primitive.index(), accessor.count());
+                //log::info!("elements data buffer id is {:?} for accessor {}, primitive {}, count {}", buffer_id, accessor.index(), primitive.index(), accessor.count());
+                //TODO - figure out wtf this should really be... 
                 (Some(buffer_id), PrimitiveDraw::Elements(draw_mode, accessor.count().try_into().unwrap(), accessor_info.webgl_data_type, accessor.offset().try_into().unwrap()))
             },
 
@@ -115,18 +115,33 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
         */
 
 
-        state.webgl.assign_vertex_array( 
-            vao_id, 
-            elements_id, 
-            &attributes.iter().map(|(buffer_id, attribute_name, _dim_size, opts)| {
+        let vertex_arrays = attributes
+            .iter()
+            .map(|(buffer_id, attribute_name, _dim_size, opts)| {
                 VertexArray{
                     attribute_name,
                     buffer_id: *buffer_id,
                     opts: &opts
                 }
-            }).collect::<Vec<VertexArray>>()
+            })
+            .collect::<Vec<VertexArray>>();
+
+        if vertex_arrays.len() != attributes.iter().len() {
+            return Err("lengths don't match".into());
+        }
+        if vertex_arrays.len() == 0 {
+            return Err("no elements!".into());
+        }
+
+        log::info!("{:?}", &vertex_arrays);
+
+        state.webgl.assign_vertex_array( 
+            vao_id, 
+            elements_id, 
+            &vertex_arrays
         )?;
 
+        //TODO - remove the initial transform nudge... requires being able to nudge the camera instead though ;)
         add_node(state.world, NodeData::Primitive(Primitive{shader_id, vao_id, draw_info, }), None, None, None, None);
     }
 
@@ -187,13 +202,13 @@ fn upload_buffer_view(state:&mut ProcessState, view:&gltf::buffer::View, target:
     if buffer_view_ids[buffer_view_id].is_none() {
 
         let buffer_id = webgl.create_buffer()?;
+        let raw_data = super::buffer_view::get_buffer_view_data(&view, &buffers);
+
         let data = BufferData::new(
-            super::buffer_view::get_buffer_view_data(&view, &buffers),
+            &raw_data,
             target,
             BufferUsage::StaticDraw
         );
-
-        //log::info!("len {}: {:?}", data.values.len(), &data.values);
 
         webgl.upload_buffer(buffer_id, data)?;
         buffer_view_ids[buffer_view_id] = Some(buffer_id);

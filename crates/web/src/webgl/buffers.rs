@@ -306,6 +306,12 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
         Ok(())
     }
 
+    #[cfg(feature = "disable_webgl_opt")]
+    pub fn bind_buffer(&self, buffer_id: Id, target: BufferTarget) -> Result<(), Error> {
+        self._bind_buffer_nocheck(buffer_id, target)
+    }
+
+    #[cfg(not(feature = "disable_webgl_opt"))]
     pub fn bind_buffer(&self, buffer_id: Id, target: BufferTarget) -> Result<(), Error> {
         if Some(buffer_id) != self.current_buffer_id.get()
             || Some(target) != self.current_buffer_target.get()
@@ -342,12 +348,7 @@ impl<T: WebGlCommon> WebGlRenderer<T> {
 }
 
 impl WebGlRenderer<WebGl2RenderingContext> {
-    pub(super) fn _bind_buffer_base_nocheck(
-        &self,
-        buffer_id: Id,
-        index: u32,
-        target: BufferTarget,
-    ) -> Result<(), Error> {
+    pub(super) fn _bind_buffer_base_nocheck( &self, buffer_id: Id, index: u32, target: BufferTarget,) -> Result<(), Error> {
         self.current_buffer_id.set(Some(buffer_id));
         self.current_buffer_target.set(Some(target));
         self.current_buffer_index.set(Some(index));
@@ -361,12 +362,12 @@ impl WebGlRenderer<WebGl2RenderingContext> {
         Ok(())
     }
 
-    pub fn bind_buffer_base(
-        &self,
-        buffer_id: Id,
-        index: u32,
-        target: BufferTarget,
-    ) -> Result<(), Error> {
+    #[cfg(feature = "disable_webgl_opt")]
+    pub fn bind_buffer_base( &self, buffer_id: Id, index: u32, target: BufferTarget,) -> Result<(), Error> {
+        self._bind_buffer_base_nocheck(buffer_id, index, target)
+    }
+    #[cfg(not(feature = "disable_webgl_opt"))]
+    pub fn bind_buffer_base( &self, buffer_id: Id, index: u32, target: BufferTarget,) -> Result<(), Error> {
         if Some(buffer_id) != self.current_buffer_id.get()
             || Some(target) != self.current_buffer_target.get()
             || Some(index) != self.current_buffer_index.get()

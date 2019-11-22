@@ -8,8 +8,7 @@ use super::events::*;
 use super::event_sender::EventSender;
 use super::{BridgeEventIndex};
 use crate::state::*;
-use awsm_renderer::transform::{Matrix4, TransformValues};
-
+use awsm_renderer::transform::{Vector3, Matrix4, TransformValues};
 use std::rc::Rc;
 use std::cell::RefCell;
 use wasm_bindgen_futures::futures_0_3::future_to_promise;
@@ -64,7 +63,6 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, state: Rc<RefCell<State>>, 
 
     Ok(())
 }
-
 fn update_view(state: Rc<RefCell<State>>, renderer:Rc<RefCell<Renderer>>) -> Result<(), JsValue> {
 
     let mut renderer = renderer.borrow_mut();
@@ -77,19 +75,40 @@ fn update_view(state: Rc<RefCell<State>>, renderer:Rc<RefCell<Renderer>>) -> Res
     match state.camera_style {
         CameraStyle::Orthographic => {
 
+            /* TODO - pick up next time...
+
+                First attempt to try and construct an orthographic projection based on SCREEN SIZE did not work...
+                However, it seems that an orthographic projection based on the viewport (-1.0 -> 1.0) does work! 
+
+                gotta figure out why the screen-based orthographic camera fails
+            */
+
+            //SCREEN BASED:
             let projection = Matrix4::new_from_slice(nalgebra::Matrix4::new_orthographic(
                     0.0,
                     width as f64,
                     0.0,
                     height as f64,
-                    0.0,
+                    0.01,
                     1000.0,
             ).as_slice());
 
-            renderer.add_node(NodeData::Camera(projection), None, None, None, None);
+            //VIEWPORT BASED:
+            let projection = Matrix4::new_from_slice(nalgebra::Matrix4::new_orthographic(
+                    -1.0,
+                    1.0,
+                    -1.0,
+                    1.0,
+                    0.01,
+                    1.0,
+            ).as_slice());
 
-            //renderer.add_node();
-            //log::info!("orthographic for window {}x{}", width, height);
+            let camera_translation = Vector3::new(0.0, 0.0, -1.0);
+
+            //should be able to do this, but first gotta add inverting in nodes.rs:
+            //let camera_translation = Vector3::new(0.0, 0.0, 1.0);
+
+            renderer.add_node(NodeData::Camera(projection), None, Some(camera_translation), None, None);
         },
         CameraStyle::Perspective => log::info!("TODO: perspective"),
     };

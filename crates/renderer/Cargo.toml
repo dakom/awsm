@@ -27,7 +27,7 @@ log = "0.4.8"
 shipyard = { git= "https://github.com/leudz/shipyard.git", features = ["proc"], default-features = false}
 serde = { version = "1.0.99", features = ["derive"], optional = true }
 futures-preview = { version = "=0.3.0-alpha.18", features = ["async-await", "nightly"]}
-awsm_web = { path="../web", version = "0.0.11", features = ["webgl", "loaders"], default-features = false }
+awsm_web = { path="../web", version = "0.0.12", features = ["webgl", "loaders"], default-features = false }
 
 [dependencies.gltf]
 # path = "../../../gltf"
@@ -35,3 +35,7 @@ awsm_web = { path="../web", version = "0.0.11", features = ["webgl", "loaders"],
 git = "https://github.com/gltf-rs/gltf"
 features = ["import", "utils", "names", "extras", "names", "KHR_lights_punctual", "KHR_materials_pbrSpecularGlossiness"]
 default-features = false 
+
+[features]
+# default = ["awsm_web/debug_log", "awsm_web/disable_webgl_opt"]
+default = []

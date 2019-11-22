@@ -127,6 +127,7 @@ impl Renderer {
 
                 webgl.activate_program(*shader_id).unwrap();
                 webgl.activate_uniform_buffer(self.camera_buffer_id, "camera").unwrap();
+                webgl.upload_uniform_mat_4("u_model", &model_matrix.0.to_vec_f32()).unwrap();
                 webgl.activate_vertex_array(*vao_id).unwrap();
 
                 match draw_info {

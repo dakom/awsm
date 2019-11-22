@@ -3,7 +3,7 @@ pub enum WebGlVersion {
     Two,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum DataType {
     Byte = 0x1400,
@@ -15,7 +15,7 @@ pub enum DataType {
     Float = 0x1406,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum BufferTarget {
     ArrayBuffer = 0x8892,
@@ -24,7 +24,7 @@ pub enum BufferTarget {
     UniformBuffer = 0x8A11,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum BufferUsage {
     StreamDraw = 0x88E0,
@@ -32,7 +32,7 @@ pub enum BufferUsage {
     DynamicDraw = 0x88E8,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum BeginMode {
     Points = 0x0000,
@@ -44,7 +44,7 @@ pub enum BeginMode {
     TriangleFan = 0x0006,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 //All of them - even though we have API's to use some separately too
 //For example awsm_texture_set_wrap(), awsm_texture_set_mag_filter() &
@@ -63,7 +63,7 @@ pub enum TextureParameterName {
     CompareFunc = 0x884D,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureWrapTarget {
     S = 0x2802,
@@ -71,7 +71,7 @@ pub enum TextureWrapTarget {
     R = 0x8072,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureWrapMode {
     Repeat = 0x2901,
@@ -79,14 +79,14 @@ pub enum TextureWrapMode {
     MirroredRepeat = 0x8370,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureMagFilter {
     Nearest = 0x2600,
     Linear = 0x2601,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureMinFilter {
     Nearest = 0x2600,
@@ -97,7 +97,7 @@ pub enum TextureMinFilter {
     LinearMipMapLinear = 0x2703,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureTarget {
     Texture2d = 0x0DE1,
@@ -106,7 +106,7 @@ pub enum TextureTarget {
     CubeMap = 0x8513,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureCubeFace {
     PositiveX = 0x8515,
@@ -117,7 +117,7 @@ pub enum TextureCubeFace {
     NegativeZ = 0x851A,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureQuery {
     //Not actually totally sure that these are queries - but looks like it?
@@ -128,7 +128,7 @@ pub enum TextureQuery {
     MaxCubeTextureSize = 0x851C,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum TextureUnit {
     Texture0 = 0x84C0,
@@ -166,7 +166,7 @@ pub enum TextureUnit {
     ActiveTexture = 0x84E0,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum PixelFormat {
     //WebGL1 and 2
@@ -212,7 +212,7 @@ pub enum PixelFormat {
     Rgb16f = 0x881B,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum ClearBufferMask {
     DepthBufferBit = 0x00000100,
@@ -220,7 +220,7 @@ pub enum ClearBufferMask {
     ColorBufferBit = 0x00004000,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum GlToggle {
     Blend = 0x0BE2,
@@ -235,7 +235,7 @@ pub enum GlToggle {
     RasterizerDiscard = 0x8C89,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum GlQuery {
     FragmentShader = 0x8B30,
@@ -252,7 +252,7 @@ pub enum GlQuery {
     BlendColor = 0x8005,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum CmpFunction {
     Never = 0x0200,
@@ -265,7 +265,7 @@ pub enum CmpFunction {
     Always = 0x0207,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum BlendEquation {
     Add = 0x8006,
@@ -275,7 +275,7 @@ pub enum BlendEquation {
     Max = 0x8008,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum BlendFactor {
     Zero = 0,
@@ -294,7 +294,7 @@ pub enum BlendFactor {
     OneMinusConstantAlpha = 0x8004,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum UniformBlockQuery {
     BindingPoint = 0x8A3F,
@@ -305,7 +305,7 @@ pub enum UniformBlockQuery {
     ReferencedByFragmentShader = 0x8A46,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum UniformBlockActiveQuery {
     Type = 0x8A37,
@@ -317,7 +317,7 @@ pub enum UniformBlockActiveQuery {
     IsRowMajor = 0x8A3E,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum WebGlSpecific {
     UnpackFlipY = 0x9240,
@@ -327,7 +327,7 @@ pub enum WebGlSpecific {
     BrowserDefault = 0x9244,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum UniformDataType {
     FloatVec2 = 0x8B50,
@@ -365,7 +365,7 @@ pub enum UniformDataType {
     UnsignedInt24_8 = 0x84FA,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum ShaderQuery {
     DeleteStatus = 0x8B80,
@@ -373,14 +373,14 @@ pub enum ShaderQuery {
     ShaderType = 0x8B4F,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum ShaderType {
     Fragment = 0x8B30,
     Vertex = 0x8B31,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]
 pub enum ProgramQuery {
     DeleteStatus = 0x8B80,

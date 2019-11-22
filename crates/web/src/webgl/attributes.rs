@@ -4,7 +4,7 @@ use web_sys::WebGlProgram;
 use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
 
 //ATTRIBUTES
-
+#[derive(Debug)]
 pub struct AttributeOptions {
     pub size: u8, //according to spec, must be 1,2,3,4
     pub data_type: DataType,

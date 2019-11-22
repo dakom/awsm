@@ -5,6 +5,7 @@ use web_sys::OesVertexArrayObject;
 use web_sys::WebGlVertexArrayObject;
 use web_sys::{WebGl2RenderingContext, WebGlRenderingContext};
 
+#[derive(Debug)]
 pub struct VertexArray<'a> {
     pub attribute_name: &'a str,
     pub buffer_id: Id,
