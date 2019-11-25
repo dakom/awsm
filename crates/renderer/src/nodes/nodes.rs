@@ -22,18 +22,19 @@ pub enum NodeData {
 }
 
 impl Renderer {
-    pub fn add_node(&mut self, data:NodeData, parent:Option<Key>, translation: Option<Vector3>, rotation: Option<Quaternion>, scale: Option<Vector3>) {
+    pub fn add_node(&mut self, data:NodeData, parent:Option<Key>, translation: Option<Vector3>, rotation: Option<Quaternion>, scale: Option<Vector3>) -> Key {
         add_node(&mut self.world.borrow_mut(), data, parent, translation, rotation, scale)
     }
 }
 
 //Mostly for internal use - but can also be used to share the ECS outside of renderer
-pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation: Option<Vector3>, rotation: Option<Quaternion>, scale: Option<Vector3>) {
+pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation: Option<Vector3>, rotation: Option<Quaternion>, scale: Option<Vector3>) -> Key {
     let translation = translation.unwrap_or_default();
     let rotation = rotation.unwrap_or_default();
     let scale = scale.unwrap_or(Vector3::new(1.0, 1.0, 1.0));
     let local_matrix = Matrix4::from_trs(&translation, &rotation, &scale);
     let world_matrix = Matrix4::default();
+    let mut node:Option<Key> = None;
 
     if let Some(parent) = parent {
         //TODO - re-arrange all the nodes?
@@ -59,7 +60,7 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                 mut local_matrices,
                 mut world_matrices,
             )| {
-                entities.add_entity(
+                node = Some(entities.add_entity(
                     (
                         &mut nodes,
                         &mut translations,
@@ -76,7 +77,7 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                         LocalMatrix(local_matrix),
                         WorldMatrix(world_matrix),
                     )
-                );
+                ));
             });
         }
         NodeData::Camera(projection_matrix) => {
@@ -102,7 +103,7 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                 mut local_matrices,
                 mut world_matrices,
             )| {
-                entities.add_entity(
+                node = Some(entities.add_entity(
                     (
                         &mut nodes,
                         &mut camera_views, 
@@ -123,7 +124,7 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                         LocalMatrix(local_matrix),
                         WorldMatrix(world_matrix),
                     )
-                );
+                ));
             });
         }
 
@@ -147,7 +148,7 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                 mut local_matrices,
                 mut world_matrices,
             )| {
-                entities.add_entity(
+                node = Some(entities.add_entity(
                     (
                         &mut nodes,
                         &mut primitives, 
@@ -166,8 +167,10 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                         LocalMatrix(local_matrix),
                         WorldMatrix(world_matrix),
                     )
-                );
+                ));
             });
         }
     }
+
+    node.unwrap()
 }

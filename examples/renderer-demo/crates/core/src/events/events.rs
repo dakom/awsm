@@ -34,6 +34,10 @@ pub struct WindowSize {
 #[derive(Serialize, Deserialize)]
 pub struct CameraSettings {
     pub style: u32,
+    pub xmag: Option<f64>,
+    pub ymag: Option<f64>,
+    pub znear: Option<f64>,
+    pub zfar: Option<f64>,
 }
 
 

@@ -23,7 +23,11 @@ interface WindowSize{
 }
 
 export interface CameraSettings {
-    style: CameraStyle
+    style: CameraStyle,
+    xmag?: number,
+    ymag?: number,
+    znear?: number,
+    zfar?: number
 }
 
 export enum CameraStyle {

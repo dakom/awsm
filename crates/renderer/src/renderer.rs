@@ -17,7 +17,7 @@ pub struct Renderer {
     pub webgl:Rc<RefCell<WebGl2Renderer>>,
     pub world: Rc<RefCell<World>>,
 
-    camera_buffer_id: Id,
+    pub(crate) camera_buffer_id: Id,
 }
 
 impl Renderer {
@@ -54,28 +54,7 @@ impl Renderer {
         ]);
     }
 
-    fn update_camera_ubo(&mut self) {
-        let world = self.world.borrow_mut();
-        let webgl = self.webgl.borrow_mut();
 
-        //TODO - only do if marked as dirty
-        world.run::<(&CameraView, &CameraProjection), _>(|(views, projs)| {
-            if let Some((view, proj)) = (views, projs).iter().next() {
-                let view = &view.0;
-                let projection = &proj.0;
-                
-                let camera = vec![view.to_vec_f32(), projection.to_vec_f32()].concat();
-                webgl.upload_buffer(
-                    self.camera_buffer_id,
-                    BufferData::new(
-                        &camera,
-                        BufferTarget::UniformBuffer,
-                        BufferUsage::DynamicDraw,
-                    ),
-                ).unwrap();
-            }
-        });
-    }
     fn update_transforms(&mut self) {
         let mut webgl = self.webgl.borrow_mut();
         let world = self.world.borrow_mut();

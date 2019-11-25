@@ -4,10 +4,11 @@ use std::convert::TryInto;
 use awsm_renderer::Renderer;
 use awsm_renderer::gltf::loader::{load_gltf};
 use awsm_renderer::nodes::{NodeData};
-use super::events::*;
+use awsm_renderer::camera::{get_orthographic_projection};
+use super::events;
 use super::event_sender::EventSender;
 use super::{BridgeEventIndex};
-use crate::state::*;
+use crate::state::{State, self};
 use awsm_renderer::transform::{Vector3, Matrix4, TransformValues};
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -21,7 +22,7 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, state: Rc<RefCell<State>>, 
     match evt_type {
         BridgeEventIndex::WindowSize =>
         {
-            let window_size:WindowSize = serde_wasm_bindgen::from_value(evt_data)?;
+            let window_size:events::WindowSize = serde_wasm_bindgen::from_value(evt_data)?;
             state.borrow_mut().window_size = window_size;
             update_view(state, renderer)?;
         },
@@ -49,11 +50,21 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, state: Rc<RefCell<State>>, 
 
         BridgeEventIndex::CameraSettings =>
         {
-            let camera_settings:CameraSettings = serde_wasm_bindgen::from_value(evt_data)?;
-            let camera_style:CameraStyle = camera_settings.style.try_into()?;
-            state.borrow_mut().camera_style = camera_style;
+            let camera_settings:events::CameraSettings = serde_wasm_bindgen::from_value(evt_data)?;
+            match camera_settings.style.try_into()? {
+                events::CameraStyle::Orthographic => {
+                    state.borrow_mut().camera_settings = Some(state::CameraSettings::Orthographic(state::OrthographicCamera{
+                        xmag: camera_settings.xmag.unwrap(),
+                        ymag: camera_settings.ymag.unwrap(),
+                        znear: camera_settings.znear.unwrap(),
+                        zfar: camera_settings.zfar.unwrap(),
+                    }));
+                    update_view(state, renderer)?;
+                },
+                events::CameraStyle::Perspective => {
+                }
+            }
 
-            update_view(state, renderer)?;
         },
         _ => 
         {
@@ -69,60 +80,32 @@ fn update_view(state: Rc<RefCell<State>>, renderer:Rc<RefCell<Renderer>>) -> Res
 
     log::info!("TODO - remove previous camera node, or update instead of add if exists!");
 
-    let state = state.borrow();
-    let WindowSize {width, height} = state.window_size;
+    let mut state = state.borrow_mut();
+    let events::WindowSize {width, height} = state.window_size;
     renderer.resize(width, height);
-    match state.camera_style {
-        CameraStyle::Orthographic => {
 
-            /* TODO - pick up next time...
-
-                First attempt to try and construct an orthographic projection based on SCREEN SIZE did not work...
-                However, it seems that an orthographic projection based on the viewport (-1.0 -> 1.0) does work! 
-
-                gotta figure out why the screen-based orthographic camera fails
-            */
-
-            //SCREEN BASED:
-            let projection = Matrix4::new_from_slice(nalgebra::Matrix4::new_orthographic(
-                    0.0,
-                    width as f64,
-                    0.0,
-                    height as f64,
-                    0.01,
-                    1000.0,
-            ).as_slice());
-
-            //VIEWPORT BASED:
-            let projection = Matrix4::new_from_slice(nalgebra::Matrix4::new_orthographic(
-                    -1.0,
-                    1.0,
-                    -1.0,
-                    1.0,
-                    0.01,
-                    1.0,
-            ).as_slice());
-
+    match state.camera_settings.as_ref().unwrap() {
+        state::CameraSettings::Orthographic(settings) => {
+            let projection = get_orthographic_projection(settings.xmag, settings.ymag, settings.znear, settings.zfar);
             let camera_translation = Vector3::new(0.0, 0.0, -1.0);
 
-            //should be able to do this, but first gotta add inverting in nodes.rs:
+            //TODO: should be able to do this, but first gotta add inverting in nodes.rs:
             //let camera_translation = Vector3::new(0.0, 0.0, 1.0);
 
-            renderer.add_node(NodeData::Camera(projection), None, Some(camera_translation), None, None);
+            match(state.camera_node) {
+                None => {
+                    state.camera_node = Some(renderer.add_node(NodeData::Camera(projection), None, Some(camera_translation), None, None));
+                },
+                Some(_) => {
+                    renderer.update_camera_projection(None, projection.as_ref())
+                }
+            };
         },
-        CameraStyle::Perspective => log::info!("TODO: perspective"),
+        state::CameraSettings::Perspective(settings) => {
+           log::info!("TODO: perspective");
+        }
     };
 
-    /* Orthographic example
-        let camera_mat = Matrix4::new_orthographic(
-                    0.0,
-                    camera_width as f32,
-                    0.0,
-                    camera_height as f32,
-                    0.0,
-                    1.0,
-                );
-    */
 
     /* Perspective example
         

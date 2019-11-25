@@ -9,8 +9,8 @@
     "bundle:local": "npm run clean && npm run bundle:ci && npm run _copy:static",
     "bundle:ci": "npm run _rust:release && npm run _webpack:release",
     "test": "npm-run-all -p _typescript:test _rust:core:test",
-	"//LIB": "",
-	"_rust:lib:clean": "rimraf ../../crates/renderer/target",
+    "//LIB": "",
+    "_rust:lib:clean": "rimraf ../../crates/renderer/target",
     "//TYPESCRIPT": "",
     "_typescript:test": "jest",
     "//WEBPACK": "",
@@ -49,6 +49,7 @@
   },
   "homepage": "https://github.com/dakom/my_app#readme",
   "devDependencies": {
+    "@types/dat.gui": "^0.7.5",
     "@types/jest": "^24.0.21",
     "cors": "^2.8.5",
     "cpy-cli": "^2.0.0",
