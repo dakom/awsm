@@ -21,5 +21,15 @@
                 </a>
         </div>
         <div id="ui"></div>
+        <script type="module">
+            //this allows using --target web via bindgen, and avoiding the need to go through webpack
+            //the callback will get the full wasm module - and can then interpret it by the imported typescript
+            //it will be available to the webpack code since the webpack js is set to "defer"
+            import init,* as wasm from './wasm/core/pkg/my_core.js';
+            export function load_wasm(cb) {
+                init().then(() => cb(wasm));
+            }
+            window.load_wasm = load_wasm;
+         </script>
     </body>
 </html>

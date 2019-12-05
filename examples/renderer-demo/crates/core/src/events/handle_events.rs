@@ -12,7 +12,7 @@ use crate::state::{State, self};
 use awsm_renderer::transform::{Vector3, Matrix4, TransformValues};
 use std::rc::Rc;
 use std::cell::RefCell;
-use wasm_bindgen_futures::futures_0_3::future_to_promise;
+use wasm_bindgen_futures::future_to_promise;
 //if result is Ok(true) then send the updated state back
 
 pub fn handle_event(evt_type:u32, evt_data: JsValue, state: Rc<RefCell<State>>, renderer:Rc<RefCell<Renderer>>, event_sender:Rc<EventSender>) -> Result<(), JsValue> 

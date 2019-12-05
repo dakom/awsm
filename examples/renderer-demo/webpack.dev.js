@@ -3,6 +3,7 @@ const path = require('path');
 const webpack = require('webpack');
 const ForkTsCheckerNotifierWebpackPlugin = require('fork-ts-checker-notifier-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
@@ -21,6 +22,9 @@ module.exports = {
         new HtmlWebpackPlugin({
             inject: true,
             template: 'typescript/entry/index.html'
+        }),
+        new ScriptExtHtmlWebpackPlugin({
+            defaultAttribute: 'defer'
         }),
         //new webpack.HotModuleReplacementPlugin()
     ],

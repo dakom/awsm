@@ -2,6 +2,7 @@
 const path = require('path');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
@@ -40,6 +41,10 @@ module.exports = {
                 minifyCSS: true,
                 minifyURLs: true,
             },
+        }),
+
+        new ScriptExtHtmlWebpackPlugin({
+            defaultAttribute: 'defer'
         }),
     ],
     module: {

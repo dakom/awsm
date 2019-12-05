@@ -12,7 +12,7 @@ use nalgebra::{Isometry3, Matrix4, Perspective3, Point3, Vector3};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::futures_0_3::future_to_promise;
+use wasm_bindgen_futures::future_to_promise;
 use web_sys::HtmlImageElement;
 use web_sys::{Document, HtmlElement, Window};
 

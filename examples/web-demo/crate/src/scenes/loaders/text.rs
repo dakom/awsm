@@ -3,7 +3,7 @@ use awsm_web::loaders::{fetch};
 use gloo_events::EventListener;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::futures_0_3::future_to_promise;
+use wasm_bindgen_futures::future_to_promise;
 use web_sys::{Document, Element, HtmlElement, Window};
 
 pub fn start(_window: Window, document: Document, body: HtmlElement) -> Result<(), JsValue> {
