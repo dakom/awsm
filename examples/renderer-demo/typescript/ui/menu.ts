@@ -14,6 +14,8 @@ export const init_menu = async () => {
     const gui = new dat.GUI();
     const model_data:Array<ModelData> = await (await fetch(samples_path("model-index.json"))).json();
 
+    gui.add({ CLEAR:() => send_bridge_event(BridgeEvent.Clear)}, "CLEAR");
+
     init_model_menu (model_data);
     init_camera_menu ();
 
@@ -30,6 +32,7 @@ export const init_menu = async () => {
         let model_name = model_names[debug_settings.model_idx];
 
         const reload = () => {
+            set_state("loading");
             const model_idx = model_names.indexOf(model_name);
             const variant_idx = variant_names[model_idx].indexOf(variant_name);
             const variant_value = variant_values[model_idx][variant_idx];
@@ -37,7 +40,6 @@ export const init_menu = async () => {
             const gltf_path = samples_path(`${model_name}/${variant_name}`);
 
             //console.log("model index is", model_idx, "variant index is", variant_idx);
-            set_state("loading");
             send_bridge_event([BridgeEvent.LoadGltf, `${gltf_path}/${variant_value}`]);
         }
 

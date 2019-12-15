@@ -11,6 +11,7 @@ pub enum BridgeEventIndex {
     LoadGltf,
     GltfLoaded,
     CameraSettings,
+    Clear
 }
 
 //Let's us get a BridgeEvent from the number which is sent from JS

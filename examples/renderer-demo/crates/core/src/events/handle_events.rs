@@ -73,6 +73,10 @@ pub fn handle_event(evt_type:u32, evt_data: JsValue, state: Rc<RefCell<State>>, 
             }
 
         },
+        BridgeEventIndex::Clear => 
+        {
+            info!("clearing all");
+        }
         _ => 
         {
             info!("unknown event!");
