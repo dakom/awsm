@@ -141,7 +141,6 @@ pub fn process_mesh(state:&mut ProcessState, mesh:&gltf::mesh::Mesh) -> Result<(
             &vertex_arrays
         )?;
 
-        //TODO - remove the initial transform nudge... requires being able to nudge the camera instead though ;)
         add_node(state.world, NodeData::Primitive(Primitive{shader_id, vao_id, draw_info, }), None, None, None, None);
     }
 

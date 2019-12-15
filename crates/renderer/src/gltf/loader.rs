@@ -14,7 +14,7 @@ use std::cell::RefCell;
 /// 3. Some error checking is removed since the web api does it inherently (e.g. mime type)
 /// 4. Adds awsm as a dependency
 ///
-/// Note: instead of having awsm as a dependency, the loaders could accept 
+/// instead of having awsm as a dependency, the loaders could accept 
 /// generic functions like Fn(&str) -> impl Future<Output=DataResult>
 
 type DataResult = Result<Vec<u8>, GltfError>;

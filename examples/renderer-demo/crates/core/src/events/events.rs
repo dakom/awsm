@@ -38,6 +38,8 @@ pub struct CameraSettings {
     pub ymag: Option<f64>,
     pub znear: Option<f64>,
     pub zfar: Option<f64>,
+    pub aspectRatio: Option<f64>,
+    pub yfov: Option<f64>,
 }
 
 

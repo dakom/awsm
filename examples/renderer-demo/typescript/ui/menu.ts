@@ -112,6 +112,10 @@ export const init_menu = async () => {
             }
 
             const setup_perspective = () => { 
+                add_camera_menu_option("aspectRatio") (1.0);
+                add_camera_menu_option("yfov") (1.0);
+                add_camera_menu_option("znear") (0.01);
+                add_camera_menu_option("zfar") (1.0);
             }
 
             if (style === "orthographic") {
@@ -130,10 +134,18 @@ export const init_menu = async () => {
                         znear: opts.znear,
                         zfar: opts.zfar,
                     }]) 
+                } else if(style === "perspective") {
+                    send_bridge_event([BridgeEvent.CameraSettings, {
+                        style: CameraStyle.PERSPECTIVE,
+                        aspectRatio: opts.aspectRatio,
+                        yfov: opts.yfov,
+                        znear: opts.znear,
+                        zfar: opts.zfar,
+                    }]) 
                 }
             }
         }
 
-        reset_camera("orthographic");
+        reset_camera(debug_settings.camera_style);
     }
 }

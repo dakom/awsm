@@ -15,21 +15,28 @@ export type ValidBridgeEvents =
     | [BridgeEvent.WindowSize, WindowSize]
     | BridgeEvent.GltfLoaded
     | [BridgeEvent.LoadGltf, string]
-    | [BridgeEvent.CameraSettings, CameraSettings ]
+    | [BridgeEvent.CameraSettings, OrthographicCameraSettings | PerspectiveCameraSettings]
 
 interface WindowSize{
     width: number;
     height: number;
 }
 
-export interface CameraSettings {
+export interface OrthographicCameraSettings {
     style: CameraStyle,
-    xmag?: number,
-    ymag?: number,
-    znear?: number,
-    zfar?: number
+    xmag: number,
+    ymag: number,
+    znear: number,
+    zfar: number
 }
 
+export interface PerspectiveCameraSettings {
+    style: CameraStyle,
+    aspectRatio: number;
+    yfov: number;
+    znear: number,
+    zfar: number
+}
 export enum CameraStyle {
     ORTHOGRAPHIC,
     PERSPECTIVE

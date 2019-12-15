@@ -20,4 +20,8 @@ pub struct OrthographicCamera {
 }
 
 pub struct PerspectiveCamera {
+    pub aspectRatio: f64,
+    pub yfov: f64,
+    pub znear: f64,
+    pub zfar: f64,
 }

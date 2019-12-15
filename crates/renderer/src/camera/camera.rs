@@ -19,34 +19,37 @@ pub fn get_orthographic_projection(xmag:f64, ymag: f64, znear: f64, zfar: f64) -
     projection
 }
 
-/*
+pub fn get_perspective_projection(aspect_ratio:f64, yfov: f64, znear: f64, zfar: Option<f64>) -> Matrix4 {
+    let mut projection = Matrix4::default();
+    let mut values = projection.as_mut();
 
-export const getPerspectiveProjection = (settings:Partial<PerspectiveCameraSettings>) => {
-    const values = createMat4(); 
-    const a = settings.aspectRatio === undefined && settings.canvas !== undefined
-            ?   settings.canvas.clientWidth / settings.canvas.clientHeight
-            :   settings.aspectRatio;
-    const y = settings.yfov;
-    const n = settings.znear;
-    const f = settings.zfar; //if this is undefined, use infinite projection
+    match zfar {
+        None => {
+            values[10] = -1.0;
+            values[14] = (-2.0 * znear);
+        },
+        Some(zfar) => { 
+            values[10] = (zfar+znear)/(znear-zfar);
+            values[14] = (2.0 * zfar * znear)/(znear - zfar);
+        }
+    };
 
-    values[0] = 1/(a * Math.tan(.5 * y));
-    values[5] = 1/(Math.tan(.5 * y));
-    values[10] = f === undefined ? -1 : (f+n)/(n-f);
-    values[11] = -1;
-    values[14] = f === undefined ? (-2 * n) : (2 * f * n)/(n - f);
+    values[0] = 1.0/(aspect_ratio * (0.5 * yfov).tan());
+    values[5] = 1.0/((0.5 * yfov).tan());
+    values[11] = -1.0;
 
-
-    return values; 
+    projection
 }
-*/
 
 impl Renderer {
     //if node is supplied, will update the camera at that node
     //otherwise, it is the first camera node found
-    pub fn update_camera_projection(&mut self, node:Option<Key>, projection:&[f64]) {
+    pub fn update_camera_view_and_projection(&mut self, node:Option<Key>, projection:&[f64]) {
+        //TODO!
+    }
+
+    pub fn update_camera_projection(&mut self, projection:&[f64]) {
         let world = self.world.borrow_mut();
-        //TODO - if node is supplied, only use that 
         world.run::<(&mut CameraProjection), _>(|mut projs| {
             if let Some(proj) = projs.iter().next() {
                 proj.0.as_mut().copy_from_slice(projection);
