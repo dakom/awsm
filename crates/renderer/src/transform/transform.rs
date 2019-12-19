@@ -205,7 +205,7 @@ impl std::ops::Mul<Matrix4> for Matrix4 {
 pub trait TransformValues: AsRef<[f64]> + AsMut<[f64]> + Default {
     fn len(self: &Self) -> usize;
 
-    //TODO: cache!
+    //TODO: cache! maybe Cow?
     fn to_vec_f32(self: &Self) -> Vec<f32> {
         self.as_ref().iter().map(|n| *n as f32).collect()
     }

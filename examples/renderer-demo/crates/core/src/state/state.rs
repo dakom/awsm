@@ -1,4 +1,5 @@
 use crate::events;
+use awsm_renderer::transform::Vector3;
 use shipyard::*;
 
 pub struct State {
@@ -17,6 +18,7 @@ pub struct OrthographicCamera {
     pub ymag: f64,
     pub znear: f64,
     pub zfar: f64,
+    pub translation: Vector3,
 }
 
 pub struct PerspectiveCamera {
@@ -24,4 +26,5 @@ pub struct PerspectiveCamera {
     pub yfov: f64,
     pub znear: f64,
     pub zfar: f64,
+    pub translation: Vector3,
 }

@@ -22,8 +22,13 @@ pub enum NodeData {
 }
 
 impl Renderer {
+    /// Adds a node to the scene
     pub fn add_node(&mut self, data:NodeData, parent:Option<Key>, translation: Option<Vector3>, rotation: Option<Quaternion>, scale: Option<Vector3>) -> Key {
         add_node(&mut self.world.borrow_mut(), data, parent, translation, rotation, scale)
+    }
+
+    pub fn set_node_trs(&mut self, node:Key, translation: Option<Vector3>, rotation: Option<Quaternion>, scale: Option<Vector3>) {
+        //TODO
     }
 }
 
@@ -81,7 +86,7 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
             });
         }
         NodeData::Camera(projection_matrix) => {
-            let camera_view = local_matrix.clone(); //TODO - should be inverse of this, I think?
+            let camera_view = get_view_from_local_mat(&local_matrix);
             world.run::<(
                 EntitiesMut, 
                 &mut Node,

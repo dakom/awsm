@@ -41,27 +41,55 @@ pub fn get_perspective_projection(aspect_ratio:f64, yfov: f64, znear: f64, zfar:
     projection
 }
 
-impl Renderer {
-    //if node is supplied, will update the camera at that node
-    //otherwise, it is the first camera node found
-    pub fn update_camera_view_and_projection(&mut self, node:Option<Key>, projection:&[f64]) {
-        //TODO!
-    }
+pub fn get_view_from_local_mat(local_matrix:&Matrix4) -> Matrix4 {
+    //TODO - should be inverse of this, I think?
+    local_matrix.clone()
+}
 
-    pub fn update_camera_projection(&mut self, projection:&[f64]) {
+impl Renderer {
+    /// if no node is provided then the first node will be used 
+    pub fn update_camera_projection(&mut self, node: Option<Key>, projection:&[f64]) {
         let world = self.world.borrow_mut();
-        world.run::<(&mut CameraProjection), _>(|mut projs| {
-            if let Some(proj) = projs.iter().next() {
-                proj.0.as_mut().copy_from_slice(projection);
+        world.run::<&mut CameraProjection, _>(|mut projs| {
+            match node {
+                Some(entity) => {
+                    if let Some(proj) = (&mut projs).get(entity).iter_mut().next() {
+                        proj.0.as_mut().copy_from_slice(projection);
+                    } 
+                },
+                None => {
+                    if let Some(proj) = projs.iter().next() {
+                        proj.0.as_mut().copy_from_slice(projection);
+                    }
+                }
+            }
+        });
+    }
+    /// if no node is provided then the first node will be used 
+    pub fn update_camera_view(&mut self, node: Option<Key>) {
+        let world = self.world.borrow_mut();
+        world.run::<(&mut CameraView, &LocalMatrix), _>(|(mut views, local_mats)| {
+
+            match node {
+                Some(entity) => {
+                    if let Some((view, local_mat)) = (&mut views, &local_mats).get(entity).iter_mut().next() {
+                        (*view).0 = get_view_from_local_mat(&local_mat.0);
+                    } 
+                },
+                None => {
+                    if let Some((view, local_mat)) = (&mut views, &local_mats).iter().next() {
+                        (*view).0 = get_view_from_local_mat(&local_mat.0);
+                    }
+                }
             }
         });
     }
 
-    pub(crate) fn update_camera_ubo(&mut self) {
+    /// if no node is provided then the first node will be used 
+    pub(crate) fn update_camera_ubo(&mut self, node:Option<Key>) {
         let world = self.world.borrow_mut();
         let webgl = self.webgl.borrow_mut();
 
-        //TODO - only do if marked as dirty
         world.run::<(&CameraView, &CameraProjection), _>(|(views, projs)| {
             if let Some((view, proj)) = (views, projs).iter().next() {
                 let view = &view.0;

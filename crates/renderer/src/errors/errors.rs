@@ -141,13 +141,3 @@ impl From<Error> for gltf::Error {
         gltf::Error::from(std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
     }
 }
-
-/* TODO: this doesn't work, but maybe it could!
- * idea is to consolidate str and String into one impl
-impl From<Borrow<str>> for Error
-{
-    fn from(err: &str) -> Self {
-        Error::String(String::from(err))
-    }
-}
-*/

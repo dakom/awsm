@@ -1,7 +1,7 @@
 import {samples_path} from "@utils/path";
 import dat from "dat.gui";
 import {debug_settings} from "@config/config";
-import {BridgeEvent, send_bridge_event, CameraStyle} from "@events/events"
+import {BridgeEvent, send_event, CameraStyle} from "@events/events"
 import { set_state } from "@state/state";
 
 /*
@@ -14,7 +14,7 @@ export const init_menu = async () => {
     const gui = new dat.GUI();
     const model_data:Array<ModelData> = await (await fetch(samples_path("model-index.json"))).json();
 
-    gui.add({ CLEAR:() => send_bridge_event(BridgeEvent.Clear)}, "CLEAR");
+    gui.add({ CLEAR:() => send_event(BridgeEvent.Clear)}, "CLEAR");
 
     init_model_menu (model_data);
     init_camera_menu ();
@@ -40,7 +40,7 @@ export const init_menu = async () => {
             const gltf_path = samples_path(`${model_name}/${variant_name}`);
 
             //console.log("model index is", model_idx, "variant index is", variant_idx);
-            send_bridge_event([BridgeEvent.LoadGltf, `${gltf_path}/${variant_value}`]);
+            send_event([BridgeEvent.LoadGltf, `${gltf_path}/${variant_value}`]);
         }
 
         const opts = {
@@ -106,11 +106,23 @@ export const init_menu = async () => {
                     });
 
             }
+            const add_camera_menu_slider = (label:string) => (min:number) => (max:number) => (value:number) => {
+                opts[label] = value;
+                cameraFolder
+                    .add(opts, label, min, max)
+                    .onChange(value => { 
+                        send_camera_settings();
+                    });
+
+            }
             const setup_orthographic = () => { 
                 add_camera_menu_option("xmag") (1.0);
                 add_camera_menu_option("ymag") (1.0);
                 add_camera_menu_option("znear") (0.01);
                 add_camera_menu_option("zfar") (1.0);
+                add_camera_menu_slider("positionX") (-100.0) (100.0) (0.0);
+                add_camera_menu_slider("positionY") (-100.0) (100.0) (0.0);
+                add_camera_menu_slider("positionZ") (-100.0) (100.0) (0.0);
             }
 
             const setup_perspective = () => { 
@@ -118,6 +130,9 @@ export const init_menu = async () => {
                 add_camera_menu_option("yfov") (1.0);
                 add_camera_menu_option("znear") (0.01);
                 add_camera_menu_option("zfar") (1.0);
+                add_camera_menu_slider("positionX") (-100.0) (100.0) (0.0);
+                add_camera_menu_slider("positionY") (-100.0) (100.0) (0.0);
+                add_camera_menu_slider("positionZ") (-100.0) (100.0) (-1.0); //TODO - make 1 when view inverting is added
             }
 
             if (style === "orthographic") {
@@ -129,20 +144,26 @@ export const init_menu = async () => {
 
             function send_camera_settings() {
                 if(style === "orthographic") {
-                    send_bridge_event([BridgeEvent.CameraSettings, {
+                    send_event([BridgeEvent.CameraSettings, {
                         style: CameraStyle.ORTHOGRAPHIC,
                         xmag: opts.xmag,
                         ymag: opts.ymag,
                         znear: opts.znear,
                         zfar: opts.zfar,
+                        positionX: opts.positionX,
+                        positionY: opts.positionY,
+                        positionZ: opts.positionZ,
                     }]) 
                 } else if(style === "perspective") {
-                    send_bridge_event([BridgeEvent.CameraSettings, {
+                    send_event([BridgeEvent.CameraSettings, {
                         style: CameraStyle.PERSPECTIVE,
                         aspectRatio: opts.aspectRatio,
                         yfov: opts.yfov,
                         znear: opts.znear,
                         zfar: opts.zfar,
+                        positionX: opts.positionX,
+                        positionY: opts.positionY,
+                        positionZ: opts.positionZ,
                     }]) 
                 }
             }
