@@ -6,7 +6,7 @@ use std::convert::TryFrom;
 //the order must match typescript!
 #[derive(FromPrimitive)]
 #[repr(u32)]
-pub enum BridgeEventIndex {
+pub enum BridgeEvent {
     WindowSize,
     LoadGltf,
     GltfLoaded,
@@ -15,7 +15,7 @@ pub enum BridgeEventIndex {
 }
 
 //Let's us get a BridgeEvent from the number which is sent from JS
-impl TryFrom<u32> for BridgeEventIndex {
+impl TryFrom<u32> for BridgeEvent {
     type Error = &'static str;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
@@ -41,6 +41,9 @@ pub struct CameraSettings {
     pub zfar: Option<f64>,
     pub aspectRatio: Option<f64>,
     pub yfov: Option<f64>,
+    pub positionX: f64,
+    pub positionY: f64,
+    pub positionZ: f64,
 }
 
 

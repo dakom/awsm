@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use super::{BridgeEventIndex};
+use super::{BridgeEvent};
 
 
 #[derive(Clone)]
@@ -14,9 +14,9 @@ impl EventSender {
         }
     }
 
-    pub fn send(&self, evt:BridgeEventIndex) {
+    pub fn send(&self, evt:BridgeEvent) {
         let evt = match evt {
-            BridgeEventIndex::GltfLoaded => Some((BridgeEventIndex::GltfLoaded, JsValue::UNDEFINED)),
+            BridgeEvent::GltfLoaded => Some((BridgeEvent::GltfLoaded, JsValue::UNDEFINED)),
             _ => None 
         };
         
