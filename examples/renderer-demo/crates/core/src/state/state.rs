@@ -1,6 +1,6 @@
 use crate::events;
 use awsm_renderer::transform::Vector3;
-use shipyard::*;
+use shipyard::prelude::*;
 
 pub struct State {
     pub camera_settings: Option<CameraSettings>,

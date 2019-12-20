@@ -1,4 +1,4 @@
-use shipyard::*;
+use shipyard::prelude::*;
 pub use crate::primitives::Primitive;
 pub use crate::transform::*;
 pub use crate::camera::*;
@@ -12,6 +12,6 @@ pub fn register_components(world:&mut World) {
     world.register::<Translation>();
     world.register::<Rotation>();
     world.register::<Scale>();
-    world.register::<LocalMatrix>();
-    world.register::<WorldMatrix>();
+    world.register::<LocalTransform>();
+    world.register::<WorldTransform>();
 }

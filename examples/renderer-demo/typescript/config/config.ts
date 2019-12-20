@@ -11,7 +11,7 @@ interface DebugSettings {
 }
 
 const devDebugSettings:DebugSettings = {
-    model_idx: 52, //Triangle
+    model_idx: 51, //Triangle
     variant_idx: 0, //Embedded
     //variant_idx: 1, //Embedded
     camera_style: "perspective"

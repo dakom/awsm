@@ -7,7 +7,7 @@ use crate::components::*;
 use crate::primitives::PrimitiveDraw;
 use crate::gltf::processor::{ProcessState, process_scene};
 
-use shipyard::*;
+use shipyard::prelude::*;
 
 pub struct Renderer {
     //This is Rc<RefCell> because other renderers might want to also own the context
@@ -59,8 +59,8 @@ impl Renderer {
         let mut webgl = self.webgl.borrow_mut();
         let world = self.world.borrow_mut();
 
-        //Update all the LocalMatrices if translation, rotation, or scale changed
-        world.run::<(&Translation, &Rotation, &Scale, &mut LocalMatrix), _>(|(translations, rotations, scales, local_matrices)| {
+        //Update all the LocalMatrices
+        world.run::<(&Translation, &Rotation, &Scale, &mut LocalTransform), _, _>(|(translations, rotations, scales, local_matrices)| {
             for (translation, rotation, scale, mut local_matrix) in (translations, rotations, scales, local_matrices).iter() {
                 let local_matrix = &mut local_matrix.0;
                 let translation = &translation.0;
@@ -70,8 +70,8 @@ impl Renderer {
             }
         });
 
-        //Update all the WorldMatrices if any ancestor changed 
-        world.run::<(&Node, &LocalMatrix, &mut WorldMatrix), _>(|(nodes, local_matrices, world_matrices)| {
+        //Update all the WorldMatrices
+        world.run::<(&Node, &LocalTransform, &mut WorldTransform), _, _>(|(nodes, local_matrices, world_matrices)| {
             let mut parent_matrix = Matrix4::default();
             let mut child_index = 0;
             for (node, local_matrix, world_matrix) in (nodes, local_matrices, world_matrices).iter() {
@@ -100,7 +100,7 @@ impl Renderer {
         let mut webgl = self.webgl.borrow_mut();
         let world = self.world.borrow_mut();
 
-        world.run::<(&Primitive, &WorldMatrix), _>(|(primitives, model_matrices)| {
+        world.run::<(&Primitive, &WorldTransform), _, _>(|(primitives, model_matrices)| {
             for (primitive, model_matrix) in (primitives, model_matrices).iter() {
                 let Primitive{shader_id, vao_id, draw_info} = primitive;
 

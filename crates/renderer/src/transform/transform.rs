@@ -1,8 +1,8 @@
 pub struct Translation(pub Vector3);
 pub struct Rotation(pub Quaternion);
 pub struct Scale(pub Vector3);
-pub struct LocalMatrix(pub Matrix4);
-pub struct WorldMatrix(pub Matrix4);
+pub struct LocalTransform(pub Matrix4);
+pub struct WorldTransform(pub Matrix4);
 
 #[repr(C)]
 #[derive(Clone, PartialEq)]

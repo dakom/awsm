@@ -1,6 +1,6 @@
 use crate::transform::*;
 use crate::renderer::Renderer;
-use shipyard::*;
+use shipyard::prelude::*;
 use awsm_web::webgl::{ WebGl2Renderer, ClearBufferMask, BufferData, BufferTarget, BufferUsage, Id};
 
 pub struct CameraView(pub Matrix4); 
@@ -50,7 +50,7 @@ impl Renderer {
     /// if no node is provided then the first node will be used 
     pub fn update_camera_projection(&mut self, node: Option<Key>, projection:&[f64]) {
         let world = self.world.borrow_mut();
-        world.run::<&mut CameraProjection, _>(|mut projs| {
+        world.run::<&mut CameraProjection, _, _>(|mut projs| {
             match node {
                 Some(entity) => {
                     if let Some(proj) = (&mut projs).get(entity).iter_mut().next() {
@@ -68,7 +68,7 @@ impl Renderer {
     /// if no node is provided then the first node will be used 
     pub fn update_camera_view(&mut self, node: Option<Key>) {
         let world = self.world.borrow_mut();
-        world.run::<(&mut CameraView, &LocalMatrix), _>(|(mut views, local_mats)| {
+        world.run::<(&mut CameraView, &LocalTransform), _, _>(|(mut views, local_mats)| {
 
             match node {
                 Some(entity) => {
@@ -90,7 +90,7 @@ impl Renderer {
         let world = self.world.borrow_mut();
         let webgl = self.webgl.borrow_mut();
 
-        world.run::<(&CameraView, &CameraProjection), _>(|(views, projs)| {
+        world.run::<(&CameraView, &CameraProjection), _, _>(|(views, projs)| {
             if let Some((view, proj)) = (views, projs).iter().next() {
                 let view = &view.0;
                 let projection = &proj.0;

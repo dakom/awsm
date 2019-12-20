@@ -4,7 +4,7 @@ use crate::primitives::*;
 use crate::shaders::compile_shader;
 use super::accessors::AccessorInfo;
 use crate::nodes::*;
-use shipyard::*;
+use shipyard::prelude::*;
 use awsm_web::webgl::{ 
     Id, 
     WebGl2Renderer,

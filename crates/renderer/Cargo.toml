@@ -25,9 +25,9 @@ web-sys = { version = "0.3.32", features = ["HtmlCanvasElement"] }
 js-sys = "0.3.32"
 log = "0.4.8"
 shipyard = { git= "https://github.com/leudz/shipyard.git", features = ["proc"], default-features = false}
-serde = { version = "1.0.103", features = ["derive"], optional = true }
+serde = { version = "1.0.104", features = ["derive"], optional = true }
 awsm_web = { path="../web", version = "0.0.13", features = ["webgl", "loaders"], default-features = false }
-futures = {version = "0.3"}
+futures = "0.3.1"
 
 [dependencies.gltf]
 # path = "../../../gltf"

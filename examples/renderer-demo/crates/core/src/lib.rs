@@ -24,37 +24,24 @@ use web_sys::{HtmlCanvasElement};
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-// enable logging only during debug builds
 cfg_if! {
-    if #[cfg(all(feature = "console_log", debug_assertions))] {
-        fn init_log() {
-            use console_log;
-            console_log::init_with_level(Level::Trace).expect("error initializing log");
-
-            info!("log initiated");
-        }
-    } else {
-        fn init_log() {}
-    }
-}
-
-// enable panic hook only during debug builds
-cfg_if! {
-    if #[cfg(all(feature = "console_error_panic_hook", debug_assertions))] {
-        fn init_panic() {
+    if #[cfg(all(feature = "wasm-logger", feature = "console_error_panic_hook", debug_assertions))] {
+        fn setup() {
+            wasm_logger::init(wasm_logger::Config::default());
             console_error_panic_hook::set_once();
+            log::info!("rust logging enabled!");
         }
     } else {
-        fn init_panic() {}
+        fn setup() {
+            log::info!("rust logging disabled!"); //<-- won't be seen
+        }
     }
 }
 
 // Called by our JS entry point to run the example.
 #[wasm_bindgen]
 pub fn run(canvas:HtmlCanvasElement, window_width: u32, window_height: u32, send_bridge_event:js_sys::Function) -> Result<JsValue, JsValue> {
-    init_panic();
-    init_log();
-
+    setup();
 
     let event_sender = Rc::new(EventSender::new(send_bridge_event));
     let webgl = get_webgl_context_2(&canvas, Some(&WebGlContextOptions{

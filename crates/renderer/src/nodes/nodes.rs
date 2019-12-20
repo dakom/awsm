@@ -1,7 +1,7 @@
 use crate::renderer::Renderer;
 use crate::transform::*;
 use crate::components::*;
-use shipyard::*;
+use shipyard::prelude::*;
 
 pub struct Node {
     //just an idea so far to try and keep flat list... might not pan out
@@ -28,7 +28,23 @@ impl Renderer {
     }
 
     pub fn set_node_trs(&mut self, node:Key, translation: Option<Vector3>, rotation: Option<Quaternion>, scale: Option<Vector3>) {
-        //TODO
+        let world = self.world.borrow_mut();
+
+        world.run::<(&mut Translation, &mut Rotation, &mut Scale), _, _>(
+            |(mut translations, mut rotations, mut scales)| {
+                if let Some((t,r,s)) = (&mut translations, &mut rotations, &mut scales).get(node).iter_mut().next() {
+                    if let Some(translation) = translation {
+                        t.0.copy_from(&translation);
+                    }
+                    if let Some(rotation) = rotation {
+                        r.0.copy_from(&rotation);
+                    }
+                    if let Some(scale) = scale {
+                        s.0.copy_from(&scale);
+                    }
+                }
+            }
+        );
     }
 }
 
@@ -54,9 +70,9 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                 &mut Translation,
                 &mut Rotation,
                 &mut Scale,
-                &mut LocalMatrix,
-                &mut WorldMatrix,
-            ), _>(|(
+                &mut LocalTransform,
+                &mut WorldTransform,
+            ), _, _>(|(
                 mut entities, 
                 mut nodes,
                 mut translations,
@@ -79,8 +95,8 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                         Translation(translation),
                         Rotation(rotation),
                         Scale(scale),
-                        LocalMatrix(local_matrix),
-                        WorldMatrix(world_matrix),
+                        LocalTransform(local_matrix),
+                        WorldTransform(world_matrix),
                     )
                 ));
             });
@@ -95,9 +111,9 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                 &mut Translation,
                 &mut Rotation,
                 &mut Scale,
-                &mut LocalMatrix,
-                &mut WorldMatrix,
-            ), _>(|(
+                &mut LocalTransform,
+                &mut WorldTransform,
+            ), _, _>(|(
                 mut entities, 
                 mut nodes,
                 mut camera_views, 
@@ -126,8 +142,8 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                         Translation(translation),
                         Rotation(rotation),
                         Scale(scale),
-                        LocalMatrix(local_matrix),
-                        WorldMatrix(world_matrix),
+                        LocalTransform(local_matrix),
+                        WorldTransform(world_matrix),
                     )
                 ));
             });
@@ -141,9 +157,9 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                 &mut Translation,
                 &mut Rotation,
                 &mut Scale,
-                &mut LocalMatrix,
-                &mut WorldMatrix,
-            ), _>(|(
+                &mut LocalTransform,
+                &mut WorldTransform,
+            ), _, _>(|(
                 mut entities, 
                 mut nodes,
                 mut primitives,
@@ -169,8 +185,8 @@ pub fn add_node(world:&mut World, data:NodeData, parent:Option<Key>, translation
                         Translation(translation),
                         Rotation(rotation),
                         Scale(scale),
-                        LocalMatrix(local_matrix),
-                        WorldMatrix(world_matrix),
+                        LocalTransform(local_matrix),
+                        WorldTransform(world_matrix),
                     )
                 ));
             });

@@ -1,5 +1,5 @@
 use awsm_web::webgl::{Id, DataType, BeginMode};
-use shipyard::*;
+use shipyard::prelude::*;
 
 pub struct Primitive {
     pub shader_id: Id,
