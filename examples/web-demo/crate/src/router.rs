@@ -21,7 +21,7 @@ pub fn start_router(window: web_sys::Window, document: web_sys::Document) -> Res
         links.append_child(&home_link)?;
 
         let href = format!(
-            "https://github.com/dakom/awsm/tree/master/examples/web/crate/src/scenes/{}",
+            "https://github.com/dakom/awsm/tree/master/examples/web-demo/crate/src/scenes/{}",
             menu.source
         );
         let source_link = create_source_link(&href, &document)?;
