@@ -122,17 +122,17 @@ export const init_menu = async () => {
                 add_camera_menu_option("zfar") (1.0);
                 add_camera_menu_slider("positionX") (-100.0) (100.0) (0.0);
                 add_camera_menu_slider("positionY") (-100.0) (100.0) (0.0);
-                add_camera_menu_slider("positionZ") (-100.0) (100.0) (0.0);
+                add_camera_menu_slider("positionZ") (-100.0) (100.0) (1.0);
             }
 
             const setup_perspective = () => { 
                 add_camera_menu_option("aspectRatio") (1.0);
                 add_camera_menu_option("yfov") (1.0);
                 add_camera_menu_option("znear") (0.01);
-                add_camera_menu_option("zfar") (1.0);
+                add_camera_menu_option("zfar") (100.0);
                 add_camera_menu_slider("positionX") (-100.0) (100.0) (0.0);
                 add_camera_menu_slider("positionY") (-100.0) (100.0) (0.0);
-                add_camera_menu_slider("positionZ") (-100.0) (100.0) (-1.0); //TODO - make 1 when view inverting is added
+                add_camera_menu_slider("positionZ") (-100.0) (100.0) (1.0);
             }
 
             if (style === "orthographic") {

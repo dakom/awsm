@@ -15,6 +15,7 @@ pub enum NativeError {
     SceneMissing,
     AccessorView,
     Wip,
+    InvertMatrix,
     AttributeDimSize(String, u8, usize),
     NodeMissing(usize),
 }
@@ -68,6 +69,7 @@ impl NativeError {
             NativeError::SceneMissing=> "no such scene",
             NativeError::AccessorView => "non-sparse accessor must have a buffer view",
             NativeError::Wip => "Work In Progress",
+            NativeError::InvertMatrix => "Unable to invert matrix",
             NativeError::AttributeDimSize(_, _, _) => "wrong attribute dimension size",
             NativeError::NodeMissing(_) => "missing node",
         }

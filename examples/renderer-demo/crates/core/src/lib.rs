@@ -61,7 +61,6 @@ pub fn run(canvas:HtmlCanvasElement, window_width: u32, window_height: u32, send
     });
 
     let state = Rc::new(RefCell::new(State{
-        camera_node: None,
         camera_settings: None,
         window_size: WindowSize{
             width: window_width,

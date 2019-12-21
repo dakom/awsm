@@ -77,7 +77,8 @@ impl Renderer {
             for (node, local_matrix, world_matrix) in (nodes, local_matrices, world_matrices).iter() {
                 let local_matrix = &local_matrix.0;
                 let world_matrix = &mut world_matrix.0;
-
+                world_matrix.copy_from(&local_matrix);
+                /*
                 world_matrix.copy_from(&parent_matrix);
                 world_matrix.mul_mut(local_matrix);
 
@@ -87,6 +88,7 @@ impl Renderer {
                 } else {
                     child_index += 1;
                 }
+                */
             }
         });
     }
@@ -95,6 +97,7 @@ impl Renderer {
         self.update_transforms();
         //mult-camera support will require changing this to Some
         //idea - have a Unique component which holds the active camera
+        self.update_camera_view(None);
         self.update_camera_ubo(None);
 
         let mut webgl = self.webgl.borrow_mut();

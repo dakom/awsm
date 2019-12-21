@@ -5,7 +5,6 @@ use shipyard::prelude::*;
 pub struct State {
     pub camera_settings: Option<CameraSettings>,
     pub window_size: events::WindowSize,
-    pub camera_node: Option<Key>
 }
 
 pub enum CameraSettings {
