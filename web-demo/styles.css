@@ -1,0 +1,163 @@
+/* Global */
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+html,body {
+	padding: 0;
+	margin: 0;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 0;
+    margin: 0;
+}
+
+a {
+	text-decoration: none;
+}
+
+ul {
+	list-style: none;	
+}
+
+.github-fork-ribbon.right-bottom:before {
+            background-color: #f80;
+}
+
+.app {
+    margin-top: 100px;
+    text-align: center;
+}
+.center-links {
+    margin-top: 50px;
+    display: block;
+    text-align: center;
+}
+.button {
+	cursor: pointer;
+	margin: 10px;
+	background-color: #0583F2;
+	color: white;
+	text-align: center;
+	padding: 1em 2em;
+	border-radius: 5px;
+	font-weight: bold;
+}
+
+.button:hover {
+	background-color: #F27405;
+}
+
+/* Menu */
+.menu-header {
+	margin-top: 5px;
+	margin-left: 10px;
+	font-size: 2rem;
+}
+.menu-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+
+/* scenes */
+.tick, .loaders {
+    padding: 20px;
+}
+
+/* demo pages */
+.demo-controls, .demo-links{
+    z-index: 1;
+    display: flex;
+    flex-direction: row;
+    position: absolute;
+    top: 0px;
+}
+.demo-controls {
+    left: 0px;
+}
+.demo-links {
+    right: 0px;
+}
+.source, .home {
+    display: inline-block;
+}
+
+.home-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.text-example {
+    padding-top: 100px;
+    font-size: xx-large;
+}
+
+.demo-button {
+    display: inline-block;
+    position: absolute;
+    width: 200px;
+    top: 100px;
+    left: calc(50vw - 100px);
+    background-color: #BF5017;
+}
+
+/* pointer-lock */
+.pointer-lock-button {
+    display: inline-block;
+    position: absolute;
+    width: 200px;
+    top: calc(50vh);
+    left: calc(50vw - 100px);
+    background-color: #BF5017;
+}
+.pointer-lock-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #2a2a2a
+}
+
+.pointer-lock-cursor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 25px;
+    width: 25px;
+    background-color: red;
+    border-radius: 50%;
+    display: inline-block;
+    pointer-events: none;
+}
+
+/* loading */
+.audio-player {
+    position: absolute;
+    top: calc(20vh);
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.audio-player-loading {
+    text-align: center;
+    width: 100%;
+    font-size: xx-large; 
+}
+
+.audio-player-button {
+    display: inline-block;
+    width: 200px;
+    background-color: #BF5017;
+}
