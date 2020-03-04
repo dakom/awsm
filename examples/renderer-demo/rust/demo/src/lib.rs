@@ -1,4 +1,29 @@
-#[allow(clippy::module_inception)]
+use log::{info, Level};
+use wasm_bindgen::prelude::*;
+use web_sys::{HtmlCanvasElement};
+
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+cfg_if::cfg_if! {
+    if #[cfg(all(feature = "wasm-logger", feature = "console_error_panic_hook", debug_assertions))] {
+        fn setup() {
+            wasm_logger::init(wasm_logger::Config::default());
+            console_error_panic_hook::set_once();
+            log::info!("rust logging enabled!");
+        }
+    } else {
+        fn setup() {
+            log::info!("rust logging disabled!"); //<-- won't be seen
+        }
+    }
+}
+
+pub fn run(canvas:HtmlCanvasElement, window_width: u32, window_height: u32, send_bridge_event:js_sys::Function) -> Result<JsValue, JsValue> {
+    Err(JsValue::from_str("resurecting!"))
+}
+
+/*#[allow(clippy::module_inception)]
 mod events;
 #[allow(clippy::module_inception)]
 mod game_loop;
@@ -93,3 +118,4 @@ pub fn run(canvas:HtmlCanvasElement, window_width: u32, window_height: u32, send
 
     Ok(send_event)
 }
+*/

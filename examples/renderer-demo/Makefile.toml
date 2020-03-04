@@ -1,0 +1,134 @@
+[config]
+skip_core_tasks = true
+
+##################
+## Main Entries ##
+##################
+
+[tasks.build]
+run_task = [
+    {name = "build-development", condition = { profiles = [ "development"] } },
+    {name = "build-production", condition = { profiles = [ "production"] } },
+]
+
+##See: https://github.com/sagiegurari/cargo-make/issues/355
+[tasks.serve]
+script = ['''
+    echo waiting on https://github.com/sagiegurari/cargo-make/issues/355
+    echo in the meantime use npm start
+''']
+
+# [tasks.serve]
+# run_task = [{name = [
+#     "watch-rust",
+#     "serve-webpack",
+# ], parallel = true}]
+
+[tasks.test]
+run_task = [{name = [
+    "test-rust-unit",
+    "test-interop",
+]}]
+
+[tasks.clean]
+run_task = [{name = [
+    "clean-rust",
+    "clean-artifacts",
+]}]
+
+########################
+## Development Builds ##
+########################
+
+[tasks.build-development]
+run_task = [{name = [
+    "clean",
+    "build-development-rust", 
+    "build-development-webpack", 
+    "copy-static"
+]}]
+
+[tasks.build-development-rust]
+command = "cargo"
+args = ["make", "build", "--profile", "development"]
+cwd = "rust/demo"
+
+[tasks.build-development-webpack]
+script = ["npx webpack --progress --color --config webpack.dev.js"]
+
+##########################
+## Watchers and Servers ##
+##########################
+
+[tasks.watch-rust]
+command = "cargo"
+args = ["make", "watch"]
+cwd = "rust/demo"
+
+##See: https://github.com/sagiegurari/cargo-make/issues/355
+# [tasks.serve-webpack]
+# script = ["npx webpack-dev-server --config webpack.dev.js"]
+
+#######################
+## Production Builds ##
+#######################
+
+[tasks.build-production]
+run_task = [{name = [
+    "clean",
+    "build-production-rust", 
+    "build-production-webpack",
+    "copy-static"
+]}]
+
+[tasks.build-production-rust]
+command = "cargo"
+args = ["make", "build", "--profile", "production"]
+cwd = "rust/demo"
+
+
+[tasks.build-production-webpack]
+script = ["npx webpack --progress --color --config webpack.release.js"]
+
+##################
+## Copy Static ##
+#################
+
+[tasks.copy-static]
+script_runner = "@shell"
+script = ["cp -R ./_static/* ./dist/"]
+
+############### 
+#### Tests ####
+###############
+
+[tasks.test-rust-unit]
+command = "cargo"
+args = ["make", "test-unit"]
+cwd = "rust/demo"
+
+[tasks.test-interop]
+dependencies = ["build-rust-test-interop"]
+script = ["npx jest"]
+
+[tasks.build-rust-test-interop]
+command = "cargo"
+args = ["make", "build-test-interop"]
+cwd = "rust/demo"
+
+############### 
+#### Cleanup ##
+###############
+
+[tasks.clean-rust]
+command = "cargo"
+args = ["make", "clean"]
+cwd = "rust/demo"
+
+[tasks.clean-artifacts]
+script_runner = "@shell"
+ignore_errors = true
+script = [ 
+    "rm -rf ./dist",
+    "rm -rf ./_static/wasm/demo/pkg",
+]
